@@ -6,12 +6,22 @@ void vk_foo(void)
     puts("Hello, I'm a shared library");
 }
 
-void vk_send_packet(void *data)
+void vkil_send_frame(void *data)
+{
+    printf("[Valkyrie Integration Layer] sending a frame...\n");
+}
+
+void vkil_receive_frame(void *data)
+{
+    printf("[Valkyrie Integration Layer] receiving a frame...\n");
+}
+
+void vkil_send_packet(void *data)
 {
     printf("[Valkyrie Integration Layer] sending a packet...\n");
 }
 
-void vk_receive_frame(void *data)
+void vkil_receive_packet(void *data)
 {
-    printf("[Valkyrie Integration Layer] receiving a frame...\n");
+    printf("[Valkyrie Integration Layer] receiving a packet...\n");
 }

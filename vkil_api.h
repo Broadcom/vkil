@@ -82,8 +82,10 @@ typedef struct _VkIl {
    // int32_t (*pool_delete)(void *handle);
 }VkIl;
 
-extern void vk_send_packet(void *data);
-extern void vk_receive_frame(void *data);
+extern void vkil_send_frame(void *data);
+extern void vkil_send_packet(void *data);
+extern void vkil_receive_frame(void *data);
+extern void vkil_receive_packet(void *data);
 
  
 #endif  // vkil_api_h__
