@@ -1,6 +1,7 @@
 #ifndef vkil_api_h__
 #define vkil_api_h__
- 
+
+#include <stdint.h>
 extern void vk_foo(void);
 
 enum vkil_role_type 
@@ -80,6 +81,9 @@ typedef struct _VkIl {
    // int32_t (*pool_new)(void ** handle, const int32_t element_size,const int32_t element_num);
    // int32_t (*pool_delete)(void *handle);
 }VkIl;
+
+extern void vk_send_packet(void *data);
+extern void vk_receive_frame(void *data);
 
  
 #endif  // vkil_api_h__
