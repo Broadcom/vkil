@@ -30,7 +30,6 @@ enum vkil_status_type
    VK_STATE_ERROR  = 0xFF,
 };
 
-
 // this structure is copied thru PCIE bridge and is currenlty limited to 16 bytes
 typedef struct _vkil_context_essential
 {
@@ -42,18 +41,15 @@ typedef struct _vkil_context_essential
                           // in case of the component die, it is expected the hw kills all the context pertaining to the session
                          // all the component belonging to the session
    enum       vkil_role_type component_role;
-}vkil_context_essential;
-
-
+} vkil_context_essential;
 
 typedef struct _vkil_context
 {
    vkil_context_essential context_essential;
    void       *priv_data; // component role format dependent, 
-}vkil_context;
+} vkil_context;
 
-
-typedef struct _VkIl {
+typedef struct _vkil_api {
    int32_t (*init)(void ** handle, const vkil_context * context);  
    int32_t (*deinit)(void *handle);
    int32_t  (*set_parameter)(const void *handle, const int32_t field, const void *value);  // static parameters
@@ -80,12 +76,6 @@ typedef struct _VkIl {
 
    // int32_t (*pool_new)(void ** handle, const int32_t element_size,const int32_t element_num);
    // int32_t (*pool_delete)(void *handle);
-}VkIl;
+} vkil_api;
 
-extern void vkil_send_frame(void *data);
-extern void vkil_send_packet(void *data);
-extern void vkil_receive_frame(void *data);
-extern void vkil_receive_packet(void *data);
-
- 
 #endif  // vkil_api_h__
