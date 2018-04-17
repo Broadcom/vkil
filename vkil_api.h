@@ -50,7 +50,6 @@ typedef struct _vkil_context
 } vkil_context;
 
 typedef struct _vkil_api {
-    // mind the order assumed by the vkil initializer initializer
    int32_t (*init)(void ** handle);
    int32_t (*deinit)(void *handle);
    int32_t  (*set_parameter)(const void *handle, const int32_t field, const void *value);  // static parameters
