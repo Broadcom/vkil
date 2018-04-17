@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <errno.h>
+#include <stdlib.h>
 #include "vkil_api.h"
+
+#define VKERROR(e) (-(e)) // returns a negative error code
 
 int32_t vkil_init(void ** handle)
 {
@@ -18,7 +21,7 @@ int32_t vkil_init(void ** handle)
     return 0;
 
 fail_malloc:
-    return ENOMEM;
+    return VKERROR(ENOMEM);
 };
 
 int32_t vkil_deinit(void *handle)
