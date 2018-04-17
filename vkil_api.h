@@ -2,7 +2,7 @@
 #define vkil_api_h__
 
 #include <stdint.h>
-extern void vk_foo(void);
+
 
 enum vkil_role_type 
 {
@@ -50,7 +50,8 @@ typedef struct _vkil_context
 } vkil_context;
 
 typedef struct _vkil_api {
-   int32_t (*init)(void ** handle, const vkil_context * context);  
+    // mind the order assumed by the vkil initializer initializer
+   int32_t (*init)(void ** handle);
    int32_t (*deinit)(void *handle);
    int32_t  (*set_parameter)(const void *handle, const int32_t field, const void *value);  // static parameters
    int32_t  (*get_parameter)(const void *handle, const int32_t field, void **value); // set only in idling mode
@@ -77,5 +78,6 @@ typedef struct _vkil_api {
    // int32_t (*pool_new)(void ** handle, const int32_t element_size,const int32_t element_num);
    // int32_t (*pool_delete)(void *handle);
 } vkil_api;
+
 
 #endif  // vkil_api_h__
