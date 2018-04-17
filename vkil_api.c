@@ -1,9 +1,7 @@
 #include <stdio.h>
-#include <errno.h>
 #include <stdlib.h>
 #include "vkil_api.h"
-
-#define VKERROR(e) (-(e)) // returns a negative error code
+#include "vkil_error.h"
 
 int32_t vkil_init(void ** handle)
 {
@@ -16,12 +14,12 @@ int32_t vkil_init(void ** handle)
     else { // read the handle, to proper cast it, and start to init the component
 
       // here we gonna call the driver to effectivey load and init the component.
-
     }
     return 0;
 
 fail_malloc:
-    return VKERROR(ENOMEM);
+    return VKILERROR(ENOMEM);
+
 };
 
 int32_t vkil_deinit(void *handle)

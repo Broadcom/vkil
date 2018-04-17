@@ -3,12 +3,12 @@
 
 #include <stdint.h>
 
-
-enum vkil_role_type 
-{
-   VK_DECODER = 1,
-   VK_ENCODER = 2,
-   VK_SCALER  = 3,
+enum vkil_role_type{
+    VK_GENERIC    = 0,
+    VK_DECODER    = 1,
+    VK_ENCODER    = 2,
+    VK_SCALER	  = 3,
+    VK_ROLE_MAX   = 0xFF
 };
 
 enum vkil_command_type 
