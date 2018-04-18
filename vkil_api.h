@@ -3,6 +3,38 @@
 
 #include <stdint.h>
 
+
+typedef struct _vkil_buffer_surface
+{
+    uint32_t handle;
+    uint32_t user_data_tag;
+    uint32_t flags;
+    uint16_t visible_frame_height; // dimension of visible part of the surface
+    uint16_t visible_frame_width;
+    uint16_t format; // pixel fromat
+    uint16_t reserved0;
+    uint32_t plane_top[ 3 ]; /* Y,Cb,Cr top field */
+    uint32_t plane_bot[ 3 ]; /* bottom field (interlace only) */
+    uint32_t stride[ 3 ]; /* Stride between rows, in bytes */
+    uint16_t max_frame_width; /* Size of largest frame allowed to put in */
+    uint16_t max_frame_height; /* this buffer. */
+    uint16_t xoffset; // Luma x crop
+    uint16_t yoffset; // Luma y crop
+} vkil_buffer_surface;
+
+
+typedef struct _vkil_buffer_bitstream
+{
+    uint32_t handle;
+    uint32_t user_data_tag;
+    uint32_t flags;
+    uint32_t bitstream_alloc_bytes; /* Length of allocated buffer */
+    uint32_t bitstream_offset; /* Byte offset from start to first byte */
+    uint32_t bitstream_filled_len; /* Number of bytes in the buffer */
+    uint32_t bitstream_buf_addr; /* Pointer to buffer start */
+    uint32_t reserved; /* padding */
+} vkil_buffer_bitstream;
+
 typedef enum _vkil_role_t{
     VK_GENERIC    = 0,
     VK_DECODER    = 1,
