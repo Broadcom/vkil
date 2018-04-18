@@ -2,12 +2,14 @@
 #define vkil_error_h__
 
 
+
+#include <string.h>
 #include "vk_error.h"
 
 #define EOL "endoflist"
 
 
-static int32_t vkil_error(char * functionname)
+static int32_t vkil_error(const char * functionname)
 {
     static char * vkil_fun_list[] = {
                         "undefined",
@@ -33,6 +35,5 @@ static int32_t vkil_error(char * functionname)
 
 
 #define VKILERROR(type) VKERROR_MAKE(VKIL,0,vkil_error(__FUNCTION__),type)
-
 
 #endif  // vkil_error_h__

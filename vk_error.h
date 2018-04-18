@@ -13,10 +13,7 @@ typedef enum {
     VKAPI       = 0,
     VKIL	    = 1,
     VKDRV	    = 3,
-    VKLAYER_MAX = 0x7F	
+    VKLAYER_MAX = 0x7F
 }  vk_layer_t;
-
-
-
 
 #endif  // vkil_error_h__
