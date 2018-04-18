@@ -45,10 +45,12 @@ typedef enum _vkil_role_t{
 
 typedef enum _vkil_command_t
 {
-    VK_CMD_NONE = 0,
-    VK_CMD_IDLE = 1,
-    VK_CMD_RUN = 2,
-    VK_CMD_FLUSH  = 3,
+    VK_CMD_NONE     = 0,
+    VK_CMD_IDLE     = 1,
+    VK_CMD_RUN      = 2,
+    VK_CMD_FLUSH    = 3,
+    VK_CMD_UPLOAD   = 4,
+    VK_CMD_DOWNLOAD = 5,
     VK_CMD_MAX = 0xFF
 } vkil_command_t;
 

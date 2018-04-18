@@ -12,7 +12,7 @@ int32_t vkil_init(void ** handle)
     printf("[VKIL] vkil_init\n");
     if (*handle==NULL) {
         // create the handle
-        if (!(*handle = (void*)malloc(sizeof(vkil_context_essential))))
+        if (!(*handle = (void*)malloc(sizeof(vkil_context))))
             goto fail_malloc;
         // we don't know anything yet on the component, just return the handle
     }
@@ -52,23 +52,6 @@ int32_t vkil_get_parameter(const void *handle, const int32_t field, void **value
     return 0;
 };
 
-int32_t vkil_send_buffer(const void *component_handle, const void *buffer_handle, const vkil_command_t cmd)
-{
-    printf("[VKIL] vkil_send_buffer\n");
-    vk_assert0(component_handle);
-    vk_assert0(buffer_handle);
-    vk_assert0(cmd);
-    return 0;
-};
-
-int32_t vkil_receive_buffer(const void *component_handle, void **buffer_handle)
-{
-    printf("[VKIL] vkil_receive_buffer\n");
-    vk_assert0(component_handle);
-    vk_assert0(buffer_handle);
-    return 0;
-};
-
  // start dma operation
 int32_t vkil_upload_buffer(const void *component_handle, const void *host_buffer, const vkil_command_t cmd)
 {
@@ -101,6 +84,43 @@ int32_t vkil_downloaded_buffer(const void *component_handle, const void *host_bu
     printf("[VKIL] vkil_downloaded_buffer\n");
     vk_assert0(component_handle);
     vk_assert0(host_buffer);
+    return 0;
+};
+
+int32_t vkil_send_buffer(const void *component_handle, const void *buffer_handle, const vkil_command_t cmd)
+{
+    printf("[VKIL] vkil_send_buffer\n");
+    vk_assert0(component_handle);
+    vk_assert0(buffer_handle);
+    vk_assert0(cmd);
+
+    vkil_context *ilctx = (vkil_context *) component_handle;
+    vkil_role_t ilrole = ilctx->context_essential.component_role;
+    switch (ilrole) {
+        case VK_GENERIC:
+            break;
+        case VK_DECODER:
+            if (cmd == VK_CMD_UPLOAD)
+                return vkil_upload_buffer(component_handle, buffer_handle, cmd);
+            break;
+        case VK_ENCODER:
+            if (cmd == VK_CMD_UPLOAD)
+                return vkil_uploaded_buffer(component_handle, buffer_handle);
+            break;
+        case VK_SCALER:
+            break;
+        default:
+            // return VKILERROR(EINVAL);
+            break;
+    }
+    return 0;
+};
+
+int32_t vkil_receive_buffer(const void *component_handle, void **buffer_handle)
+{
+    printf("[VKIL] vkil_receive_buffer\n");
+    vk_assert0(component_handle);
+    vk_assert0(buffer_handle);
     return 0;
 };
 
