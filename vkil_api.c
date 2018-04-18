@@ -9,6 +9,7 @@
 
 int32_t vkil_init(void ** handle)
 {
+    printf("[VKIL] vkil_init\n");
     if (*handle==NULL) {
         // create the handle
         if (!(*handle = (void*)malloc(sizeof(vkil_context_essential))))
@@ -28,20 +29,23 @@ fail_malloc:
 
 int32_t vkil_deinit(void *handle)
 {
+    printf("[VKIL] vkil_deinit\n");
     vk_assert0(handle);
     return 0;
 };
 
-int32_t  vkil_set_parameter(const void *handle, const int32_t field, const void *value)
+int32_t vkil_set_parameter(const void *handle, const int32_t field, const void *value)
 {
+    printf("[VKIL] vkil_set_parameter\n");
     vk_assert0(handle);
     vk_assert0(field);
     vk_assert0(value);
     return 0;
 };
 
-int32_t  vkil_get_parameter(const void *handle, const int32_t field, void **value)
+int32_t vkil_get_parameter(const void *handle, const int32_t field, void **value)
 {
+    printf("[VKIL] vkil_get_parameter\n");
     vk_assert0(handle);
     vk_assert0(field);
     vk_assert0(value);
@@ -50,6 +54,7 @@ int32_t  vkil_get_parameter(const void *handle, const int32_t field, void **valu
 
 int32_t vkil_send_buffer(const void *component_handle, const void *buffer_handle, const vkil_command_t cmd)
 {
+    printf("[VKIL] vkil_send_buffer\n");
     vk_assert0(component_handle);
     vk_assert0(buffer_handle);
     vk_assert0(cmd);
@@ -58,6 +63,7 @@ int32_t vkil_send_buffer(const void *component_handle, const void *buffer_handle
 
 int32_t vkil_receive_buffer(const void *component_handle, void **buffer_handle)
 {
+    printf("[VKIL] vkil_receive_buffer\n");
     vk_assert0(component_handle);
     vk_assert0(buffer_handle);
     return 0;
@@ -66,6 +72,7 @@ int32_t vkil_receive_buffer(const void *component_handle, void **buffer_handle)
  // start dma operation
 int32_t vkil_upload_buffer(const void *component_handle, const void *host_buffer, const vkil_command_t cmd)
 {
+    printf("[VKIL] vkil_upload_buffer\n");
     vk_assert0(component_handle);
     vk_assert0(host_buffer);
     vk_assert0(cmd);
@@ -74,6 +81,7 @@ int32_t vkil_upload_buffer(const void *component_handle, const void *host_buffer
 
 int32_t vkil_download_buffer(const void *component_handle, const void *host_buffer)
 {
+    printf("[VKIL] vkil_download_buffer\n");
     vk_assert0(component_handle);
     vk_assert0(host_buffer);
     return 0;
@@ -82,14 +90,15 @@ int32_t vkil_download_buffer(const void *component_handle, const void *host_buff
  // poll dma operation status
 int32_t vkil_uploaded_buffer(const void *component_handle, const void *host_buffer)
 {
+    printf("[VKIL] vkil_uploaded_buffer\n");
     vk_assert0(component_handle);
     vk_assert0(host_buffer);
     return 0;
 };
 
-
 int32_t vkil_downloaded_buffer(const void *component_handle, const void *host_buffer)
 {
+    printf("[VKIL] vkil_downloaded_buffer\n");
     vk_assert0(component_handle);
     vk_assert0(host_buffer);
     return 0;
