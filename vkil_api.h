@@ -99,7 +99,7 @@ typedef struct _vkil_api {
 
     // start dma operation
     int32_t (*upload_buffer)(const void *component_handle, const void *host_buffer, const vkil_command_t cmd);
-    int32_t (*download_buffer)(const void *component_handle, const void *host_buffer);
+    int32_t (*download_buffer)(const void *component_handle, void **host_buffer);
 
     // poll dma operation status
     int32_t (*uploaded_buffer)(const void *component_handle, const void *host_buffer);

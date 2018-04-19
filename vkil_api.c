@@ -62,7 +62,7 @@ int32_t vkil_upload_buffer(const void *component_handle, const void *host_buffer
     return 0;
 };
 
-int32_t vkil_download_buffer(const void *component_handle, const void *host_buffer)
+int32_t vkil_download_buffer(const void *component_handle, void **host_buffer)
 {
     printf("[VKIL] vkil_download_buffer\n");
     vk_assert0(component_handle);
