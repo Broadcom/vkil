@@ -121,6 +121,22 @@ int32_t vkil_receive_buffer(const void *component_handle, void **buffer_handle)
     printf("[VKIL] vkil_receive_buffer\n");
     vk_assert0(component_handle);
     vk_assert0(buffer_handle);
+
+    vkil_context *ilctx = (vkil_context *) component_handle;
+    vkil_role_t ilrole = ilctx->context_essential.component_role;
+    switch (ilrole) {
+        case VK_GENERIC:
+            break;
+        case VK_DECODER:
+            return vkil_downloaded_buffer(component_handle, *buffer_handle);
+        case VK_ENCODER:
+            return vkil_download_buffer(component_handle, buffer_handle);
+        case VK_SCALER:
+            break;
+        default:
+            // return VKILERROR(EINVAL);
+            break;
+    }
     return 0;
 };
 
