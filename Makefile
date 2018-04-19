@@ -14,10 +14,10 @@ OBJS = $(SRCS:.c=.o)
 
 
 .PHONY: all
-all: ${TARGET_LIB}
+all: $(TARGET_LIB)
 
 $(TARGET_LIB): $(OBJS)
-	$(CC) ${LDFLAGS} -o $@ $^
+	$(CC) $(LDFLAGS) -o $@ $^
 
 $(SRCS:.c=.d):%.d:%.c
 	$(CC) $(CFLAGS) -MM $< >$@
@@ -26,16 +26,16 @@ include $(SRCS:.c=.d)
 
 .PHONY: clean
 clean:
-	-${RM} ${TARGET_LIB} ${OBJS} $(SRCS:.c=.d)
+	-$(RM) $(TARGET_LIB) $(OBJS) $(SRCS:.c=.d)
 
 # may want to run with sudo
 install:
-	install -d ${PREFIX}/lib/
-	install -d ${PREFIX}/include/
-	install -m 0644 ${TARGET_LIB} ${PREFIX}/lib/
-	install -m 0644 ${HDRS} ${PREFIX}/include/
+	install -d $(PREFIX)/lib/
+	install -d $(PREFIX)/include/
+	install -m 0644 $(TARGET_LIB) $(PREFIX)/lib/
+	install -m 0644 $(HDRS) $(PREFIX)/include/
 	ldconfig
 
 uninstall:
-	${RM} ${PREFIX}/lib/${TARGET_LIB}
-	${RM} ${PREFIX}/include/${HDRS}
+	$(RM) $(PREFIX)/lib/$(TARGET_LIB)
+	$(RM) $(PREFIX)/include/$(HDRS)
