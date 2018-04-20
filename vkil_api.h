@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 
+// this declaration file is to be called by  the vkapi layer (embedded into ffmpeg)
 
 typedef struct _vkil_buffer_surface
 {
@@ -64,18 +65,19 @@ typedef enum _vkil_status_t
     VK_STATE_ERROR  = 0xFF,
 } vkil_status_t;
 
-// this structure is copied thru PCIE bridge and is currenlty limited to 16 bytes
+// this structure is copied thru PCIE bridge and is currenlty limited to 12 bytes
 typedef struct _vkil_context_essential
 {
     uint32_t    handle;     // host opaque handle
+    vkil_role_t component_role;
     int8_t      card_id;    // 255 should be plenty enough
                             // oxff mean the card_id is automatically determined by the driver
     int8_t      queue_id;   // low, high priority
     int16_t     session_id; // allow the HW, to pool all the context pertaining to a single session
                             // in case of the component die, it is expected the hw kills all the context pertaining to the session
                             // all the component belonging to the session
-    vkil_role_t component_role;
 } vkil_context_essential;
+
 
 typedef struct _vkil_context
 {

@@ -2,23 +2,57 @@
 #include <stdlib.h>
 #include "vkil_api.h"
 #include "vkil_error.h"
+#include "vkil_backend.h"
+
+#include "vkdrv_access.h" // TODO: OK at this time the driver is a shared library !
 
 #include <assert.h>
 
 #define vk_assert0 assert
 
+// this structure is copied thru PCIE bridge and is currenlty limited to 16 bytes
+typedef struct _vkil_context_internal
+{
+    void *      fd_dummy;
+} vkil_context_internal;
+
 int32_t vkil_init(void ** handle)
 {
-    printf("[VKIL] vkil_init\n");
+    printf("[VKIL] vkil_init %x \n", *handle);
     if (*handle==NULL) {
         // create the handle
         if (!(*handle = (void*)malloc(sizeof(vkil_context))))
             goto fail_malloc;
+        memset(*handle,0,sizeof(vkil_context));
         // we don't know anything yet on the component, just return the handle
     }
-    else { // read the handle, to proper cast it, and start to init the component
+    else{
+        vkil_context *ilctx = (vkil_context *)(* handle);
+        if (ilctx->context_essential.component_role && !ilctx->priv_data)
+        {
+            vkil_context_internal * ilpriv;
+            vk_comm_from_host message;
+            // we knwo the component, but this one has not been created yet
 
-      // here we gonna call the driver to effectivey load and init the component.
+            // the priv_data structure size could be component specific
+            if (!(ilctx->priv_data = (void*)malloc(sizeof(vkil_context_internal))))
+                goto fail_malloc;
+            memset(ilctx->priv_data,0,sizeof(vkil_context_internal));
+            ilpriv = (vkil_context_internal *) ilctx->priv_data;
+            // instanciate the driver
+            ilpriv->fd_dummy = vkdrv_open("libvkdrv.so", 0);
+            printf("[VKIL] %s driver inited %x\n", __FUNCTION__, ilpriv->fd_dummy);
+
+            message.queue_id    = ilctx->context_essential.queue_id;
+            message.function_id = vkil_get_function_id("init");
+            message.context_id = (int32_t)handle;
+            message.args[0] = ilctx->context_essential.component_role;
+            vkdrv_write(ilpriv->fd_dummy,&message,sizeof(message));
+            // here, we will need to wait for the HW to start to create the component
+            // poll_wait() wait for the hw to complete (interrupt or probing).
+            // vkdrv_read(ilpriv->fd_dummy,&message,sizeof(message)); to get the status of the hw.
+            printf("[VKIL] %s card inited %x\n", __FUNCTION__, ilpriv->fd_dummy);
+        }
     }
     return 0;
 
@@ -29,8 +63,16 @@ fail_malloc:
 
 int32_t vkil_deinit(void *handle)
 {
-    printf("[VKIL] vkil_deinit\n");
+    vkil_context *ilctx = (vkil_context *)(handle);
     vk_assert0(handle);
+    printf("[VKIL] vkil_deinit\n");
+    if (ilctx->priv_data){
+        vkil_context_internal * ilpriv = ilctx->priv_data;
+        if (ilpriv->fd_dummy){
+            vkdrv_close(ilpriv->fd_dummy);
+        }
+
+    }
     return 0;
 };
 
@@ -52,14 +94,31 @@ int32_t vkil_get_parameter(const void *handle, const int32_t field, void **value
     return 0;
 };
 
+
  // start dma operation
 int32_t vkil_upload_buffer(const void *component_handle, const void *host_buffer, const vkil_command_t cmd)
 {
+    vkil_context *ilctx = (vkil_context *)(component_handle);
+    vkil_context_internal *ilpriv;
+    vk_comm_from_host message;
+
     printf("[VKIL] vkil_upload_buffer\n");
+
+    //sanity check
     vk_assert0(component_handle);
     vk_assert0(host_buffer);
     vk_assert0(cmd);
-    return 0;
+    ilpriv = (vkil_context_internal *) ilctx->priv_data;
+    vk_assert0(ilpriv);
+
+    // here we need to write the dma command
+    message.queue_id    = ilctx->context_essential.queue_id;
+    message.function_id = vkil_get_function_id("copy_buffer");
+    message.context_id = component_handle;
+    message.args[0] = host_buffer; // TODO: to clarify
+    message.args[1] = VK_CMD_UPLOAD;
+
+    return vkdrv_write(ilpriv->fd_dummy,&message,sizeof(message));
 };
 
 int32_t vkil_download_buffer(const void *component_handle, void **host_buffer)

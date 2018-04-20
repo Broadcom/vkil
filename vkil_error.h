@@ -6,8 +6,9 @@
 #include <string.h>
 #include "vk_error.h"
 
-#define EOL "endoflist"
-
+#ifndef VK_EOL
+#define VK_EOL "endoflist"
+#endif
 
 static int32_t vkil_error(const char * functionname)
 {
@@ -23,13 +24,13 @@ static int32_t vkil_error(const char * functionname)
                         "vkil_download_buffer",
                         "vkil_uploaded_buffer",
                         "vkil_downloaded_buffer",
-                        EOL};
+                        VK_EOL};
     int32_t i=0;
     do{
         i++;
         if (!strcmp(vkil_fun_list[i],functionname))
             return i;
-    } while (strcmp(vkil_fun_list[i],EOL));
+    } while (strcmp(vkil_fun_list[i],VK_EOL));
     return 0;
 };
 
