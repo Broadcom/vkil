@@ -71,8 +71,8 @@ int32_t vkil_deinit(void *handle)
         if (ilpriv->fd_dummy){
             vkdrv_close(ilpriv->fd_dummy);
         }
-
     }
+    free(ilctx);
     return 0;
 };
 
