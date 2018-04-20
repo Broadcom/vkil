@@ -5,6 +5,7 @@ endif
 CC = gcc # C compiler
 CFLAGS = -fPIC -Wall -Wextra -O2 -g # C flags
 LDFLAGS = -shared  # linking flags
+LIBS = -lvkdrv
 RM = rm -f  # rm command
 
 TARGET_LIB = libvkil.so # target lib
@@ -17,7 +18,7 @@ OBJS = $(SRCS:.c=.o)
 all: $(TARGET_LIB)
 
 $(TARGET_LIB): $(OBJS)
-	$(CC) $(LDFLAGS) -o $@ $^
+	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 $(SRCS:.c=.d):%.d:%.c
 	$(CC) $(CFLAGS) -MM $< >$@
