@@ -114,5 +114,8 @@ typedef struct _vkil_api {
     // int32_t (*pool_delete)(void *handle);
 } vkil_api;
 
+extern void* vkil_create_api(void);
+
+extern int vkil_destroy_api(void* ilapi);
 
 #endif  // vkil_api_h__

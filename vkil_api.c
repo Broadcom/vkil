@@ -40,7 +40,7 @@ int32_t vkil_init(void ** handle)
             memset(ilctx->priv_data,0,sizeof(vkil_context_internal));
             ilpriv = (vkil_context_internal *) ilctx->priv_data;
             // instanciate the driver
-            ilpriv->fd_dummy = vkdrv_open("libvkdrv.so", 0);
+            ilpriv->fd_dummy = vkdrv_open();
             printf("[VKIL] %s driver inited %x\n", __FUNCTION__, ilpriv->fd_dummy);
 
             message.queue_id    = ilctx->context_essential.queue_id;
@@ -199,15 +199,31 @@ int32_t vkil_receive_buffer(const void *component_handle, void **buffer_handle)
     return 0;
 };
 
-vkil_api ilapi = {
-    .init                  = vkil_init,
-    .deinit                = vkil_deinit,
-    .set_parameter         = vkil_set_parameter,
-    .get_parameter         = vkil_get_parameter,
-    .send_buffer           = vkil_send_buffer,
-    .receive_buffer        = vkil_receive_buffer,
-    .upload_buffer         = vkil_upload_buffer,
-    .download_buffer       = vkil_download_buffer,
-    .uploaded_buffer       = vkil_uploaded_buffer,
-    .downloaded_buffer     = vkil_downloaded_buffer
-};
+void* vkil_create_api(void)
+{
+    printf("[VKIL] %s\n",__FUNCTION__);
+    vkil_api* ilapi = (vkil_api*) malloc(sizeof(vkil_api));
+    if(!ilapi)
+        return NULL;
+    *ilapi = (vkil_api) {
+        .init                  = vkil_init,
+        .deinit                = vkil_deinit,
+        .set_parameter         = vkil_set_parameter,
+        .get_parameter         = vkil_get_parameter,
+        .send_buffer           = vkil_send_buffer,
+        .receive_buffer        = vkil_receive_buffer,
+        .upload_buffer         = vkil_upload_buffer,
+        .download_buffer       = vkil_download_buffer,
+        .uploaded_buffer       = vkil_uploaded_buffer,
+        .downloaded_buffer     = vkil_downloaded_buffer
+    };
+    return ilapi;
+}
+
+int vkil_destroy_api(void* ilapi)
+{
+    printf("[VKIL] %s\n",__FUNCTION__);
+    if((vkil_api*) ilapi)
+        free(ilapi);
+    return 0;
+}
