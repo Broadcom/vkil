@@ -121,28 +121,31 @@ int32_t vkil_upload_buffer(const void *component_handle, const void *host_buffer
     return vkdrv_write(ilpriv->fd_dummy,&message,sizeof(message));
 };
 
-int32_t vkil_download_buffer(const void *component_handle, void **host_buffer)
+int32_t vkil_download_buffer(const void *component_handle, void **host_buffer, const vkil_command_t cmd)
 {
     printf("[VKIL] vkil_download_buffer\n");
     vk_assert0(component_handle);
     vk_assert0(host_buffer);
+    vk_assert0(cmd);
     return 0;
 };
 
  // poll dma operation status
-int32_t vkil_uploaded_buffer(const void *component_handle, const void *host_buffer)
+int32_t vkil_uploaded_buffer(const void *component_handle, const void *host_buffer, const vkil_command_t cmd)
 {
     printf("[VKIL] vkil_uploaded_buffer\n");
     vk_assert0(component_handle);
     vk_assert0(host_buffer);
+    vk_assert0(cmd);
     return 0;
 };
 
-int32_t vkil_downloaded_buffer(const void *component_handle, const void *host_buffer)
+int32_t vkil_downloaded_buffer(const void *component_handle, const void *host_buffer, const vkil_command_t cmd)
 {
     printf("[VKIL] vkil_downloaded_buffer\n");
     vk_assert0(component_handle);
     vk_assert0(host_buffer);
+    vk_assert0(cmd);
     return 0;
 };
 
@@ -152,50 +155,34 @@ int32_t vkil_send_buffer(const void *component_handle, const void *buffer_handle
     vk_assert0(component_handle);
     vk_assert0(buffer_handle);
     vk_assert0(cmd);
-
-    vkil_context *ilctx = (vkil_context *) component_handle;
-    vkil_role_t ilrole = ilctx->context_essential.component_role;
-    switch (ilrole) {
-        case VK_GENERIC:
-            break;
-        case VK_DECODER:
-            if (cmd == VK_CMD_UPLOAD)
-                return vkil_upload_buffer(component_handle, buffer_handle, cmd);
-            break;
-        case VK_ENCODER:
-            if (cmd == VK_CMD_UPLOAD)
-                return vkil_uploaded_buffer(component_handle, buffer_handle);
-            break;
-        case VK_SCALER:
-            break;
+    switch (cmd) {
+        // untunneled operations
+        case VK_CMD_UPLOAD:
+            vkil_upload_buffer(component_handle, buffer_handle, cmd);
+            // here we need to wait the buffer has effectively been uploaded
+            return vkil_uploaded_buffer(component_handle, buffer_handle, VK_CMD_BLOCKING);
         default:
-            // return VKILERROR(EINVAL);
             break;
     }
+    // tunneled operations
     return 0;
 };
 
-int32_t vkil_receive_buffer(const void *component_handle, void **buffer_handle)
+int32_t vkil_receive_buffer(const void *component_handle, void **buffer_handle, const vkil_command_t cmd)
 {
     printf("[VKIL] vkil_receive_buffer\n");
     vk_assert0(component_handle);
     vk_assert0(buffer_handle);
-
-    vkil_context *ilctx = (vkil_context *) component_handle;
-    vkil_role_t ilrole = ilctx->context_essential.component_role;
-    switch (ilrole) {
-        case VK_GENERIC:
-            break;
-        case VK_DECODER:
-            return vkil_downloaded_buffer(component_handle, *buffer_handle);
-        case VK_ENCODER:
-            return vkil_download_buffer(component_handle, buffer_handle);
-        case VK_SCALER:
-            break;
+    switch (cmd) {
+        // untunneled operations
+        case VK_CMD_DOWNLOAD:
+            vkil_download_buffer(component_handle, buffer_handle, cmd);
+            // here we need to wait the buffer has effectively been uploaded
+            return vkil_uploaded_buffer(component_handle, buffer_handle, VK_CMD_BLOCKING);
         default:
-            // return VKILERROR(EINVAL);
             break;
     }
+    // tunneled operations
     return 0;
 };
 

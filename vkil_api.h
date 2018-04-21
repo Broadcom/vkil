@@ -24,17 +24,15 @@ typedef struct _vkil_buffer_surface
 } vkil_buffer_surface;
 
 
-typedef struct _vkil_buffer_bitstream
+
+typedef struct _vkil_buffer_packet
 {
     uint32_t handle;
     uint32_t user_data_tag;
     uint32_t flags;
-    uint32_t bitstream_alloc_bytes; /* Length of allocated buffer */
-    uint32_t bitstream_offset; /* Byte offset from start to first byte */
-    uint32_t bitstream_filled_len; /* Number of bytes in the buffer */
-    uint32_t bitstream_buf_addr; /* Pointer to buffer start */
-    uint32_t reserved; /* padding */
-} vkil_buffer_bitstream;
+    uint32_t size; /* size of packet in byte */
+    uint8_t* data; /* Pointer to buffer start */
+} vkil_buffer_packet;
 
 typedef enum _vkil_role_t{
     VK_GENERIC    = 0,
@@ -52,6 +50,7 @@ typedef enum _vkil_command_t
     VK_CMD_FLUSH    = 3,
     VK_CMD_UPLOAD   = 4,
     VK_CMD_DOWNLOAD = 5,
+    VK_CMD_BLOCKING = 6,
     VK_CMD_MAX = 0xFF
 } vkil_command_t;
 
@@ -97,15 +96,15 @@ typedef struct _vkil_api {
     int32_t (*send_buffer)(const void *component_handle, const void *buffer_handle, const vkil_command_t cmd);
 
     // Receivebuffer_cb(*component_handle, *buffer_handle);
-    int32_t (*receive_buffer)(const void *component_handle, void **buffer_handle);
+    int32_t (*receive_buffer)(const void *component_handle, void **buffer_handle, const vkil_command_t cmd);
 
     // start dma operation
     int32_t (*upload_buffer)(const void *component_handle, const void *host_buffer, const vkil_command_t cmd);
-    int32_t (*download_buffer)(const void *component_handle, void **host_buffer);
+    int32_t (*download_buffer)(const void *component_handle, void **host_buffer, const vkil_command_t cmd);
 
     // poll dma operation status
-    int32_t (*uploaded_buffer)(const void *component_handle, const void *host_buffer);
-    int32_t (*downloaded_buffer)(const void *component_handle, const void *host_buffer);
+    int32_t (*uploaded_buffer)(const void *component_handle, const void *host_buffer, const vkil_command_t cmd);
+    int32_t (*downloaded_buffer)(const void *component_handle, const void *host_buffer, const vkil_command_t cmd);
    
     // int32_t (*uploaded_buffer_cb)(const void *component_handle, const void *host_buffer)
     // int32_t (*downloaded_buffer_cb)(const void *component_handle, const void *host_buffer)
