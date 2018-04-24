@@ -10,7 +10,7 @@ RM = rm -f  # rm command
 
 TARGET_LIB = libvkil.so # target lib
 HDRS = vkil_api.h
-SRCS = vkil_api.c # source files
+SRCS = vkil_api.c vkil_session.c# source files
 OBJS = $(SRCS:.c=.o)
 
 .PHONY: all clean install uninstall
