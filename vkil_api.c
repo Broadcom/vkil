@@ -28,6 +28,10 @@ int32_t vkil_init(void ** handle)
     }
     else{
         vkil_context *ilctx = (vkil_context *)(* handle);
+        ilctx->context_essential.session_id = vkil_get_session_id();
+        ilctx->context_essential.card_id = vkil_get_card_id();
+        printf("[VKIL] %s session_id: %i\n", __FUNCTION__, ilctx->context_essential.session_id);
+        printf("[VKIL] %s card_id: %i\n", __FUNCTION__, ilctx->context_essential.card_id);
         if (ilctx->context_essential.component_role && !ilctx->priv_data)
         {
             vkil_context_internal * ilpriv;
