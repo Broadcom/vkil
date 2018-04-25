@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "vkil_api.h"
-#include "vkil_error.h"
 #include "vkil_backend.h"
+#include "vkil_error.h"
+#include "vkil_session.h"
 
 #include "vkdrv_access.h" // TODO: OK at this time the driver is a shared library !
 

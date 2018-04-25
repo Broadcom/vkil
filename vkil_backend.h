@@ -2,7 +2,7 @@
 #define vkil_backend_h__
 
 #include <stdint.h>
-
+#include <string.h>
 
 #ifndef VK_EOL
 #define VK_EOL "endoflist"

@@ -2,15 +2,15 @@ ifndef PREFIX
 	PREFIX = /usr/local
 endif
 
-CC = gcc # C compiler
-CFLAGS = -fPIC -Wall -Wextra -O2 -g # C flags
-LDFLAGS = -shared  # linking flags
+CC = gcc
+CFLAGS = -fPIC -Wall -Wextra -O2 -g
+LDFLAGS = -shared
 LIBS = -lvkdrv
-RM = rm -f  # rm command
+RM = rm -f
 
-TARGET_LIB = libvkil.so # target lib
+TARGET_LIB = libvkil.so
 HDRS = vkil_api.h
-SRCS = vkil_api.c vkil_session.c# source files
+SRCS = vkil_api.c vkil_session.c
 OBJS = $(SRCS:.c=.o)
 
 .PHONY: all clean install uninstall
@@ -21,7 +21,7 @@ $(TARGET_LIB): $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 $(SRCS:.c=.d):%.d:%.c
-	$(CC) $(CFLAGS) -MM $< >$@
+	$(CC) $(CFLAGS) -MM $< > $@
 
 -include $(SRCS:.c=.d)
 
