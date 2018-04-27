@@ -100,7 +100,7 @@ int vkil_unlock_sem(const int semid)
     This will probably need more info from the caller (vkapi/vkil_api).
     currently stub, simply return 0.
 */
-uint8_t vkil_select_card()
+int8_t vkil_select_card()
 {
     // note:
     // take in considerations of sessions count in each card, watch for VKIL_MAX_SESSION_PER_CARD
