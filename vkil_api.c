@@ -29,8 +29,10 @@ int32_t vkil_init(void ** handle)
     }
     else{
         vkil_context *ilctx = (vkil_context *)(* handle);
-        ilctx->context_essential.session_id = vkil_get_session_id();
-        ilctx->context_essential.card_id = vkil_get_card_id();
+        if ((ilctx->context_essential.session_id = vkil_get_session_id()) < 0)
+            goto fail_session;
+        if ((ilctx->context_essential.card_id = vkil_get_card_id()) < 0)
+            goto fail_session;
         printf("[VKIL] %s session_id: %i\n", __FUNCTION__, ilctx->context_essential.session_id);
         printf("[VKIL] %s card_id: %i\n", __FUNCTION__, ilctx->context_essential.card_id);
         if (ilctx->context_essential.component_role && !ilctx->priv_data)
@@ -63,6 +65,9 @@ int32_t vkil_init(void ** handle)
 
 fail_malloc:
     return VKILERROR(ENOMEM);
+
+fail_session:
+    return VKILERROR(ENOSPC);
 
 };
 
