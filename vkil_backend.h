@@ -9,13 +9,23 @@
 #endif
 
 // this declaration file is to be called by the valkyrie card driver
+typedef enum _vkil_status_t
+{
+    VK_STATE_UNLOADED = 0, // no hw is loaded
+    VK_STATE_READY = 1,
+    VK_STATE_IDLE = 1,
+    VK_STATE_RUN = 2,
+    VK_STATE_FLUSH  = 3,
+    VK_STATE_ERROR  = 0xFF,
+} vkil_status_t;
+
 
 typedef struct _vkil_drvtable{
    // function carried by vk_comm_from_host
    int32_t (*init)(vkil_context_essential essential);
    int32_t (*deinit)(uint32_t handle);
    int32_t (*set_parameter)(const uint32_t handle, const int32_t field, const int32_t value);  // static parameters
-   int32_t (*get_parameter)(const uint32_t handle, const int32_t field, void **value); // set only in idling mode
+   int32_t (*get_parameter)(const uint32_t handle, const int32_t field, void *value); // set only in idling mode
    int32_t (*upload_buffer)(const uint32_t component_handle, const uint32_t buffer_handle, const vkil_command_t cmd);
    int32_t (*send_buffer)(const uint32_t component_handle, const uint32_t buffer_handle, const vkil_command_t cmd);
    int32_t (*copy_buffer)(const uint32_t component_handle, const uint32_t buffer_handle, const vkil_command_t cmd);
@@ -26,7 +36,6 @@ typedef struct _vkil_drvtable{
    int32_t (*parameter_set)(const uint32_t handle, vkil_status_t * status, int32_t * err_code);
    int32_t (*parameter_got)(const uint32_t handle, vkil_status_t * status, uint32_t * value);
    int32_t (*received_buffer)(const uint32_t component_handle, vkil_status_t * status, void **buffer_handle);
-   int32_t (*copied_buffer)(const uint32_t handle, vkil_status_t * status,  int32_t * err_code);
 } vkil_drvtable;
 
 

@@ -34,13 +34,16 @@ typedef struct _vkil_buffer_packet
     uint8_t* data; /* Pointer to buffer start */
 } vkil_buffer_packet;
 
+
+
 typedef enum _vkil_role_t{
     VK_GENERIC    = 0,
     VK_DECODER    = 1,
     VK_ENCODER    = 2,
     VK_SCALER	  = 3,
-    VK_ROLE_MAX   = 0xFF
+    VK_ROLE_MAX   = 0x0F
 } vkil_role_t;
+
 
 typedef enum _vkil_command_t
 {
@@ -50,24 +53,27 @@ typedef enum _vkil_command_t
     VK_CMD_FLUSH    = 3,
     VK_CMD_UPLOAD   = 4,
     VK_CMD_DOWNLOAD = 5,
-    VK_CMD_BLOCKING = 6,
-    VK_CMD_MAX = 0xFF
+    VK_CMD_MAX = 0x7F,
+    VK_CMD_BLOCKING = 0x80, // used as a mask
 } vkil_command_t;
 
-typedef enum _vkil_status_t
-{
-    VK_STATE_UNLOADED = 0, // no hw is loaded
-    VK_STATE_READY = 1,
-    VK_STATE_IDLE = 1,
-    VK_STATE_RUN = 2,
-    VK_STATE_FLUSH  = 3,
-    VK_STATE_ERROR  = 0xFF,
-} vkil_status_t;
+typedef enum _vkil_parameter_t {
+    VK_PARAM_NONE                   = 0,
+    VK_PARAM_AVAILABLE_LOAD         = 2, // % returned 
+    VK_PARAM_AVAILABLE_LOAD_HI      = 3,
+
+    VK_PARAM_VIDEO_CODEC            = 16, // 0 undefined, 'h264', 'h265', 'vp9 '
+    VK_PARAM_VIDEO_PROFILEANDLVEL   = 17,
+    VK_PARAM_VIDEO_SIZE             = 32,
+
+    VK_PARAM_MAX = 0x0FFF,
+} vkil_parameter_t;
+
 
 // this structure is copied thru PCIE bridge and is currenlty limited to 12 bytes
 typedef struct _vkil_context_essential
 {
-    uint32_t    handle;     // host opaque handle
+    uint32_t    handle;     // host opaque handle: this is defined by the vk card (expected to be the address on the valkyrie card so 32 bits is expected to be enough)
     vkil_role_t component_role;
     int8_t      card_id;    // 255 should be plenty enough
                             // oxff mean the card_id is automatically determined by the driver
@@ -87,10 +93,9 @@ typedef struct _vkil_context
 typedef struct _vkil_api {
     int32_t (*init)(void ** handle);
     int32_t (*deinit)(void *handle);
-    int32_t  (*set_parameter)(const void *handle, const int32_t field, const void *value);  // static parameters
+    //  field is build as ((vkil_parameter_t)<<4) | (vkil_role_t))
+    int32_t  (*set_parameter)(const void *handle, const int32_t field, const void *value);  // static and dynamic parameters
     int32_t  (*get_parameter)(const void *handle, const int32_t field, void **value); // set only in idling mode
-    // SetConfig(*handle, field, *value);  // dynamic parameters
-    // GetConfig(*handle, field, &value);  // currently not required
     // SendCommand(*handle, cmd);
     // cmd are typically used to put the component in different states: e.g. “run”, “flush”, “idle”.
     int32_t (*send_buffer)(const void *component_handle, const void *buffer_handle, const vkil_command_t cmd);
