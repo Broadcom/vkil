@@ -40,30 +40,38 @@ typedef struct _vkil_drvtable{
 
 
 
-typedef struct _vk_comm_from_host
+typedef struct _host2vk_msg
 {
-    uint16_t queue_id:4 ;  // this provide the input queue index
-				           // Low, Hi, more queue index for future proof.
-    uint16_t reserved:12 ;
-    uint16_t function_id;   // this refers to a function listed in
-			                // vkil_drv structure
-    uint32_t context_id;    // context_id is in fact an handle
-			                // allowing the HW to early retrieve the
-			                // the context (session id, component)
+    uint8_t function_id;    // this refers to a function listed in
+			                // vkil_drv structure or more generally
+                            // specifies a message type 
+                            // (subsequent message fields can be considered 
+                            // function_id dependent)
+    uint8_t size;           // message size is 16*(1+size) bytes
+    uint16_t queue_id:4 ;   // this provide the input queue index
+				            // Low, Hi, more queue index for future proof.
+    uint16_t msg_id:12 ;    // unique message identifier in the given queue
+    uint32_t context_id;    // context_id is an handle
+			                // allowing the HW to retrieve the
+			                // the context (session id, component,...)
+                            // in which the message apply
     uint32_t args[2];       // argument list taken by the function
-} vk_comm_from_host;
+} host2vk_msg;
 
 
-typedef struct _vk_comm_to_host
+typedef struct _vk2host_msg
 {
-    uint16_t reserved; 
-    uint16_t function_id;   // this refers to a function listed in
+    uint8_t function_id;    // this refers to a function listed in
 			                // vkil_drv structure
-    uint32_t context_id;   
+    uint8_t size;           // message size is 16*(1+size) bytes
+    uint16_t queue_id:4 ;   // this match the host2vk_msg (queue_id,
+    uint16_t msg_id:12 ;    // msg_id) to allow to match the response
+                            // to a request
+    uint32_t context_id;
     uint32_t hw_status;     // return hw status
 			                // if ERROR, error_code carries in arg
     uint32_t arg;           // return argument (depend on function)
-} vk_comm_to_host;
+} vk2host_msg;
 
 static int32_t vkil_get_function_id(const char * functionname)
 {

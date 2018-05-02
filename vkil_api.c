@@ -40,7 +40,7 @@ int32_t vkil_init(void ** handle)
         if (ilctx->context_essential.component_role && !ilctx->priv_data)
         {
             vkil_context_internal * ilpriv;
-            vk_comm_from_host message;
+            host2vk_msg message;
             // we knwo the component, but this one has not been created yet
             // the priv_data structure size could be component specific
             if ((ret=vk_mallocz(&ilctx->priv_data,sizeof(vkil_context_internal)))!=0)
@@ -50,8 +50,10 @@ int32_t vkil_init(void ** handle)
             ilpriv->fd_dummy = vkdrv_open();
             message.queue_id    = ilctx->context_essential.queue_id;
             message.function_id = vkil_get_function_id("init");
+            message.size = 0;
             message.context_id = ilctx->context_essential.handle;
             message.args[0] = ilctx->context_essential.component_role;
+            vkil_log(VK_LOG_DEBUG,"&message %x, &message.function_id %x, message.size %x\n",&message, &message.function_id, &message.size);
             vkdrv_write(ilpriv->fd_dummy,&message,sizeof(message));
             // here, we will need to wait for the HW to start to create the component
             // poll_wait() wait for the hw to complete (interrupt or probing).
@@ -110,7 +112,7 @@ int32_t vkil_upload_buffer(const void *component_handle, const void *host_buffer
 {
     vkil_context *ilctx = (vkil_context *)(component_handle);
     vkil_context_internal *ilpriv;
-    vk_comm_from_host message;
+    host2vk_msg message;
 
     vkil_log(VK_LOG_DEBUG,"");
 
