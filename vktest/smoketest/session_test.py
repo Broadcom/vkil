@@ -60,7 +60,7 @@ def concurrent_session_test():
             while (p.is_alive()):
                 pass
 
-        if itr == iterations[0] and error_count.value != 0:
+        if itr <= 128 and error_count.value != 0:
             print("- failed")
             if failed == 0: failed = 1
         # expect more than 128 running concurrently at some point, thus some error would arise
