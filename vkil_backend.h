@@ -21,16 +21,14 @@ typedef enum _vkil_status_t
 
 
 typedef struct _vkil_drvtable{
-   // function carried by vk_comm_from_host
+   // function carried by host2vk_msg
    int32_t (*init)(vkil_context_essential essential);
    int32_t (*deinit)(uint32_t handle);
    int32_t (*set_parameter)(const uint32_t handle, const int32_t field, const int32_t value);  // static parameters
    int32_t (*get_parameter)(const uint32_t handle, const int32_t field, void *value); // set only in idling mode
-   int32_t (*upload_buffer)(const uint32_t component_handle, const uint32_t buffer_handle, const vkil_command_t cmd);
    int32_t (*send_buffer)(const uint32_t component_handle, const uint32_t buffer_handle, const vkil_command_t cmd);
-   int32_t (*copy_buffer)(const uint32_t component_handle, const uint32_t buffer_handle, const vkil_command_t cmd);
 
-   // function carried by vk_comm_to_host
+   // function carried by vk2host_msg
    int32_t (*init_done)(const uint32_t handle, vkil_status_t * status, void ** hw_handle);
    int32_t (*deinit_done)(const uint32_t handle, vkil_status_t * status, int32_t * err_code);
    int32_t (*parameter_set)(const uint32_t handle, vkil_status_t * status, int32_t * err_code);
@@ -82,13 +80,11 @@ static int32_t vkil_get_function_id(const char * functionname)
                         "set_parameter",
                         "get_parameter",
                         "send_buffer",
-                        "copy_buffer",
                         "init_done",
                         "deinit_done",
                         "parameter_set",
                         "parameter_got",
                         "received_buffer",
-                        "copied_buffer",
                         VK_EOL};
     int32_t i=0;
     do{

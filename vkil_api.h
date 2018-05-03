@@ -5,34 +5,34 @@
 
 // this declaration file is to be called by  the vkapi layer (embedded into ffmpeg)
 
-typedef struct _vkil_buffer_surface
+typedef struct _vk_buffer_surface
 {
     uint32_t handle;
     uint32_t user_data_tag;
     uint32_t flags;
-    uint16_t visible_frame_height; // dimension of visible part of the surface
-    uint16_t visible_frame_width;
-    uint16_t format; // pixel fromat
-    uint16_t reserved0;
-    uint32_t plane_top[ 3 ]; /* Y,Cb,Cr top field */
-    uint32_t plane_bot[ 3 ]; /* bottom field (interlace only) */
-    uint32_t stride[ 3 ]; /* Stride between rows, in bytes */
     uint16_t max_frame_width; /* Size of largest frame allowed to put in */
     uint16_t max_frame_height; /* this buffer. */
     uint16_t xoffset; // Luma x crop
     uint16_t yoffset; // Luma y crop
-} vkil_buffer_surface;
+    uint16_t visible_frame_height; // dimension of visible part of the surface
+    uint16_t visible_frame_width;
+    uint16_t format; // pixel fromat
+    uint16_t reserved0;
+    uint32_t stride[ 2 ]; /* Stride between rows, in bytes */
+    uint64_t plane_top[ 2 ]; /* Y,Cb,Cr top field */
+    uint64_t plane_bot[ 2 ]; /* bottom field (interlace only) */
+} vk_buffer_surface;
 
 
 
-typedef struct _vkil_buffer_packet
+typedef struct _vk_buffer_packet
 {
     uint32_t handle;
     uint32_t user_data_tag;
     uint32_t flags;
     uint32_t size; /* size of packet in byte */
-    uint8_t* data; /* Pointer to buffer start */
-} vkil_buffer_packet;
+    uint64_t data; /* Pointer to buffer start */
+} vk_buffer_packet;
 
 
 
@@ -53,8 +53,8 @@ typedef enum _vkil_command_t
     VK_CMD_FLUSH    = 3,
     VK_CMD_UPLOAD   = 4,
     VK_CMD_DOWNLOAD = 5,
-    VK_CMD_MAX = 0x7F,
-    VK_CMD_BLOCKING = 0x80, // used as a mask
+    VK_CMD_MAX = 0x7F,      // command mask
+    VK_CMD_BLOCKING = 0x80, // additional command flag
 } vkil_command_t;
 
 typedef enum _vkil_parameter_t {

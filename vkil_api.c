@@ -125,12 +125,14 @@ int32_t vkil_upload_buffer(const void *component_handle, const void *host_buffer
 
     // here we need to write the dma command
     message.queue_id    = ilctx->context_essential.queue_id;
-    message.function_id = vkil_get_function_id("copy_buffer");
+    message.function_id = vkil_get_function_id("send_buffer");
     message.context_id = ilctx->context_essential.handle;
+    message.size = 0;
     message.args[0] = host_buffer; // TODO: to clarify
     message.args[1] = VK_CMD_UPLOAD;
-
     return vkdrv_write(ilpriv->fd_dummy,&message,sizeof(message));
+
+
 };
 
 int32_t vkil_download_buffer(const void *component_handle, void **host_buffer, const vkil_command_t cmd)
@@ -164,19 +166,37 @@ int32_t vkil_downloaded_buffer(const void *component_handle, const void *host_bu
 int32_t vkil_send_buffer(const void *component_handle, const void *buffer_handle, const vkil_command_t cmd)
 {
     vkil_log(VK_LOG_DEBUG,"");
+    //sanity check
     vk_assert0(component_handle);
     vk_assert0(buffer_handle);
-    vk_assert0(cmd);
-    switch (cmd) {
+    switch (cmd&VK_CMD_MAX) {
         // untunneled operations
         case VK_CMD_UPLOAD:
             vkil_upload_buffer(component_handle, buffer_handle, cmd);
             // here we need to wait the buffer has effectively been uploaded
-            return vkil_uploaded_buffer(component_handle, buffer_handle, VK_CMD_BLOCKING);
-        default:
+            if (cmd&VK_CMD_BLOCKING) {
+                // here we need to wait the buffer has effectively been uploaded
+                return vkil_uploaded_buffer(component_handle, buffer_handle, VK_CMD_BLOCKING);
+            }
             break;
+        default:
+            // tunneled operations
+            {
+                vkil_context *ilctx = (vkil_context *)(component_handle);
+                vkil_context_internal *ilpriv;
+                host2vk_msg message;
+                ilpriv = (vkil_context_internal *) ilctx->priv_data;
+                vk_assert0(ilpriv);
+
+                message.queue_id    = ilctx->context_essential.queue_id;
+                message.function_id = vkil_get_function_id("send_buffer");
+                message.context_id = ilctx->context_essential.handle;
+                message.size = 0;
+                message.args[0] = buffer_handle; // TODO: to clarify
+                message.args[1] = 0;
+                return vkdrv_write(ilpriv->fd_dummy,&message,sizeof(message));
+            }
     }
-    // tunneled operations
     return 0;
 };
 
