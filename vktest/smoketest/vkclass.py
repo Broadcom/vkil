@@ -1,86 +1,56 @@
-import sys, getopt
+import sys
 from subprocess import call
-from os import remove
 
 # vk_fmpeg test obj
 class vk_ffmpeg:
-    def usage(self):
-        print("Initializes a vk_ffmpeg testing object:\n")
-        print("(This object uses the vk components by default)")
-        print("")
-        print("Required options:")
-        print("-i --input       input file")
-        print("-o --output      output file")
-        print("")
-        print("Other options:")
-        print("-d --dec         video decoder")
-        print("-e --enc         video encoder")
-        print("-h --hwaccel     hardware accelerator")
-        print("-u --usage       usage menu")
-        print("")
 
-    def __init__(self, args):
-        try:
-            opts, args = getopt.getopt(args, "i:o:d:e:h:u", ["input=", "output=", "dec=", "enc=", "hwaccel=", "usage"])
-        except getopt.GetoptError:
-            self.usage()
+    # initializes a vk_ffmpeg testing object
+    #     - construct a simple cmdline to be run
+    #          - supports multiple inputs and outputs
+    #          - default to vk codecs unless specified
+    #     - alternatively, use the cmdline argument
+    #
+    # Note:
+    # - make sure there is a corresponding dec/enc (if specified) for in/out
+    def __init__(self, in_lst = [], out_lst = [], dec_lst = [], enc_lst = [], cmdline = ''):
+        if not ((in_lst and out_lst) or cmdline):
             sys.exit(1)
-
-        self.input   = ""
-        self.output  = ""
-        self.dec     = "h264_vk"
-        self.enc     = "h264_vk"
-        self.hwaccel = "vk"
-
-        for opt, arg in opts:
-            if opt in ("-u", "--usage"):
-                self.usage()
-                sys.exit()
-            elif opt in ("-i", "--ipaddress"): self.input   = arg
-            elif opt in ("-o", "--width"):     self.output  = arg
-            elif opt in ("-d", "--height"):    self.dec     = arg
-            elif opt in ("-e", "--ltrf"):      self.enc     = arg
-            elif opt in ("-h", "--profile"):   self.hwaccel = arg
-
-        if self.input == "":
-            print("Input file not specified")
-            self.usage()
-            print("")
-            sys.exit(1)
-        if self.output == "":
-            print("Output file not specified")
-            print("")
-            self.usage()
-            sys.exit(1)
-
-        self.cmd_args = ["ffmpeg",
-                         "-hwaccel"  , self.hwaccel,
-                         "-loglevel" , "error",
-                         "-c:v"      , self.dec,
-                         "-i"        , self.input]
-
-        if self.output == "-" or self.output == "/dev/null":
-            self.cmd_args.append("-f")
-            self.cmd_args.append("null")
-            self.cmd_args.append(self.output)
+        if cmdline:
+            self.cmd_args = cmdline.split()
         else:
-            self.cmd_args.append("-c:v")
-            self.cmd_args.append(self.enc)
-            self.cmd_args.append(self.output)
+            if dec_lst and len(dec_lst) != len(in_lst)  : sys.exit(1)
+            if enc_lst and len(enc_lst) != len(out_lst) : sys.exit(1)
 
-    def rm_output(self):
-        if self.output != "-" and self.output != "/dev/null":
-            remove(self.output)
+            self.cmd_args = ["ffmpeg", "-hwaccel", "vk", "-loglevel", "error"]
+            for i, j in enumerate(in_lst):
+                self.cmd_args.append("-c:v")
 
-    def cmp_output_with(self, file):
-        return cmp(self.output, file)
+                if dec_lst: self.cmd_args.append(dec_lst[i])
+                else      : self.cmd_args.append("h264_vk")
 
-    # user should be responsible of openning and closing the log_file_object
-    def run(self, log_file_object = None):
-        if log_file_object is None:
+                self.cmd_args.append("-i")
+                self.cmd_args.append(j)
+
+
+            for i, j in enumerate(out_lst):
+                self.cmd_args.append("-c:v")
+
+                if dec_lst: self.cmd_args.append(enc_lst[i])
+                else      : self.cmd_args.append("h264_vk")
+
+                if j == "-" or j == "/dev/null":
+                    self.cmd_args.append("-f")
+                    self.cmd_args.append("null")
+
+                self.cmd_args.append(j)
+
+    # if file_obj is passed in, stdout and stderr get redirect to the file
+    # caller should be responsible for openning and closing the file_obj
+    def run(self, file_obj = None):
+        if file_obj is None:
             return call(self.cmd_args)
         else:
-            return call(self.cmd_args, stdout=log_file_object, stderr=log_file_object)
+            return call(self.cmd_args, stdout=file_obj, stderr=file_obj)
 
 
 class vk_hwaccel:
