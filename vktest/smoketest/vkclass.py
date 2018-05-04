@@ -35,7 +35,7 @@ class vk_ffmpeg:
             for i, j in enumerate(out_lst):
                 self.cmd_args.append("-c:v")
 
-                if dec_lst: self.cmd_args.append(enc_lst[i])
+                if enc_lst: self.cmd_args.append(enc_lst[i])
                 else      : self.cmd_args.append("h264_vk")
 
                 if j == "-" or j == "/dev/null":
