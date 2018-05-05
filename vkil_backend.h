@@ -4,6 +4,9 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "vkil_api.h" // TODO, remove this dependency, the vkil_backend is to be shared withe soc and the vkil,
+                      // but the vkil_api.h is not intended to be shared with the soc, but the host app (e.g. ffmpeg)
+
 #ifndef VK_EOL
 #define VK_EOL "endoflist"
 #endif
@@ -22,8 +25,10 @@ typedef enum _vkil_status_t
 
 typedef struct _vkil_drvtable{
    // function carried by host2vk_msg
-   int32_t (*init)(vkil_context_essential essential);
-   int32_t (*deinit)(uint32_t handle);
+   int32_t (*init)(const uint32_t handle, const vkil_context_essential essential); // if the handle is invalid, a new context is created from vkil_context_essential essential
+                                                                                   // otherwise reinit or continue to init the context according to the vkil_context_essential
+                                                                                   // vkil_context_essential essential structure is limited to 64 bits (8 bytes)
+   int32_t (*deinit)(uint32_t handle);                                             // after the context is deinited, all other command will return an error code
    int32_t (*set_parameter)(const uint32_t handle, const int32_t field, const int32_t value);  // static parameters
    int32_t (*get_parameter)(const uint32_t handle, const int32_t field, void *value); // set only in idling mode
    int32_t (*send_buffer)(const uint32_t component_handle, const uint32_t buffer_handle, const vkil_command_t cmd);

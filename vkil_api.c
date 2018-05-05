@@ -37,17 +37,18 @@ int32_t vkil_init(void ** handle)
             goto fail_session;
         vkil_log(VK_LOG_DEBUG,"session_id: %i\n", ilctx->context_essential.session_id);
         vkil_log(VK_LOG_DEBUG,"card_id: %i\n", ilctx->context_essential.card_id);
-        if (ilctx->context_essential.component_role && !ilctx->priv_data)
+        if (!ilctx->priv_data)
         {
             vkil_context_internal * ilpriv;
             host2vk_msg message;
-            // we knwo the component, but this one has not been created yet
+            // we know the component, but this one has not been created yet
             // the priv_data structure size could be component specific
             if ((ret=vk_mallocz(&ilctx->priv_data,sizeof(vkil_context_internal)))!=0)
                 goto fail_malloc;
             ilpriv = (vkil_context_internal *) ilctx->priv_data;
             // instanciate the driver
             ilpriv->fd_dummy = vkdrv_open();
+            vkil_log(VK_LOG_DEBUG,"ilpriv->fd_dummy: %i\n", ilpriv->fd_dummy);
             message.queue_id    = ilctx->context_essential.queue_id;
             message.function_id = vkil_get_function_id("init");
             message.size = 0;

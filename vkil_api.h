@@ -5,7 +5,7 @@
 
 // this declaration file is to be called by  the vkapi layer (embedded into ffmpeg)
 
-typedef struct _vk_buffer_surface
+typedef struct _vkil_buffer_surface
 {
     uint32_t handle;
     uint32_t user_data_tag;
@@ -21,18 +21,18 @@ typedef struct _vk_buffer_surface
     uint32_t stride[ 2 ]; /* Stride between rows, in bytes */
     uint64_t plane_top[ 2 ]; /* Y,Cb,Cr top field */
     uint64_t plane_bot[ 2 ]; /* bottom field (interlace only) */
-} vk_buffer_surface;
+} vkil_buffer_surface;
 
 
 
-typedef struct _vk_buffer_packet
+typedef struct _vkil_buffer_packet
 {
     uint32_t handle;
     uint32_t user_data_tag;
     uint32_t flags;
     uint32_t size; /* size of packet in byte */
     uint64_t data; /* Pointer to buffer start */
-} vk_buffer_packet;
+} vkil_buffer_packet;
 
 
 
@@ -41,7 +41,7 @@ typedef enum _vkil_role_t{
     VK_DECODER    = 1,
     VK_ENCODER    = 2,
     VK_SCALER	  = 3,
-    VK_ROLE_MAX   = 0x0F
+    VK_ROLE_MAX   = 0x7F
 } vkil_role_t;
 
 
@@ -69,18 +69,22 @@ typedef enum _vkil_parameter_t {
     VK_PARAM_MAX = 0x0FFF,
 } vkil_parameter_t;
 
-
-// this structure is copied thru PCIE bridge and is currenlty limited to 12 bytes
+// this structure is copied thru PCIE bridge and is currenlty limited to 8 bytes
+// TODO: queue_id and card_id should be out of it, the first is passed thur the host2msg header, and card_id is irrelevant, to the card.
 typedef struct _vkil_context_essential
 {
-    uint32_t    handle;     // host opaque handle: this is defined by the vk card (expected to be the address on the valkyrie card so 32 bits is expected to be enough)
-    vkil_role_t component_role;
-    int8_t      card_id;    // 255 should be plenty enough
-                            // oxff mean the card_id is automatically determined by the driver
-    int8_t      queue_id;   // low, high priority
-    int16_t     session_id; // allow the HW, to pool all the context pertaining to a single session
-                            // in case of the component die, it is expected the hw kills all the context pertaining to the session
-                            // all the component belonging to the session
+    uint32_t    handle;         // host opaque handle: this is defined by the vk card
+                                // (expected to be the address on the valkyrie card so 32 bits is expected to be enough)
+    uint8_t     queue_id:4;     // low, high priority
+    uint8_t     component_role:4;
+    int8_t      card_id;        // 255 should be plenty enough
+                                // oxff mean the card_id is automatically determined by the driver
+    int16_t     session_id;     // allow the HW, to pool all the context pertaining to a single session
+                                // in case of the component die, it is expected the hw kills all the context pertaining to the session
+                                // all the component belonging to the session
+                                // apriori a char is more than enough on an individual card
+                                // but it is expected a host can handle more than 256 session in parallel.
+                                // for the sake of simplicity both card and host use the same session_id for a specific session.
 } vkil_context_essential;
 
 
