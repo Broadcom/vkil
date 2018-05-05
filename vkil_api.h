@@ -92,7 +92,7 @@ typedef struct _vkil_context
 
 typedef struct _vkil_api {
     int32_t (*init)(void ** handle);
-    int32_t (*deinit)(void *handle);
+    int32_t (*deinit)(void ** handle);
     //  field is build as ((vkil_parameter_t)<<4) | (vkil_role_t))
     int32_t  (*set_parameter)(const void *handle, const int32_t field, const void *value);  // static and dynamic parameters
     int32_t  (*get_parameter)(const void *handle, const int32_t field, void **value); // set only in idling mode
@@ -120,6 +120,6 @@ typedef struct _vkil_api {
 
 extern void* vkil_create_api(void);
 
-extern int vkil_destroy_api(void* ilapi);
+extern int vkil_destroy_api(void** ilapi);
 
 #endif  // vkil_api_h__

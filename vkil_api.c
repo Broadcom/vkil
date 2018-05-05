@@ -72,9 +72,9 @@ fail_session:
 
 };
 
-int32_t vkil_deinit(void *handle)
+int32_t vkil_deinit(void **handle)
 {
-    vkil_context *ilctx = (vkil_context *)(handle);
+    vkil_context *ilctx = (vkil_context *)(*handle);
     vk_assert0(handle);
     vkil_log(VK_LOG_DEBUG,"");
     if (ilctx->priv_data){
@@ -84,7 +84,7 @@ int32_t vkil_deinit(void *handle)
         }
         vk_free((void**)&ilpriv);
     }
-    vk_free(&handle);
+    vk_free(handle);
     return 0;
 };
 
@@ -221,8 +221,8 @@ int32_t vkil_receive_buffer(const void *component_handle, void **buffer_handle, 
 void* vkil_create_api(void)
 {
     vkil_log(VK_LOG_DEBUG,"");
-    vkil_api* ilapi = (vkil_api*) malloc(sizeof(vkil_api));
-    if(!ilapi)
+    vkil_api* ilapi;
+    if (vk_mallocz((void**)&ilapi, sizeof(vkil_api)))
         return NULL;
     *ilapi = (vkil_api) {
         .init                  = vkil_init,
@@ -239,10 +239,9 @@ void* vkil_create_api(void)
     return ilapi;
 }
 
-int vkil_destroy_api(void* ilapi)
+int vkil_destroy_api(void ** ilapi)
 {
     vkil_log(VK_LOG_DEBUG,"");
-    if((vkil_api*) ilapi)
-        free(ilapi);
+    vk_free(ilapi);
     return 0;
 }
