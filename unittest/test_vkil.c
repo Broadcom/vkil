@@ -1,4 +1,4 @@
-#include "../../vkil_api.h"
+#include "../vkil_api.h"
 #include <stdio.h>
 #include <assert.h>
 
@@ -100,5 +100,6 @@ int main()
     test_vkil_downloaded_buffer();
     test_vkil_deinit();
     test_vkil_destroy_api();
+    printf("Passed!\n");
     return 0;
 }

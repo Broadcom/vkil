@@ -8,7 +8,7 @@ from datetime import datetime
 from os import remove
 
 time_str = str(datetime.now().strftime("%Y%m%d%H%M%S"))
-log_f    = "../log/transcoding_test-" + time_str + ".log"
+log_f    = "transcoding_test-" + time_str + ".log"
 log_fo   = open(log_f, 'w')
 in_f     = "/home/vp024039/Downloads/vids/small.mp4"
 out_f1   = "output.264"

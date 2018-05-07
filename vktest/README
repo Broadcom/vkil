@@ -1,4 +1,0 @@
-Test folder for Valkyrie
-	- smoke tests written in python scripts in the 'smoketest' folder
-	- unit tests in the 'unittest' folder
-	- test results are stored in the 'log' folder

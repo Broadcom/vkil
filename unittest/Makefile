@@ -1,4 +1,4 @@
-SRCS = test_vkil.c ../../vkil_api.c ../../vkil_session.c
+SRCS = test_vkil.c ../vkil_api.c ../vkil_session.c
 OBJS = $(SRCS:.c=.o)
 LIBS = -lvkdrv
 RM   = rm -f
