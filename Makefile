@@ -44,3 +44,9 @@ install:
 uninstall:
 	$(RM) $(PREFIX)/lib/$(TARGET_LIB)
 	$(RM) $(PREFIX)/include/$(HDRS)
+
+test: $(OBJS)
+	$(CC) -o vktest/unittest/test_vkil vktest/unittest/test_vkil.c $^ $(LIBS)
+
+clean_test:
+	-$(RM) vktest/unittest/test_vkil
