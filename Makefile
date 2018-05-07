@@ -31,7 +31,7 @@ $(SRCS:.c=.d):%.d:%.c
 -include $(SRCS:.c=.d)
 
 clean:
-	-$(RM) $(TARGET_LIB) $(OBJS) $(SRCS:.c=.d)
+	$(RM) $(TARGET_LIB) $(OBJS) $(SRCS:.c=.d)
 
 # may want to run with sudo
 install:
@@ -44,9 +44,3 @@ install:
 uninstall:
 	$(RM) $(PREFIX)/lib/$(TARGET_LIB)
 	$(RM) $(PREFIX)/include/$(HDRS)
-
-test: $(OBJS)
-	$(CC) -o vktest/unittest/test_vkil vktest/unittest/test_vkil.c $^ $(LIBS)
-
-clean_test:
-	-$(RM) vktest/unittest/test_vkil
