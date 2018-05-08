@@ -2,6 +2,9 @@
 #include <stdarg.h>
 #include "vkil_utils.h"
 #include <string.h>
+#include <errno.h>
+#include <unistd.h>
+
 
 // handle are stored into a hash table
 int vk_malloc(void ** ptr, size_t size)
@@ -47,4 +50,19 @@ void vk_log(const char * prefix, int level, const char *fmt, ...)
             printf("\x1B[32m");
         printf("%s:%s\x1B[0m",prefix,buffer);
     }
+}
+
+
+
+int32_t vk_wait_probe_msg(int32_t (*f)(const void * , void *), const void * handle, void * msg )
+{
+    int32_t ret, i;
+    for (i=0 ; i < VK_TIMEOUT_MS ; i++)
+    {
+        if ((ret=f(handle,msg))>=0)
+            return ret;
+        usleep(1);
+    }
+    // if we are here we have timed out
+    return (-ETIMEDOUT);
 }
