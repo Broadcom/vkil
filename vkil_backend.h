@@ -7,9 +7,13 @@
 #include "vkil_api.h" // TODO, remove this dependency, the vkil_backend is to be shared withe soc and the vkil,
                       // but the vkil_api.h is not intended to be shared with the soc, but the host app (e.g. ffmpeg)
 
+
 #ifndef VK_EOL
 #define VK_EOL "endoflist"
 #endif
+
+#define VK_START_VALID_HANDLE (0x4000)
+#define VK_NEW_CTX (0)
 
 // this declaration file is to be called by the valkyrie card driver
 typedef enum _vkil_status_t

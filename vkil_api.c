@@ -53,8 +53,12 @@ int32_t vkil_init(void ** handle)
             message.function_id = vkil_get_function_id("init");
             message.size = 0;
             message.context_id = ilctx->context_essential.handle;
-            message.args[0] = ilctx->context_essential.component_role;
-            vkil_log(VK_LOG_DEBUG,"&message %x, &message.function_id %x, message.size %x\n",&message, &message.function_id, &message.size);
+            if (message.context_id == VK_NEW_CTX){
+                // the context is not yet existing on the device
+                // the arguments carries the context essential allowing the device to create it
+                memcpy((void*)message.args,(void*)&ilctx->context_essential,sizeof(vkil_context_essential));
+            }
+            vkil_log(VK_LOG_DEBUG,"&message %x, &message.function_id %x, message.size %d, message.context_id=%x\n",&message, message.function_id, message.size, message.context_id);
             vkdrv_write(ilpriv->fd_dummy,&message,sizeof(message));
             // here, we will need to wait for the HW to start to create the component
             // poll_wait() wait for the hw to complete (interrupt or probing).
@@ -131,7 +135,8 @@ int32_t vkil_upload_buffer(const void *component_handle, const void *host_buffer
     message.size = 0;
     message.args[0] = host_buffer; // TODO: to clarify
     message.args[1] = VK_CMD_UPLOAD;
-    return vkdrv_write(ilpriv->fd_dummy,&message,sizeof(message));
+    // return vkdrv_write(ilpriv->fd_dummy,&message,sizeof(message));
+    return 0;
 
 
 };
