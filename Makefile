@@ -13,8 +13,8 @@ TARGET_LIB = libvkil.so
 
 HDRS = vkil_api.h
 # for development purpose, the vkdrv (user space development stage)
-# and vksim layer also use vkil_utils.h and vkil_backend.h
-HDRS += vk_utils.h vkil_backend.h
+# and vksim layer also use vkil_utils.h, vkil_backend.h and vk_error.h
+HDRS += vk_utils.h vkil_backend.h vk_error.h
 SRCS = vkil_api.c vkil_session.c vk_utils.c
 OBJS = $(SRCS:.c=.o)
 
