@@ -1,6 +1,0 @@
-Smoke tests for ffmpeg's integration with Valkyrie
-
-run 'python run_tests.py'
-	- output files (i.e. a transcoded video) are removed after a test
-	- log files are deleted if tests pass
-	- otherwise, they are kept same folder
