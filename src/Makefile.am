@@ -1,0 +1,21 @@
+lib_LTLIBRARIES = libvkil.la
+
+include_HEADERS = \
+    vk_error.h \
+    vk_utils.h \
+    vkil_api.h \
+    vkil_backend.h
+
+libvkil_la_SOURCES = \
+    vk_error.h \
+    vk_utils.c \
+    vk_utils.h \
+    vkil_api.c \
+    vkil_api.h \
+    vkil_backend.h \
+    vkil_error.h \
+    vkil_session.c \
+    vkil_session.h \
+    vkil_utils.h
+
+libvkil_la_LDFLAGS = -lvkdrv

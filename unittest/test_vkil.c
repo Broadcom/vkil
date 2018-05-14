@@ -1,4 +1,4 @@
-#include "../vkil_api.h"
+#include "vkil_api.h"
 #include <stdio.h>
 #include <assert.h>
 
