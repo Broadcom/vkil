@@ -14,6 +14,7 @@
  * version 2 (GPLv2) along with this source code.
  */
 
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "vkdrv_access.h"
@@ -28,7 +29,7 @@
  * Currently, it is limited to 16 bytes
  */
 typedef struct _vkil_context_internal {
-	void *fd_dummy;
+	int fd_dummy;
 } vkil_context_internal;
 
 /**
@@ -42,6 +43,7 @@ typedef struct _vkil_context_internal {
 int32_t vkil_init(void **handle)
 {
 	int ret;
+	char dev_name[30]; /* format: /dev/bcm-vk.x */
 
 	VKIL_LOG(VK_LOG_DEBUG, "");
 
@@ -66,10 +68,14 @@ int32_t vkil_init(void **handle)
 		if (ilctx->context_essential.card_id < 0)
 			goto fail_session;
 
+		if (!snprintf(dev_name, sizeof(dev_name), "/dev/bcm-vk.%d",
+			     ilctx->context_essential.card_id))
+			goto fail_session;
+
 		VKIL_LOG(VK_LOG_DEBUG, "session_id: %i\n",
 			 ilctx->context_essential.session_id);
-		VKIL_LOG(VK_LOG_DEBUG, "card_id: %i\n",
-			 ilctx->context_essential.card_id);
+		VKIL_LOG(VK_LOG_DEBUG, "card_id: %i dev name %s\n",
+			 ilctx->context_essential.card_id, dev_name);
 
 		if (!ilctx->priv_data) {
 			vkil_context_internal *ilpriv;
@@ -86,7 +92,7 @@ int32_t vkil_init(void **handle)
 				goto fail_malloc;
 
 			ilpriv = ilctx->priv_data;
-			ilpriv->fd_dummy = vkdrv_open();
+			ilpriv->fd_dummy = vkdrv_open(dev_name, O_RDWR);
 
 			VKIL_LOG(VK_LOG_DEBUG, "ilpriv->fd_dummy: %i\n",
 				 ilpriv->fd_dummy);
