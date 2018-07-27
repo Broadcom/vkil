@@ -199,11 +199,13 @@ fail:
  * @param handle    handle to a vkil_context
  * @param field     field to set
  * @param value     value to set the field to
+ * @param cmd       some cmd file
  * @return          zero on success, error code otherwise
  */
 int32_t vkil_set_parameter(const void *handle,
 			   const int32_t field,
-			   const void *value)
+			   const void *value,
+			   const vkil_command_t cmd)
 {
 	VKIL_LOG(VK_LOG_DEBUG, "");
 
@@ -224,7 +226,8 @@ int32_t vkil_set_parameter(const void *handle,
  */
 int32_t vkil_get_parameter(const void *handle,
 			   const int32_t field,
-			   void **value)
+			   void **value,
+			   const vkil_command_t cmd)
 {
 	VKIL_LOG(VK_LOG_DEBUG, "");
 

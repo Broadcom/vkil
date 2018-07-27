@@ -1,7 +1,11 @@
 lib_LTLIBRARIES = libvkil.la
 
+include_HEADERS = \
+    vkil_api.h
+
 libvkil_la_SOURCES = \
     vkil_api.c \
+    vkil_api.h \
     vkil_error.h \
     vkil_session.c \
     vkil_session.h \
