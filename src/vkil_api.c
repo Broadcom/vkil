@@ -24,6 +24,14 @@
 #include "vkil_session.h"
 #include "vkil_utils.h"
 
+/*
+ * usually we wait for response message up to TIMEOUT us
+ * However, in certain case, (essentially component initialization)
+ * we could need to provide more time for the card to do the initialization
+ * (all this at this time is empiric)
+ */
+#define TIMEOUT_MULTIPLE 4
+
 /**
  * This structure is copied thru PCIE bridge
  * Currently, it is limited to 16 bytes
@@ -32,14 +40,164 @@ typedef struct _vkil_context_internal {
 	int fd;
 } vkil_context_internal;
 
-
-static int32_t vkil_init1_ctx(void *handle)
+/**
+ * deinitialzation to the vk card and
+ * return on completion response from the card)
+ *
+ * @param handle    handle to a vkil_context
+ * @return          zero on succes, error code otherwise
+ */
+static int32_t vkil_deinit_com(void *handle)
 {
 	int32_t ret, i;
 	vkil_context *ilctx = handle;
 	vkil_context_internal *ilpriv;
 	host2vk_msg msg2vk;
 	vk2host_msg msg2host;
+
+	VK_ASSERT(handle);
+
+	ilpriv = ilctx->priv_data;
+	VK_ASSERT(ilpriv);
+
+	if (ilctx->context_essential.handle < VK_START_VALID_HANDLE) {
+		/* the call is allowed, but not necessarily expected */
+		VKIL_LOG(VK_LOG_DEBUG, "context %llx is not valid",
+			 ilctx->context_essential.handle);
+		return 0;
+	}
+
+
+	msg2vk.queue_id = ilctx->context_essential.queue_id;
+	msg2vk.function_id = vkil_get_function_id("deinit");
+	msg2vk.size        = 0;
+	msg2vk.context_id  = ilctx->context_essential.handle;
+
+	ret = vkdrv_write(ilpriv->fd, &msg2vk, sizeof(msg2vk));
+	if (ret < 0)
+		goto fail_write;
+
+	memset(&msg2host, 0, sizeof(msg2host));
+	/*
+	 * in the deinit phase the card will need to flush some stuff we don't
+	 * have visibility at vkil, but it is expected this take longer time
+	 * than usual so we don't abort at the first timeout
+	 */
+	for (i = 0 ; i < TIMEOUT_MULTIPLE; i++) {
+		ret = vkil_wait_probe_msg(vkdrv_read, ilpriv->fd, &msg2host,
+						sizeof(msg2host));
+		if (ret ==  (-ETIMEDOUT))
+			continue;
+		else
+			break;
+	}
+	if (ret < 0)
+		goto fail_read;
+
+	VKIL_LOG(VK_LOG_DEBUG, "card inited %d\n, with context_id=%llx",
+			ilpriv->fd, ilctx->context_essential.handle);
+	return 0;
+
+fail_write:
+	/* the queue could be full (ENOFUS), so not a real error */
+	VKIL_LOG(VK_LOG_DEBUG, "failure %d on writing message", ret);
+	return ret;
+
+fail_read:
+	/*
+	 * the response could take more time to return (ETIMEOUT),
+	 * so not a real error
+	 */
+	VKIL_LOG(VK_LOG_DEBUG, "failure %d on reading message ", ret);
+	return ret;
+}
+
+/**
+ * communicate initialzation to the vk card (return on repsonse from the card)
+ *
+ * @param handle    handle to a vkil_context
+ * @return          zero on succes, error code otherwise
+ */
+static int32_t vkil_init_com(void *handle)
+{
+	int32_t ret, i;
+	vkil_context *ilctx = handle;
+	vkil_context_internal *ilpriv;
+	host2vk_msg msg2vk;
+	vk2host_msg msg2host;
+
+	VK_ASSERT(handle);
+
+	ilpriv = ilctx->priv_data;
+
+	VK_ASSERT(ilpriv);
+
+	msg2vk.queue_id = ilctx->context_essential.queue_id;
+	msg2vk.function_id = vkil_get_function_id("init");
+	msg2vk.size        = 0;
+	msg2vk.context_id  = ilctx->context_essential.handle;
+	if (msg2vk.context_id == VK_NEW_CTX) {
+		/*
+		 * the context is not yet existing on the device the arguments
+		 * carries the context essential allowing the device to create
+		 * it
+		 */
+		memcpy(msg2vk.args, &ilctx->context_essential,
+			sizeof(vkil_context_essential));
+	}
+
+	ret = vkdrv_write(ilpriv->fd, &msg2vk, sizeof(msg2vk));
+	if (ret)
+		goto fail_write;
+	memset(&msg2host, 0, sizeof(msg2host));
+	/*
+	 * in the init phase the card will instantiate some stuff we don't have
+	 * visibility at vkil, but it is expected this take longer time than
+	 * usual so we don't abort at the first timeout
+	 */
+	for (i = 0 ; i < TIMEOUT_MULTIPLE; i++) {
+		ret = vkil_wait_probe_msg(vkdrv_read, ilpriv->fd, &msg2host,
+						sizeof(msg2host));
+		if (ret ==  (-ETIMEDOUT))
+			continue;
+		else
+			break;
+	}
+	if (ret < 0)
+		goto fail_read;
+
+	if (msg2vk.context_id == VK_NEW_CTX)
+		ilctx->context_essential.handle = msg2host.context_id;
+
+	VKIL_LOG(VK_LOG_DEBUG, "card inited %d\n, with context_id=%llx",
+			ilpriv->fd, ilctx->context_essential.handle);
+	return 0;
+
+fail_write:
+	/* the queue could be full (ENOFUS), so not a real error */
+	VKIL_LOG(VK_LOG_DEBUG, "failure %d on writing message", ret);
+	return ret;
+
+fail_read:
+	/*
+	 * the response could take more time to return (ETIMEOUT),
+	 * so not a real error
+	 */
+	VKIL_LOG(VK_LOG_DEBUG, "failure %d on reading message ", ret);
+	return ret;
+}
+
+/**
+ * Initialize the hw context essential and driver
+ *
+ * @param handle    handle to a vkil_context
+ * @return          zero on succes, error code otherwise
+ */
+static int32_t vkil_init_ctx(void *handle)
+{
+	int32_t ret, i;
+	vkil_context *ilctx = handle;
+	vkil_context_internal *ilpriv;
 	char dev_name[30]; /* format: /dev/bcm-vk.x */
 
 	VK_ASSERT(!ilctx->priv_data);
@@ -73,49 +231,7 @@ static int32_t vkil_init1_ctx(void *handle)
 
 	VKIL_LOG(VK_LOG_DEBUG, "ilpriv->fd: %i\n", ilpriv->fd);
 
-	msg2vk.queue_id = ilctx->context_essential.queue_id;
-	msg2vk.function_id = vkil_get_function_id("init");
-	msg2vk.size        = 0;
-	msg2vk.context_id  = ilctx->context_essential.handle;
-	if (msg2vk.context_id == VK_NEW_CTX) {
-		/*
-		 * the context is not yet existing on the device the arguments
-		 * carries the context essential allowing the device to create
-		 * it
-		 */
-		memcpy(msg2vk.args, &ilctx->context_essential,
-			sizeof(vkil_context_essential));
-	}
-
-	vkdrv_write(ilpriv->fd, &msg2vk, sizeof(msg2vk));
-
-	memset(&msg2host, 0, sizeof(msg2host));
-
-	/*
-	 * in the init phase the card will instantiate some stuff we don't have
-	 * visibility at vkil, but it is expected this take longer time than
-	 * usual so we don't abort at the first timeout
-	 */
-	for (i = 0 ; i < 4; i++) {
-		ret = vkil_wait_probe_msg(vkdrv_read, ilpriv->fd, &msg2host,
-						sizeof(msg2host));
-		if (ret ==  (-ETIMEDOUT))
-			continue;
-		else
-			break;
-	}
-	if (ret < 0)
-		goto fail_message_queue;
-
-	ilctx->context_essential.handle = msg2host.context_id;
-
-	VKIL_LOG(VK_LOG_DEBUG, "card inited %d\n, with context_id=%llx",
-			ilpriv->fd, ilctx->context_essential.handle);
 	return 0;
-
-fail_message_queue:
-	VKIL_LOG(VK_LOG_ERROR, "failed message queue %d\n", ret);
-	return VKILERROR(ret);
 
 fail_malloc:
 	VKIL_LOG(VK_LOG_ERROR, "failed malloc\n");
@@ -124,6 +240,8 @@ fail_malloc:
 fail_session:
 	return VKILERROR(ENOSPC);
 }
+
+
 
 /**
  * De-initializes a vkil_context, and its associated h/w contents
@@ -145,6 +263,7 @@ int32_t vkil_deinit(void **handle)
 	if (ilctx->priv_data) {
 		vkil_context_internal *ilpriv;
 
+		vkil_deinit_com(*handle);
 		ilpriv = ilctx->priv_data;
 		if (ilpriv->fd)
 			vkdrv_close(ilpriv->fd);
@@ -177,15 +296,19 @@ int32_t vkil_init(void **handle)
 	} else {
 		vkil_context *ilctx = *handle;
 
-		if (!ilctx->priv_data)
-			ret = vkil_init1_ctx(*handle);
+		if (!ilctx->priv_data) {
+			ret = vkil_init_ctx(*handle);
 			if (ret)
 				goto fail;
+		}
+		ret = vkil_init_com(*handle);
+		if (ret)
+			goto fail;
 	}
 	return 0;
 
 fail_malloc:
-	VKIL_LOG(VK_LOG_ERROR, "failed malloc\n");
+	VKIL_LOG(VK_LOG_ERROR, "failed malloc");
 	return VKILERROR(ret);
 
 fail:
