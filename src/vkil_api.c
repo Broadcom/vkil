@@ -194,6 +194,18 @@ fail:
 };
 
 /**
+ * return the size in bytes of the structure associated to the field
+ *
+ * @param field
+ * @return          size of the structure aasociated to field
+ */
+static int32_t vkil_get_struct_size(const vkil_parameter_t field)
+{
+	/* that is the default value*/
+	return sizeof(int32_t);
+}
+
+/**
  * Sets a parameter of a vkil_context
  *
  * @param handle    handle to a vkil_context
@@ -203,17 +215,66 @@ fail:
  * @return          zero on success, error code otherwise
  */
 int32_t vkil_set_parameter(const void *handle,
-			   const int32_t field,
+			   const vkil_parameter_t field,
 			   const void *value,
 			   const vkil_command_t cmd)
 {
+	const vkil_context *ilctx = handle;
+	int32_t ret;
+	vkil_context_internal *ilpriv;
+	int32_t field_size = vkil_get_struct_size(field);
+	/* message size is expressed in 16 bytes unit */
+	int32_t msg_size = ((field_size + 15)/16) - 1;
+	host2vk_msg message[msg_size + 1];
+
 	VKIL_LOG(VK_LOG_DEBUG, "");
+	VK_ASSERT(handle); /* sanity check */
 
-	VK_ASSERT(handle);
-	VK_ASSERT(field);
-	VK_ASSERT(value);
+	/* TODO: non blocking option not yet implemented */
+	VK_ASSERT(cmd & VK_CMD_BLOCKING);
 
+	ilpriv = ilctx->priv_data;
+	VK_ASSERT(ilpriv);
+
+	message->queue_id    = ilctx->context_essential.queue_id;
+	message->function_id = vkil_get_function_id("set_parameter");
+	message->context_id  = ilctx->context_essential.handle;
+	message->size        = msg_size;
+	message->args[0]     = field;
+	memcpy(&message->args[1], value, field_size);
+
+	VKIL_LOG(VK_LOG_DEBUG, "message->context_id %llx", message->context_id);
+
+	ret = vkdrv_write(ilpriv->fd, &message, sizeof(message));
+	if (ret < 0)
+		goto fail_write;
+
+	if (cmd & VK_CMD_BLOCKING) {
+		/* we wait for the the card response */
+		vk2host_msg response;
+
+		response.queue_id    = ilctx->context_essential.queue_id;
+		response.context_id  = ilctx->context_essential.handle;
+		response.size        = 0;
+		ret = vkil_wait_probe_msg(vkdrv_read, ilpriv->fd, &response,
+						sizeof(response));
+		if (ret < 0)
+			goto fail_read;
+	}
 	return 0;
+
+fail_write:
+	/* the queue could be full (ENOFUS), so not a real error */
+	VKIL_LOG(VK_LOG_DEBUG, "failure %d on writing message", ret);
+	return ret;
+
+fail_read:
+	/*
+	 * the response could take more time to return (ETIMEOUT),
+	 * so not a real error
+	 */
+	VKIL_LOG(VK_LOG_DEBUG, "failure %d on reading message ", ret);
+	return ret;
 };
 
 /**
@@ -225,17 +286,64 @@ int32_t vkil_set_parameter(const void *handle,
  * @return          zero on success, error code otherwise
  */
 int32_t vkil_get_parameter(const void *handle,
-			   const int32_t field,
-			   void **value,
+			   const vkil_parameter_t field,
+			   void *value,
 			   const vkil_command_t cmd)
 {
+	int32_t ret;
+	const vkil_context *ilctx = handle;
+	vkil_context_internal *ilpriv;
+	int32_t field_size = vkil_get_struct_size(field);
+	/* message size is expressed in 16 bytes unit */
+	int32_t msg_size = ((field_size + 15)/16) - 1;
+	host2vk_msg  message;
+
 	VKIL_LOG(VK_LOG_DEBUG, "");
+	VK_ASSERT(handle); /* sanity check */
 
-	VK_ASSERT(handle);
-	VK_ASSERT(field);
-	VK_ASSERT(value);
+	/* TODO: non blocking option not yet implemented */
+	VK_ASSERT(cmd & VK_CMD_BLOCKING);
 
+	ilpriv = ilctx->priv_data;
+	VK_ASSERT(ilpriv);
+
+	message.queue_id    = ilctx->context_essential.queue_id;
+	message.function_id = vkil_get_function_id("get_parameter");
+	message.context_id  = ilctx->context_essential.handle;
+	message.size        = 0;
+	message.args[0]       = field;
+
+	ret = vkdrv_write(ilpriv->fd, &message, sizeof(message));
+	if (ret < 0)
+		goto fail_write;
+
+	if (cmd & VK_CMD_BLOCKING) {
+		/* we wait for the the card response */
+		vk2host_msg response[msg_size + 1];
+
+		response->queue_id    = ilctx->context_essential.queue_id;
+		response->context_id  = ilctx->context_essential.handle;
+		response->size        = 0;
+		ret = vkil_wait_probe_msg(vkdrv_read, ilpriv->fd, &response,
+						sizeof(response));
+		if (ret < 0)
+			goto fail_read;
+		memcpy(value, &(response->arg), field_size);
+	}
 	return 0;
+
+fail_write:
+	/* the queue could be full (ENOFUS), so not a real error */
+	VKIL_LOG(VK_LOG_DEBUG, "failure %d on writing message", ret);
+	return ret;
+
+fail_read:
+	/*
+	 * the response could take more time to return (ETIMEOUT),
+	 * so not necessarily a real error
+	 */
+	VKIL_LOG(VK_LOG_DEBUG, "failure %d on reading message ", ret);
+	return ret;
 };
 
 /**

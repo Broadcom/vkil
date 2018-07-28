@@ -31,13 +31,14 @@ typedef struct _vkil_api {
 	/** a new context is created if ctx_handle == VK_NEW_CTX */
 	int32_t (*init)(void **ctx_handle);
 	int32_t (*deinit)(void **ctx_handle);
-	int32_t  (*set_parameter)(const void *ctx_handle, const int32_t field,
-						      const void *value,
-						      const vkil_command_t cmd);
-	int32_t  (*get_parameter)(const void *ctx_handle, const int32_t field,
-						      void **value,
-						      const vkil_command_t cmd);
-
+	int32_t  (*set_parameter)(const void *ctx_handle,
+				  const vkil_parameter_t field,
+				  const void *value,
+				  const vkil_command_t cmd);
+	int32_t  (*get_parameter)(const void *ctx_handle,
+				  const vkil_parameter_t field,
+				  void *value,
+				  const vkil_command_t cmd);
 	int32_t (*send_buffer)(const void *ctx_handle,
 			       const void *buffer_handle,
 			       const vkil_command_t cmd);
