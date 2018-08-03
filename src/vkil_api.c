@@ -74,7 +74,7 @@ static int32_t vkil_deinit_com(void *handle)
 	msg2vk.context_id  = ilctx->context_essential.handle;
 
 	ret = vkdrv_write(ilpriv->fd, &msg2vk, sizeof(msg2vk));
-	if (ret < 0)
+	if (VKDRV_WR_ERR(ret, sizeof(msg2vk)))
 		goto fail_write;
 
 	memset(&msg2host, 0, sizeof(msg2host));
@@ -91,7 +91,7 @@ static int32_t vkil_deinit_com(void *handle)
 		else
 			break;
 	}
-	if (ret < 0)
+	if (VKDRV_RD_ERR(ret, sizeof(msg2host)))
 		goto fail_read;
 
 	VKIL_LOG(VK_LOG_DEBUG, "card inited %d\n, with context_id=%llx",
@@ -147,7 +147,7 @@ static int32_t vkil_init_com(void *handle)
 	}
 
 	ret = vkdrv_write(ilpriv->fd, &msg2vk, sizeof(msg2vk));
-	if (ret)
+	if (VKDRV_WR_ERR(ret, sizeof(msg2vk)))
 		goto fail_write;
 	memset(&msg2host, 0, sizeof(msg2host));
 	/*
@@ -163,7 +163,7 @@ static int32_t vkil_init_com(void *handle)
 		else
 			break;
 	}
-	if (ret < 0)
+	if (VKDRV_RD_ERR(ret, sizeof(msg2host)))
 		goto fail_read;
 
 	if (msg2vk.context_id == VK_NEW_CTX)
@@ -369,7 +369,7 @@ int32_t vkil_set_parameter(const void *handle,
 	VKIL_LOG(VK_LOG_DEBUG, "message->context_id %llx", message->context_id);
 
 	ret = vkdrv_write(ilpriv->fd, &message, sizeof(message));
-	if (ret < 0)
+	if (VKDRV_WR_ERR(ret, sizeof(message)))
 		goto fail_write;
 
 	if (cmd & VK_CMD_BLOCKING) {
@@ -381,7 +381,7 @@ int32_t vkil_set_parameter(const void *handle,
 		response.size        = 0;
 		ret = vkil_wait_probe_msg(vkdrv_read, ilpriv->fd, &response,
 						sizeof(response));
-		if (ret < 0)
+		if (VKDRV_RD_ERR(ret, sizeof(response)))
 			goto fail_read;
 	}
 	return 0;
@@ -437,7 +437,7 @@ int32_t vkil_get_parameter(const void *handle,
 	message.args[0]       = field;
 
 	ret = vkdrv_write(ilpriv->fd, &message, sizeof(message));
-	if (ret < 0)
+	if (VKDRV_WR_ERR(ret, sizeof(message)))
 		goto fail_write;
 
 	if (cmd & VK_CMD_BLOCKING) {
@@ -449,7 +449,7 @@ int32_t vkil_get_parameter(const void *handle,
 		response->size        = 0;
 		ret = vkil_wait_probe_msg(vkdrv_read, ilpriv->fd, &response,
 						sizeof(response));
-		if (ret < 0)
+		if (VKDRV_RD_ERR(ret, sizeof(response)))
 			goto fail_read;
 		memcpy(value, &(response->arg), field_size);
 	}

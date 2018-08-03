@@ -53,4 +53,8 @@ static int32_t vkil_error(const char *functionname)
 	return 0;
 };
 
+/* macros for handling error condition */
+#define VKDRV_WR_ERR(_ret, _size)     ((_ret < 0) || (_ret != _size))
+#define VKDRV_RD_ERR(_ret, _size)     ((_ret < 0) || (_ret != _size))
+
 #endif

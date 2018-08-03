@@ -35,7 +35,7 @@ ssize_t vkil_wait_probe_msg(ssize_t (*f)(int fd, void *buf, size_t nbytes),
 
 	for (i = 0 ; i < VK_TIMEOUT_MS ; i++) {
 		ret =  f(fd, buf, nbytes);
-		if (ret >= 0)
+		if (ret > 0)
 			return ret;
 		usleep(1);
 	}
