@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include "vkil_api.h"
 
-static vkil_api *ilapi;
+static vkil_api * ilapi;
 static vkil_context *ilctx;
 
 void test_vkil_create_api(void)
@@ -29,12 +29,7 @@ void test_vkil_create_api(void)
 	assert(ilapi->deinit);
 	assert(ilapi->set_parameter);
 	assert(ilapi->get_parameter);
-	assert(ilapi->send_buffer);
-	assert(ilapi->receive_buffer);
-	assert(ilapi->upload_buffer);
-	assert(ilapi->download_buffer);
-	assert(ilapi->uploaded_buffer);
-	assert(ilapi->downloaded_buffer);
+	assert(ilapi->transfer_buffer);
 }
 
 void test_vkil_init(void)
@@ -59,32 +54,7 @@ void test_vkil_set_parameter(void)
 
 }
 
-void test_vkil_send_buffer(void)
-{
-
-}
-
-void test_vkil_receive_buffer(void)
-{
-
-}
-
-void test_vkil_upload_buffer(void)
-{
-
-}
-
-void test_vkil_download_buffer(void)
-{
-
-}
-
-void test_vkil_uploadedd_buffer(void)
-{
-
-}
-
-void test_vkil_downloaded_buffer(void)
+void test_vkil_transfer_buffer(void)
 {
 
 }
@@ -110,12 +80,7 @@ int main(void)
 	test_vkil_init2();
 	test_vkil_get_parameter();
 	test_vkil_set_parameter();
-	test_vkil_send_buffer();
-	test_vkil_receive_buffer();
-	test_vkil_upload_buffer();
-	test_vkil_download_buffer();
-	test_vkil_uploadedd_buffer();
-	test_vkil_downloaded_buffer();
+	test_vkil_transfer_buffer();
 	test_vkil_deinit();
 	test_vkil_destroy_api();
 	printf("Passed!\n");
