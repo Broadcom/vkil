@@ -676,7 +676,7 @@ int32_t vkil_transfer_buffer(const void *component_handle,
 				vkil_get_function_id("transfer_buffer");
 			message.context_id  = ilctx->context_essential.handle;
 			message.size        = 0;
-			message.args[0]     = VK_CMD_RUN;
+			message.args[0]     = (cmd & VK_CMD_MAX);
 			message.args[1]     = buffer->handle;
 
 			ret = vkdrv_write(ilpriv->fd, &message,
@@ -695,25 +695,36 @@ int32_t vkil_transfer_buffer(const void *component_handle,
 		ret = vkil_wait_probe_msg(vkdrv_read, ilpriv->fd, &response,
 						sizeof(response));
 		if (VKDRV_RD_ERR(ret, sizeof(response)))
-			goto fail_write;
+			goto fail_read;
 
 		buffer->handle = response.arg;
 	}
-	return 0;
+	return ret;
 
 fail_write:
 	/*
 	 * the input queue could be full (ENOBUFS),
-	 * so not necessarily always an real error
+	 * so not necessarily always a real error
 	 */
+	if (ret == (-ENOBUFS))
+		/*
+		 * This is probably caused by a backlog on the return queue.
+		 * The host should thain drain this queue first before
+		 * retrying to write on the input queue
+		 */
+		return ret; /* request the host to drain the queue first */
+
 	VKIL_LOG(VK_LOG_ERROR, "failure %d on writing message ", ret);
 	return ret;
 
 fail_read:
 	/*
 	 * the response could take more time to return (ETIMEOUT),
-	 * so not necessarily aalways an real error
+	 * so not necessarily always a real error
 	 */
+	if ((ret == (-ETIMEDOUT)) || (ret == (-ENOMSG)) || (ret == (-EAGAIN)))
+		return (-EAGAIN); /* request the host to try again */
+
 	VKIL_LOG(VK_LOG_ERROR, "failure %d on reading message ", ret);
 	return ret;
 };
