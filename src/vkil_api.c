@@ -14,14 +14,13 @@
  * version 2 (GPLv2) along with this source code.
  */
 
-#include <fcntl.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "vkdrv_access.h"
 #include "vkil_api.h"
 #include "vkil_backend.h"
 #include "vkil_error.h"
+#include "vkil_internal.h"
 #include "vkil_session.h"
 #include "vkil_utils.h"
 
@@ -47,24 +46,6 @@
  * and so the mantenance of a list is a given
  */
 #define MSG_LIST_SIZE 256
-
-
-typedef struct _vkil_msg_id {
-	int16_t used;         /**< indicte a associated intransit message */
-	int16_t reserved[3];  /**< byte alignment purpose */
-	int64_t user_data;    /**< associated sw data */
-} vkil_msg_id;
-
-typedef struct _vkil_context_internal {
-	int fd;                /**< device context (driver) */
-	vkil_msg_id *msg_list; /**< outgoing message list   */
-	/**
-	 * all writing operation on the list are accessed thru the mwx mutex
-	 * (memory barrier)
-	 */
-	pthread_mutex_t mwx;
-} vkil_context_internal;
-
 
 static int32_t vkil_return_msg_id(void *handle, const int32_t msg_id)
 {
@@ -182,7 +163,7 @@ static int32_t vkil_deinit_com(void *handle)
 
 	preset_host2vk_msg(&msg2vk, handle, "deinit");
 
-	ret = vkdrv_write(ilpriv->fd, &msg2vk, sizeof(msg2vk));
+	ret = vkil_write((void *)ilctx->devctx, &msg2vk);
 	if (VKDRV_WR_ERR(ret, sizeof(msg2vk)))
 		goto fail_write;
 
@@ -193,8 +174,7 @@ static int32_t vkil_deinit_com(void *handle)
 	 * than usual so we don't abort at the first timeout
 	 */
 	for (i = 0 ; i < TIMEOUT_MULTIPLE; i++) {
-		ret = vkil_wait_probe_msg(vkdrv_read, ilpriv->fd, &msg2host,
-						sizeof(msg2host));
+		ret = vkil_wait_probe_read((void *)ilctx->devctx, &msg2host);
 		if (ret ==  (-ETIMEDOUT))
 			continue;
 		else
@@ -205,8 +185,8 @@ static int32_t vkil_deinit_com(void *handle)
 
 	vkil_return_msg_id(handle, msg2host.msg_id);
 
-	VKIL_LOG(VK_LOG_DEBUG, "card inited %d\n, with context_id=%llx",
-		ilpriv->fd, ilctx->context_essential.handle);
+	VKIL_LOG(VK_LOG_DEBUG, "devctx = %llx, context_id=%llx",
+		ilctx->devctx, ilctx->context_essential.handle);
 	return 0;
 
 fail_write:
@@ -254,7 +234,7 @@ static int32_t vkil_init_com(void *handle)
 			sizeof(vkil_context_essential));
 	}
 
-	ret = vkdrv_write(ilpriv->fd, &msg2vk, sizeof(msg2vk));
+	ret = vkil_write((void *)ilctx->devctx, &msg2vk);
 	if (VKDRV_WR_ERR(ret, sizeof(msg2vk)))
 		goto fail_write;
 	memset(&msg2host, 0, sizeof(msg2host));
@@ -264,8 +244,7 @@ static int32_t vkil_init_com(void *handle)
 	 * usual so we don't abort at the first timeout
 	 */
 	for (i = 0 ; i < TIMEOUT_MULTIPLE; i++) {
-		ret = vkil_wait_probe_msg(vkdrv_read, ilpriv->fd, &msg2host,
-						sizeof(msg2host));
+		ret = vkil_wait_probe_read((void *)ilctx->devctx, &msg2host);
 		if (ret ==  (-ETIMEDOUT))
 			continue;
 		else
@@ -279,7 +258,7 @@ static int32_t vkil_init_com(void *handle)
 		ilctx->context_essential.handle = msg2host.context_id;
 
 	VKIL_LOG(VK_LOG_DEBUG, "card inited %d\n, with context_id=%llx",
-			ilpriv->fd, ilctx->context_essential.handle);
+			ilctx->devctx, ilctx->context_essential.handle);
 	return 0;
 
 fail_write:
@@ -302,12 +281,11 @@ fail_read:
  * @param handle    handle to a vkil_context
  * @return          zero on succes, error code otherwise
  */
-static int32_t vkil_init_dev(void *handle)
+static int32_t vkil_init_ctx(void *handle)
 {
 	int32_t ret, i;
 	vkil_context *ilctx = handle;
 	vkil_context_internal *ilpriv;
-	char dev_name[30]; /* format: /dev/bcm-vk.x */
 
 	/*
 	 * we ensure we don't have a device context yet
@@ -323,25 +301,24 @@ static int32_t vkil_init_dev(void *handle)
 	if (ilctx->context_essential.session_id < 0)
 		goto fail_session;
 
-	ilctx->context_essential.card_id = vkil_get_card_id();
-	if (ilctx->context_essential.card_id < 0)
-		goto fail_session;
-
-	if (!snprintf(dev_name, sizeof(dev_name), "/dev/bcm-vk.%d",
-			ilctx->context_essential.card_id))
-		goto fail_session;
-
 	/* the priv_data structure size could be component specific */
 	ret = vk_mallocz(&ilctx->priv_data, sizeof(vkil_context_internal));
 	if (ret)
 		goto fail_malloc;
 
-	ilpriv = ilctx->priv_data;
-	ilpriv->fd = vkdrv_open(dev_name, O_RDWR);
+	/*
+	 * we pair the device initialization with the private data one to
+	 * prevent multiple device opening
+	 */
+	ret = vkil_init_dev(&ilctx->devctx);
+	if (ret < 0)
+		goto fail;
 
-	VKIL_LOG(VK_LOG_DEBUG, "ilpriv->fd: %i\n", ilpriv->fd);
-
+	ilctx->context_essential.card_id = ret;
 	return 0;
+
+fail:
+	vk_free(&ilctx->priv_data);
 
 fail_malloc:
 	VKIL_LOG(VK_LOG_ERROR, "failed malloc\n");
@@ -418,14 +395,13 @@ int32_t vkil_deinit(void **handle)
 		VKIL_LOG(VK_LOG_ERROR, "unexpected call\n");
 		return 0;
 	}
-
 	if (ilctx->priv_data) {
 		vkil_context_internal *ilpriv;
 
 		ret |= vkil_deinit_com(*handle);
 		ilpriv = ilctx->priv_data;
-		if (ilpriv->fd)
-			vkdrv_close(ilpriv->fd);
+		if (ilctx->devctx)
+			vkil_deinit_dev(&ilctx->devctx);
 		if (ilpriv->msg_list)
 			ret |= vkil_deinit_msglist(ilctx);
 		vk_free((void **)&ilpriv);
@@ -459,7 +435,7 @@ int32_t vkil_init(void **handle)
 		vkil_context *ilctx = *handle;
 
 		if (!ilctx->priv_data) {
-			ret = vkil_init_dev(*handle);
+			ret = vkil_init_ctx(*handle);
 			if (ret)
 				goto fail;
 		}
@@ -534,7 +510,7 @@ int32_t vkil_set_parameter(void *handle,
 
 	VKIL_LOG(VK_LOG_DEBUG, "message->context_id %llx", message->context_id);
 
-	ret = vkdrv_write(ilpriv->fd, &message, sizeof(message));
+	ret = vkil_write((void *)ilctx->devctx, message);
 	if (VKDRV_WR_ERR(ret, sizeof(message)))
 		goto fail_write;
 
@@ -546,8 +522,7 @@ int32_t vkil_set_parameter(void *handle,
 		response.queue_id    = ilctx->context_essential.queue_id;
 		response.context_id  = ilctx->context_essential.handle;
 		response.size        = 0;
-		ret = vkil_wait_probe_msg(vkdrv_read, ilpriv->fd, &response,
-						sizeof(response));
+		ret = vkil_wait_probe_read((void *)ilctx->devctx, &response);
 		if (VKDRV_RD_ERR(ret, sizeof(response)))
 			goto fail_read;
 
@@ -603,7 +578,7 @@ int32_t vkil_get_parameter(void *handle,
 	/* complete setting */
 	message.args[0]       = field;
 
-	ret = vkdrv_write(ilpriv->fd, &message, sizeof(message));
+	ret = vkil_write((void *)ilctx->devctx, &message);
 	if (VKDRV_WR_ERR(ret, sizeof(message)))
 		goto fail_write;
 
@@ -615,8 +590,7 @@ int32_t vkil_get_parameter(void *handle,
 		response->queue_id    = ilctx->context_essential.queue_id;
 		response->context_id  = ilctx->context_essential.handle;
 		response->size        = 0;
-		ret = vkil_wait_probe_msg(vkdrv_read, ilpriv->fd, &response,
-						sizeof(response));
+		ret = vkil_wait_probe_read((void *)ilctx->devctx, response);
 		if (VKDRV_RD_ERR(ret, sizeof(response)))
 			goto fail_read;
 
@@ -784,8 +758,7 @@ static int32_t vkil_mem_transfer_buffer(void *component_handle,
 	convert_vkil2vk_buffer(&message->args[2], host_buffer);
 
 	/* then we write the command to the queue */
-	ret = vkdrv_write(ilpriv->fd, message,
-			sizeof(host2vk_msg)*(msg_size + 1));
+	ret = vkil_write((void *)ilctx->devctx, message);
 	if (VKDRV_WR_ERR(ret, sizeof(host2vk_msg)*(msg_size + 1)))
 		goto fail_write;
 
@@ -847,8 +820,7 @@ int32_t vkil_transfer_buffer(void *component_handle,
 			message.args[0]     = (cmd & VK_CMD_MAX);
 			message.args[1]     = buffer->handle;
 
-			ret = vkdrv_write(ilpriv->fd, &message,
-						sizeof(message));
+			ret = vkil_write((void *)ilctx->devctx, &message);
 			if (VKDRV_WR_ERR(ret, sizeof(message)))
 				goto fail_write;
 		}
@@ -861,8 +833,7 @@ int32_t vkil_transfer_buffer(void *component_handle,
 		response.queue_id    = ilctx->context_essential.queue_id;
 		response.context_id  = ilctx->context_essential.handle;
 		response.size        = 0;
-		ret = vkil_wait_probe_msg(vkdrv_read, ilpriv->fd, &response,
-						sizeof(response));
+		ret = vkil_wait_probe_read((void *)ilctx->devctx, &response);
 		if (VKDRV_RD_ERR(ret, sizeof(response)))
 			goto fail_read;
 

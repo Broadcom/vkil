@@ -79,7 +79,8 @@ typedef struct _vkil_buffer_surface {
 
 typedef struct _vkil_context {
 	vkil_context_essential context_essential;
-	void       *priv_data; /**< component dependent */
+	void       *devctx;   /**< handle to the hw device */
+	void       *priv_data; /**< component dependent     */
 } vkil_context;
 
 /**
