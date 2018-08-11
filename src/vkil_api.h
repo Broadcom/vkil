@@ -90,15 +90,15 @@ typedef struct _vkil_api {
 	/** a new context is created if ctx_handle == VK_NEW_CTX */
 	int32_t (*init)(void **ctx_handle);
 	int32_t (*deinit)(void **ctx_handle);
-	int32_t  (*set_parameter)(const void *ctx_handle,
+	int32_t  (*set_parameter)(void *ctx_handle,
 				  const vkil_parameter_t field,
 				  const void *value,
 				  const vkil_command_t cmd);
-	int32_t  (*get_parameter)(const void *ctx_handle,
+	int32_t  (*get_parameter)(void *ctx_handle,
 				  const vkil_parameter_t field,
 				  void *value,
 				  const vkil_command_t cmd);
-	int32_t (*transfer_buffer)(const void *ctx_handle,
+	int32_t (*transfer_buffer)(void *ctx_handle,
 			       void *buffer_handle,
 			       const vkil_command_t cmd);
 
@@ -108,14 +108,12 @@ typedef struct _vkil_api {
 	 * the transfer_buffer function with relevant
 	 * cmd (VK_CMD_UPLOAD or VK_CMD_DOWLOAD)
 	 */
-	int32_t (*send_buffer)(const void *ctx_handle,
+	int32_t (*send_buffer)(void *ctx_handle,
 			       void *buffer_handle,
 			       const vkil_command_t cmd);
-	int32_t (*receive_buffer)(const void *ctx_handle,
+	int32_t (*receive_buffer)(void *ctx_handle,
 			       void *buffer_handle,
 			       const vkil_command_t cmd);
-
-
 } vkil_api;
 
 extern void *vkil_create_api(void);
