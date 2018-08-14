@@ -28,9 +28,11 @@
  * usually we wait for response message up to TIMEOUT us
  * However, in certain case, (essentially component initialization)
  * we could need to provide more time for the card to do the initialization
- * (all this at this time is empiric)
+ * (at this time, all this is empiric)
+ * TODO: implement a polling on ctrl queue (sideband like), to enquire the
+ * status of the card rather than to rely on an arbitrary time out value
  */
-#define TIMEOUT_MULTIPLE 4
+#define TIMEOUT_MULTIPLE 100
 
 /*
  * this refers to the maximum number of intransit message into a single context
@@ -156,7 +158,7 @@ static int32_t vkil_deinit_com(void *handle)
 
 	if (ilctx->context_essential.handle < VK_START_VALID_HANDLE) {
 		/* the call is allowed, but not necessarily expected */
-		VKIL_LOG(VK_LOG_DEBUG, "context %llx is not valid",
+		VKIL_LOG(VK_LOG_WARNING, "context %llx is not valid",
 			 ilctx->context_essential.handle);
 		return 0;
 	}
@@ -175,7 +177,7 @@ static int32_t vkil_deinit_com(void *handle)
 	 */
 	for (i = 0 ; i < TIMEOUT_MULTIPLE; i++) {
 		ret = vkil_wait_probe_read((void *)ilctx->devctx, &msg2host);
-		if (ret ==  (-ETIMEDOUT))
+		if (ret ==  (-EAGAIN))
 			continue;
 		else
 			break;
@@ -191,7 +193,7 @@ static int32_t vkil_deinit_com(void *handle)
 
 fail_write:
 	/* the queue could be full (ENOFUS), so not a real error */
-	VKIL_LOG(VK_LOG_DEBUG, "failure %d on writing message", ret);
+	VKIL_LOG(VK_LOG_ERROR, "failure %d on writing message", ret);
 	return ret;
 
 fail_read:
@@ -199,7 +201,7 @@ fail_read:
 	 * the response could take more time to return (ETIMEOUT),
 	 * so not a real error
 	 */
-	VKIL_LOG(VK_LOG_DEBUG, "failure %d on reading message ", ret);
+	VKIL_LOG(VK_LOG_ERROR, "failure %d on reading message ", ret);
 	return ret;
 }
 
@@ -246,7 +248,7 @@ static int32_t vkil_init_com(void *handle)
 	 */
 	for (i = 0 ; i < TIMEOUT_MULTIPLE; i++) {
 		ret = vkil_wait_probe_read((void *)ilctx->devctx, &msg2host);
-		if (ret ==  (-ETIMEDOUT))
+		if (ret ==  (-EAGAIN))
 			continue;
 		else
 			break;
@@ -264,7 +266,7 @@ static int32_t vkil_init_com(void *handle)
 
 fail_write:
 	/* the queue could be full (ENOFUS), so not a real error */
-	VKIL_LOG(VK_LOG_DEBUG, "failure %d on writing message", ret);
+	VKIL_LOG(VK_LOG_ERROR, "failure %d on writing message", ret);
 	return ret;
 
 fail_read:
@@ -272,7 +274,7 @@ fail_read:
 	 * the response could take more time to return (ETIMEOUT),
 	 * so not a real error
 	 */
-	VKIL_LOG(VK_LOG_DEBUG, "failure %d on reading message ", ret);
+	VKIL_LOG(VK_LOG_ERROR, "failure %d on reading message ", ret);
 	return ret;
 }
 
@@ -537,7 +539,7 @@ int32_t vkil_set_parameter(void *handle,
 
 fail_write:
 	/* the queue could be full (ENOFUS), so not a real error */
-	VKIL_LOG(VK_LOG_DEBUG, "failure %d on writing message", ret);
+	VKIL_LOG(VK_LOG_ERROR, "failure %d on writing message", ret);
 	return ret;
 
 fail_read:
@@ -545,7 +547,7 @@ fail_read:
 	 * the response could take more time to return (ETIMEOUT),
 	 * so not a real error
 	 */
-	VKIL_LOG(VK_LOG_DEBUG, "failure %d on reading message ", ret);
+	VKIL_LOG(VK_LOG_WARNING, "failure %d on reading message ", ret);
 	return ret;
 };
 
@@ -606,7 +608,7 @@ int32_t vkil_get_parameter(void *handle,
 
 fail_write:
 	/* the queue could be full (ENOFUS), so not a real error */
-	VKIL_LOG(VK_LOG_DEBUG, "failure %d on writing message", ret);
+	VKIL_LOG(VK_LOG_ERROR, "failure %d on writing message", ret);
 	return ret;
 
 fail_read:
@@ -614,7 +616,7 @@ fail_read:
 	 * the response could take more time to return (ETIMEOUT),
 	 * so not necessarily a real error
 	 */
-	VKIL_LOG(VK_LOG_DEBUG, "failure %d on reading message ", ret);
+	VKIL_LOG(VK_LOG_WARNING, "failure %d on reading message ", ret);
 	return ret;
 };
 
@@ -868,10 +870,10 @@ fail_read:
 	 * the response could take more time to return (ETIMEOUT),
 	 * so not necessarily always a real error
 	 */
-	if ((ret == (-ETIMEDOUT)) || (ret == (-ENOMSG)) || (ret == (-EAGAIN)))
+	if ((ret == (-ENOMSG)) || (ret == (-EAGAIN)))
 		return (-EAGAIN); /* request the host to try again */
 
-	VKIL_LOG(VK_LOG_ERROR, "failure %d on reading message ", ret);
+	VKIL_LOG(VK_LOG_WARNING, "failure %d on reading message ", ret);
 	return ret;
 };
 

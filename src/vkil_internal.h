@@ -9,6 +9,14 @@
 #include <stdint.h>
 #include <pthread.h>
 
+/** max number of message queue used shall not be gretaer than VK_MSG_Q_NR */
+#define VKIL_MSG_Q_MAX 3
+
+typedef struct _vkil_node {
+	void *data;
+	struct _vkil_node *next;
+} vkil_node;
+
 typedef struct _vkil_msg_id {
 	int16_t used;         /**< indicte a associated intransit message */
 	int16_t reserved[3];  /**< byte alignment purpose */
@@ -19,6 +27,8 @@ typedef struct _vkil_devctx {
 	int fd;      /**< driver */
 	int32_t ref; /**< number of vkilctx instance using the device */
 	int32_t id;  /**< card id */
+	vkil_node *vk2host[VKIL_MSG_Q_MAX]; /**< dequeued messages */
+	pthread_mutex_t mwx; /** protect concurrent access to the msg queue */
 } vkil_devctx;
 
 typedef struct _vkil_context_internal {

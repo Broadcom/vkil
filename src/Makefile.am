@@ -11,6 +11,7 @@ libvkil_la_SOURCES = \
     vkil_internal.h \
     vkil_session.c \
     vkil_session.h \
+    vkil_utils.c \
     vkil_utils.h
 
-libvkil_la_LDFLAGS = -lvkdrv
+libvkil_la_LDFLAGS = -lvkdrv -lvksim

@@ -19,7 +19,12 @@
 
 #include "vk_utils.h"
 
-
 #define VKIL_LOG(...) vk_log(__func__, __VA_ARGS__)
+
+vkil_node *vkil_ll_append(vkil_node **head, void *data);
+int32_t vkil_ll_delete(vkil_node **head, vkil_node *nd);
+vkil_node *vkil_ll_search(vkil_node *head,
+			int32_t (*f)(const void *data, const void *data_ref),
+			const void *data_ref);
 
 #endif
