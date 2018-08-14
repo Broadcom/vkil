@@ -238,6 +238,7 @@ static int32_t vkil_init_com(void *handle)
 	if (VKDRV_WR_ERR(ret, sizeof(msg2vk)))
 		goto fail_write;
 	memset(&msg2host, 0, sizeof(msg2host));
+	msg2host.msg_id = msg2vk.msg_id;
 	/*
 	 * in the init phase the card will instantiate some stuff we don't have
 	 * visibility at vkil, but it is expected this take longer time than
@@ -467,7 +468,9 @@ fail:
  */
 static int32_t vkil_get_struct_size(const vkil_parameter_t field)
 {
-	/* that is the default value*/
+	if (field == VK_PARAM_PORT)
+		return sizeof(vk_port);
+	/* this is the default value when not structure is defined */
 	return sizeof(int32_t);
 }
 
@@ -490,7 +493,8 @@ int32_t vkil_set_parameter(void *handle,
 	vkil_context_internal *ilpriv;
 	int32_t field_size = vkil_get_struct_size(field);
 	/* message size is expressed in 16 bytes unit */
-	int32_t msg_size = ((field_size + 15)/16) - 1;
+	int32_t msg_size = field_size == sizeof(uint32_t) ?
+					0 : MSG_SIZE(field_size);
 	host2vk_msg message[msg_size + 1];
 
 	VKIL_LOG(VK_LOG_DEBUG, "");
@@ -506,10 +510,9 @@ int32_t vkil_set_parameter(void *handle,
 	/* complete message setting */
 	message->size        = msg_size;
 	message->args[0]     = field;
-	memcpy(&message->args[1], value, field_size);
 
-	VKIL_LOG(VK_LOG_DEBUG, "message->context_id %llx", message->context_id);
-
+	/* align  structure copy on 16 bytes boundary */
+	memcpy(&message->args[msg_size ? 2 : 1], value, field_size);
 	ret = vkil_write((void *)ilctx->devctx, message);
 	if (VKDRV_WR_ERR(ret, sizeof(message)))
 		goto fail_write;
@@ -559,11 +562,11 @@ int32_t vkil_get_parameter(void *handle,
 {
 	int32_t ret;
 	const vkil_context *ilctx = handle;
-	vkil_context_internal *ilpriv;
 	int32_t field_size = vkil_get_struct_size(field);
 	/* message size is expressed in 16 bytes unit */
-	int32_t msg_size = ((field_size + 15)/16) - 1;
-	host2vk_msg  message;
+	int32_t msg_size = field_size == sizeof(uint32_t) ?
+					0 : MSG_SIZE(field_size);
+	host2vk_msg  message[msg_size + 1];
 
 	VKIL_LOG(VK_LOG_DEBUG, "");
 	VK_ASSERT(handle); /* sanity check */
@@ -571,14 +574,13 @@ int32_t vkil_get_parameter(void *handle,
 	/* TODO: non blocking option not yet implemented */
 	VK_ASSERT(cmd & VK_CMD_BLOCKING);
 
-	ilpriv = ilctx->priv_data;
-	VK_ASSERT(ilpriv);
-
-	preset_host2vk_msg(&message, handle, "get_parameter");
+	preset_host2vk_msg(message, handle, "get_parameter");
 	/* complete setting */
-	message.args[0]       = field;
+	message->size        = msg_size;
+	message->args[0]       = field;
+	memcpy(&message->args[msg_size ? 2 : 1], value, field_size);
 
-	ret = vkil_write((void *)ilctx->devctx, &message);
+	ret = vkil_write((void *)ilctx->devctx, message);
 	if (VKDRV_WR_ERR(ret, sizeof(message)))
 		goto fail_write;
 
@@ -586,16 +588,17 @@ int32_t vkil_get_parameter(void *handle,
 		/* we wait for the the card response */
 		vk2host_msg response[msg_size + 1];
 
-		response->msg_id      = message.msg_id;
+		response->msg_id      = message->msg_id;
 		response->queue_id    = ilctx->context_essential.queue_id;
 		response->context_id  = ilctx->context_essential.handle;
-		response->size        = 0;
+		response->size        = msg_size;
 		ret = vkil_wait_probe_read((void *)ilctx->devctx, response);
 		if (VKDRV_RD_ERR(ret, sizeof(response)))
 			goto fail_read;
 
 		vkil_return_msg_id(handle, response->msg_id);
-		memcpy(value, &(response->arg), field_size);
+		memcpy(value,
+			&((&(response->arg))[msg_size ? 1 : 0]), field_size);
 	}
 	return 0;
 
