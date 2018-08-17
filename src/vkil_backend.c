@@ -159,7 +159,7 @@ ssize_t vkil_wait_probe_read(void *handle, vk2host_msg *message)
 			node = vkil_ll_append(&(devctx->vk2host[q_id]), msg);
 			if (!node) {
 				vk_free((void **)&msg);
-				ret = (-ENOMEM);
+				ret = -ENOMEM;
 				goto fail;
 			}
 		} else
@@ -167,7 +167,7 @@ ssize_t vkil_wait_probe_read(void *handle, vk2host_msg *message)
 	} while (ret >= 0);
 	if (!devctx->vk2host[q_id]) {
 		/* the list is empty, no message try later */
-		ret = (-EAGAIN); /* message is not there yet */
+		ret = -EAGAIN; /* message is not there yet */
 		goto fail;
 	}
 
@@ -179,7 +179,7 @@ ssize_t vkil_wait_probe_read(void *handle, vk2host_msg *message)
 		node = vkil_ll_search(devctx->vk2host[q_id], search_msg_id,
 					message);
 	if (!node) {
-		ret = (-EAGAIN); /* message is not there yet */
+		ret = -EAGAIN; /* message is not there yet */
 		goto fail;
 	}
 
@@ -191,12 +191,12 @@ ssize_t vkil_wait_probe_read(void *handle, vk2host_msg *message)
 		vk_free((void **)&msg);
 	} else {
 		message->size = msg->size;
-		ret = (-EMSGSIZE);
+		ret = -EMSGSIZE;
 		goto fail;
 	}
 	if (message->hw_status == VK_STATE_ERROR) {
-		VKIL_LOG(VK_LOG_ERROR, "We got an HW error %x", message->arg);
-		ret = (-EPERM); /* TODO: to be more specific */
+		VKIL_LOG(VK_LOG_ERROR, "We got an HW error %d", message->arg);
+		ret = -EPERM; /* TODO: to be more specific */
 		goto fail;
 	}
 	pthread_mutex_unlock(&(devctx->mwx));
@@ -241,7 +241,7 @@ int32_t vkil_deinit_dev(void **handle)
 int32_t vkil_init_dev(void **handle)
 {
 	vkil_devctx *devctx;
-	int32_t ret;
+	int32_t ret = -ENODEV;
 	char dev_name[30]; /* format: /dev/bcm-vk.x */
 
 	if (!(*handle)) {
@@ -259,7 +259,11 @@ int32_t vkil_init_dev(void **handle)
 		if (!snprintf(dev_name, sizeof(dev_name), "/dev/bcm-vk.%d",
 			devctx->id))
 			goto fail;
+
 		devctx->fd = vkdrv_open(dev_name, O_RDWR);
+		if (devctx->fd < 0)
+			goto fail;
+
 		pthread_mutex_init(&(devctx->mwx), NULL);
 	}
 	devctx = *handle;

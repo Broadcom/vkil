@@ -99,6 +99,8 @@ static int32_t vkil_get_msg_id(void *handle)
 
 	return i;
 fail:
+	VKIL_LOG(VK_LOG_ERROR, "unable to get an msg id in context %x",
+		 ilctx);
 	return (-ENOBUFS);
 }
 
@@ -123,6 +125,7 @@ static int32_t preset_host2vk_msg(host2vk_msg *msg2vk, void *handle,
 
 	ret = vkil_get_msg_id(handle);
 	if (ret < 0)
+		/* unable to get an id, too much message in transit */
 		goto fail;
 
 	msg2vk->msg_id = ret;
@@ -163,7 +166,9 @@ static int32_t vkil_deinit_com(void *handle)
 		return 0;
 	}
 
-	preset_host2vk_msg(&msg2vk, handle, "deinit");
+	ret = preset_host2vk_msg(&msg2vk, handle, "deinit");
+	if (ret)
+		goto fail_write;
 
 	ret = vkil_write((void *)ilctx->devctx, &msg2vk);
 	if (VKDRV_WR_ERR(ret, sizeof(msg2vk)))
@@ -193,7 +198,8 @@ static int32_t vkil_deinit_com(void *handle)
 
 fail_write:
 	/* the queue could be full (ENOFUS), so not a real error */
-	VKIL_LOG(VK_LOG_ERROR, "failure %d on writing message", ret);
+	VKIL_LOG(VK_LOG_ERROR, "failure %d on writing message in context %x",
+		 ret, ilctx);
 	return ret;
 
 fail_read:
@@ -201,7 +207,8 @@ fail_read:
 	 * the response could take more time to return (ETIMEOUT),
 	 * so not a real error
 	 */
-	VKIL_LOG(VK_LOG_ERROR, "failure %d on reading message ", ret);
+	VKIL_LOG(VK_LOG_ERROR, "failure %d on reading message in context %x",
+		 ret, ilctx);
 	return ret;
 }
 
@@ -225,7 +232,9 @@ static int32_t vkil_init_com(void *handle)
 
 	VK_ASSERT(ilpriv);
 
-	preset_host2vk_msg(&msg2vk, handle, "init");
+	ret = preset_host2vk_msg(&msg2vk, handle, "init");
+	if (ret)
+		goto fail_write;
 	if (msg2vk.context_id == VK_NEW_CTX) {
 		/*
 		 * the context is not yet existing on the device the arguments
@@ -266,7 +275,8 @@ static int32_t vkil_init_com(void *handle)
 
 fail_write:
 	/* the queue could be full (ENOFUS), so not a real error */
-	VKIL_LOG(VK_LOG_ERROR, "failure %d on writing message", ret);
+	VKIL_LOG(VK_LOG_ERROR, "failure %d on writing message in context %x",
+		 ret, ilctx);
 	return ret;
 
 fail_read:
@@ -274,7 +284,8 @@ fail_read:
 	 * the response could take more time to return (ETIMEOUT),
 	 * so not a real error
 	 */
-	VKIL_LOG(VK_LOG_ERROR, "failure %d on reading message ", ret);
+	VKIL_LOG(VK_LOG_ERROR, "failure %d on reading message in context %x",
+		 ret, ilctx);
 	return ret;
 }
 
@@ -324,7 +335,7 @@ fail:
 	vk_free(&ilctx->priv_data);
 
 fail_malloc:
-	VKIL_LOG(VK_LOG_ERROR, "failed malloc\n");
+	VKIL_LOG(VK_LOG_ERROR, "failed malloc");
 	return VKILERROR(ret);
 
 fail_session:
@@ -510,7 +521,9 @@ int32_t vkil_set_parameter(void *handle,
 	ilpriv = ilctx->priv_data;
 	VK_ASSERT(ilpriv);
 
-	preset_host2vk_msg(message, handle, "set_parameter");
+	ret = preset_host2vk_msg(message, handle, "set_parameter");
+	if (ret)
+		goto fail_write;
 	/* complete message setting */
 	message->size        = msg_size;
 	message->args[0]     = field;
@@ -539,7 +552,8 @@ int32_t vkil_set_parameter(void *handle,
 
 fail_write:
 	/* the queue could be full (ENOFUS), so not a real error */
-	VKIL_LOG(VK_LOG_ERROR, "failure %d on writing message", ret);
+	VKIL_LOG(VK_LOG_ERROR, "failure %d on writing message in context %x",
+		 ret, ilctx);
 	return ret;
 
 fail_read:
@@ -547,7 +561,8 @@ fail_read:
 	 * the response could take more time to return (ETIMEOUT),
 	 * so not a real error
 	 */
-	VKIL_LOG(VK_LOG_WARNING, "failure %d on reading message ", ret);
+	VKIL_LOG(VK_LOG_WARNING, "failure %d on reading message in context %x",
+		 ret, ilctx);
 	return ret;
 };
 
@@ -578,7 +593,9 @@ int32_t vkil_get_parameter(void *handle,
 	/* TODO: non blocking option not yet implemented */
 	VK_ASSERT(cmd & VK_CMD_BLOCKING);
 
-	preset_host2vk_msg(message, handle, "get_parameter");
+	ret = preset_host2vk_msg(message, handle, "get_parameter");
+	if (ret)
+		goto fail_write;
 	/* complete setting */
 	message->size        = msg_size;
 	message->args[0]       = field;
@@ -608,7 +625,8 @@ int32_t vkil_get_parameter(void *handle,
 
 fail_write:
 	/* the queue could be full (ENOFUS), so not a real error */
-	VKIL_LOG(VK_LOG_ERROR, "failure %d on writing message", ret);
+	VKIL_LOG(VK_LOG_ERROR, "failure %d on writing message in context %x",
+		 ret, ilctx);
 	return ret;
 
 fail_read:
@@ -616,7 +634,8 @@ fail_read:
 	 * the response could take more time to return (ETIMEOUT),
 	 * so not necessarily a real error
 	 */
-	VKIL_LOG(VK_LOG_WARNING, "failure %d on reading message ", ret);
+	VKIL_LOG(VK_LOG_WARNING, "failure %d on reading message in context %x",
+		 ret, ilctx);
 	return ret;
 };
 
@@ -742,6 +761,7 @@ static int32_t vkil_mem_transfer_buffer(void *component_handle,
 	int32_t msg_size = MSG_SIZE(size);
 	host2vk_msg message[msg_size + 1];
 
+	VKIL_LOG(VK_LOG_DEBUG, "ilctx = %x, message = %llx", ilctx, message);
 	VK_ASSERT(component_handle);
 	VK_ASSERT(cmd);
 
@@ -756,7 +776,9 @@ static int32_t vkil_mem_transfer_buffer(void *component_handle,
 	 * pointer is sufficient, in case of a SGL need to be transferred
 	 * it can be done in 2 way, a pointer to a SGL structure
 	 */
-	preset_host2vk_msg(message, component_handle, "transfer_buffer");
+	ret = preset_host2vk_msg(message, component_handle, "transfer_buffer");
+	if (ret)
+		goto fail_write;
 	/* complete setting */
 	message->size        = msg_size;
 	message->args[0]     = load_mode;
@@ -776,7 +798,8 @@ fail_write:
 	 * the input queue could be full (ENOBUFS),
 	 * so not necessarily always an real error
 	 */
-	VKIL_LOG(VK_LOG_ERROR, "failure %d on writing message ", ret);
+	VKIL_LOG(VK_LOG_ERROR, "failure %d on writing message in context %x ",
+		 ret, ilctx);
 	return ret;
 
 };
@@ -799,7 +822,6 @@ int32_t vkil_transfer_buffer(void *component_handle,
 	vkil_buffer *buffer;
 	int32_t ret;
 
-
 	VKIL_LOG(VK_LOG_DEBUG, "");
 
 	VK_ASSERT(component_handle);
@@ -817,12 +839,14 @@ int32_t vkil_transfer_buffer(void *component_handle,
 		case VK_CMD_UPLOAD:
 		case VK_CMD_DOWNLOAD:
 			ret = vkil_mem_transfer_buffer(component_handle,
-					   buffer_handle, cmd);
+						       buffer_handle, cmd);
 			break;
 		default:
 			/* tunnelled operations */
-			preset_host2vk_msg(&message, component_handle,
-					   "transfer_buffer");
+			ret = preset_host2vk_msg(&message, component_handle,
+						 "transfer_buffer");
+			if (ret)
+				goto fail_write;
 			/* complete message setting */
 			message.args[0]     = (cmd & VK_CMD_MAX);
 			message.args[1]     = buffer->handle;
@@ -862,7 +886,8 @@ fail_write:
 		 */
 		return ret; /* request the host to drain the queue first */
 
-	VKIL_LOG(VK_LOG_ERROR, "failure %d on writing message ", ret);
+	VKIL_LOG(VK_LOG_ERROR, "failure %d on writing message in context %x",
+		 ret, ilctx);
 	return ret;
 
 fail_read:
@@ -873,7 +898,8 @@ fail_read:
 	if ((ret == (-ENOMSG)) || (ret == (-EAGAIN)))
 		return (-EAGAIN); /* request the host to try again */
 
-	VKIL_LOG(VK_LOG_WARNING, "failure %d on reading message ", ret);
+	VKIL_LOG(VK_LOG_WARNING, "failure %d on reading message in context %x",
+		 ret, ilctx);
 	return ret;
 };
 
