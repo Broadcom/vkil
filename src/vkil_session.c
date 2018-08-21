@@ -182,8 +182,9 @@ int vkil_create_session(vkil_session_table *vst, const int index)
  */
 void vkil_update_session_table(vkil_session_table *vst)
 {
+	int i;
 	if (vst) {
-		for (int i = 0; i < VKIL_MAX_SESSION; i++) {
+		for (i = 0; i < VKIL_MAX_SESSION; i++) {
 			int ret = kill(vst->table[i].pid, 0);
 
 			if (ret) {
@@ -243,6 +244,7 @@ int vkil_find_session_entry(const vkil_session_table *vst, int *index)
 {
 	int pid;
 	int empty;
+	int i;
 
 	if (!vst->total_count) {
 		*index = 0;
@@ -252,7 +254,7 @@ int vkil_find_session_entry(const vkil_session_table *vst, int *index)
 	pid = getpid();
 	empty = VKIL_MAX_SESSION;
 
-	for (int i = 0; i < VKIL_MAX_SESSION; i++) {
+	for (i = 0; i < VKIL_MAX_SESSION; i++) {
 		if (pid == vst->table[i].pid) {
 			curr_vse = vst->table[i];
 			*index = i;
