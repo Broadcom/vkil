@@ -16,7 +16,14 @@
 #include "vkil_utils.h"
 
 #define BIG_MSG_SIZE_INC   2
-#define VK_TIMEOUT_SCALER 50
+/**
+ * we allow up to 1 second,
+ * long enough to allow for non real time transcoding scheme
+ * short enough to bail-out quickly on unresponsive card
+ */
+#define VKIL_TIMEOUT_US  (1000 * 1000)
+/** in the ffmpeg context ms order to magnitude is OK */
+#define VKIL_PROBE_INTERVAL_US 1000
 
 /**
  * try to call a function with given parameters and timeout
@@ -32,7 +39,7 @@ static ssize_t vkil_wait_probe_msg(int fd, void *buf, uint32_t dontwait)
 	vk2host_msg *msg = (vk2host_msg *) buf;
 	int32_t nbytes = sizeof(vk2host_msg)*(msg->size + 1);
 
-	for (i = 0 ; i < VK_TIMEOUT_MS / VK_TIMEOUT_SCALER ; i++) {
+	for (i = 0 ; i < VKIL_TIMEOUT_US / VKIL_PROBE_INTERVAL_US ; i++) {
 		ret =  vkdrv_read(fd, buf, nbytes);
 		if (ret > 0)
 			return ret;
@@ -45,7 +52,7 @@ static ssize_t vkil_wait_probe_msg(int fd, void *buf, uint32_t dontwait)
 			return (-EMSGSIZE);
 		if (dontwait)
 			return (-ENOMSG);
-		usleep(VK_TIMEOUT_SCALER);
+		usleep(VKIL_PROBE_INTERVAL_US);
 	}
 	return (-ETIMEDOUT); /* if we are here we have timed out */
 }
