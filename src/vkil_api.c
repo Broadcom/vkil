@@ -86,7 +86,8 @@ static int32_t vkil_get_msg_id(void *handle)
 	VK_ASSERT(msg_list);
 
 	pthread_mutex_lock(&(ilpriv->mwx));
-	for (i = 0; i < MSG_LIST_SIZE; i++) {
+	/* msg_id zero is reserved */
+	for (i = 1; i < MSG_LIST_SIZE; i++) {
 		if (!msg_list[i].used) {
 			msg_list[i].used = 1;
 			break;
@@ -175,6 +176,9 @@ static int32_t vkil_deinit_com(void *handle)
 		goto fail_write;
 
 	memset(&msg2host, 0, sizeof(msg2host));
+	msg2host.msg_id = msg2vk.msg_id;
+	msg2host.context_id = msg2vk.context_id;
+
 	/*
 	 * in the deinit phase the card will need to flush some stuff we don't
 	 * have visibility at vkil, but it is expected this take longer time
@@ -248,6 +252,7 @@ static int32_t vkil_init_com(void *handle)
 	ret = vkil_write((void *)ilctx->devctx, &msg2vk);
 	if (VKDRV_WR_ERR(ret, sizeof(msg2vk)))
 		goto fail_write;
+
 	memset(&msg2host, 0, sizeof(msg2host));
 	msg2host.msg_id = msg2vk.msg_id;
 	/*
@@ -743,13 +748,14 @@ static int32_t get_vkil2vk_buffer_size(const void *il_buffer)
 
 /**
  * Uploads buffers
- *
- * @param component_handle    handle to a vkil_context
- * @param host_buffer         buffer to upload
- * @param cmd                 vkil command of the dma operation
+ * @param[out] message id
+ * @param[in] component_handle    handle to a vkil_context
+ * @param[in] host_buffer         buffer to upload
+ * @param[in] cmd                 vkil command of the dma operation
  * @return                    zero on success, error code otherwise
  */
-static int32_t vkil_mem_transfer_buffer(void *component_handle,
+static int32_t vkil_mem_transfer_buffer(uint32_t *msg_id,
+					void *component_handle,
 					void *host_buffer,
 					const vkil_command_t cmd)
 {
@@ -791,6 +797,7 @@ static int32_t vkil_mem_transfer_buffer(void *component_handle,
 	if (VKDRV_WR_ERR(ret, sizeof(host2vk_msg)*(msg_size + 1)))
 		goto fail_write;
 
+	*msg_id = message->msg_id;
 	return 0;
 
 fail_write:
@@ -821,6 +828,7 @@ int32_t vkil_transfer_buffer(void *component_handle,
 	vkil_context_internal *ilpriv;
 	vkil_buffer *buffer;
 	int32_t ret;
+	int32_t msg_id = 0;
 
 	VKIL_LOG(VK_LOG_DEBUG, "");
 
@@ -838,8 +846,10 @@ int32_t vkil_transfer_buffer(void *component_handle,
 		switch (cmd & VK_CMD_MAX) {
 		case VK_CMD_UPLOAD:
 		case VK_CMD_DOWNLOAD:
-			ret = vkil_mem_transfer_buffer(component_handle,
-						       buffer_handle, cmd);
+			ret = vkil_mem_transfer_buffer(&msg_id,
+						       component_handle,
+						       buffer_handle,
+						       cmd);
 			break;
 		default:
 			/* tunnelled operations */
@@ -854,13 +864,15 @@ int32_t vkil_transfer_buffer(void *component_handle,
 			ret = vkil_write((void *)ilctx->devctx, &message);
 			if (VKDRV_WR_ERR(ret, sizeof(message)))
 				goto fail_write;
+
+			msg_id = message.msg_id;
 		}
 	}
 	if ((cmd & VK_CMD_BLOCKING) || (cmd & VK_CMD_CB)) {
 		/* we check for the the card response */
 		vk2host_msg response;
 
-		// response.msg_id
+		response.msg_id      = msg_id;
 		response.queue_id    = ilctx->context_essential.queue_id;
 		response.context_id  = ilctx->context_essential.handle;
 		response.size        = 0;

@@ -178,13 +178,13 @@ ssize_t vkil_wait_probe_read(void *handle, vk2host_msg *message)
 		goto fail;
 	}
 
-	if (message->context_id)
-		node = vkil_ll_search(devctx->vk2host[q_id], search_context,
-					message);
-	else
-		/* at the initialization, we don't know the context yet */
+	if (message->msg_id)
 		node = vkil_ll_search(devctx->vk2host[q_id], search_msg_id,
-					message);
+				      message);
+	else /* no msg_id set, search by context */
+		node = vkil_ll_search(devctx->vk2host[q_id], search_context,
+				      message);
+
 	if (!node) {
 		ret = -EAGAIN; /* message is not there yet */
 		goto fail;
