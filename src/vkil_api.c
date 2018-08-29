@@ -32,7 +32,11 @@
  * TODO: implement a polling on ctrl queue (sideband like), to enquire the
  * status of the card rather than to rely on an arbitrary time out value
  */
-#define TIMEOUT_MULTIPLE 100
+
+/** this wait factor tells vkil_read to wait "normal time" for message */
+#define WAIT 1
+/** this wait factor tells vkil_read to wait "extra time" for message */
+#define WAIT_INIT (WAIT * 10)
 
 /*
  * this refers to the maximum number of intransit message into a single context
@@ -184,13 +188,8 @@ static int32_t vkil_deinit_com(void *handle)
 	 * have visibility at vkil, but it is expected this take longer time
 	 * than usual so we don't abort at the first timeout
 	 */
-	for (i = 0 ; i < TIMEOUT_MULTIPLE; i++) {
-		ret = vkil_wait_probe_read((void *)ilctx->devctx, &msg2host);
-		if (ret ==  (-EAGAIN))
-			continue;
-		else
-			break;
-	}
+
+	ret = vkil_read((void *)ilctx->devctx, &msg2host, WAIT_INIT);
 	if (VKDRV_RD_ERR(ret, sizeof(msg2host)))
 		goto fail_read;
 
@@ -260,13 +259,7 @@ static int32_t vkil_init_com(void *handle)
 	 * visibility at vkil, but it is expected this take longer time than
 	 * usual so we don't abort at the first timeout
 	 */
-	for (i = 0 ; i < TIMEOUT_MULTIPLE; i++) {
-		ret = vkil_wait_probe_read((void *)ilctx->devctx, &msg2host);
-		if (ret ==  (-EAGAIN))
-			continue;
-		else
-			break;
-	}
+	ret = vkil_read((void *)ilctx->devctx, &msg2host, WAIT_INIT);
 	if (VKDRV_RD_ERR(ret, sizeof(msg2host)))
 		goto fail_read;
 
@@ -547,7 +540,7 @@ int32_t vkil_set_parameter(void *handle,
 		response.queue_id    = ilctx->context_essential.queue_id;
 		response.context_id  = ilctx->context_essential.handle;
 		response.size        = 0;
-		ret = vkil_wait_probe_read((void *)ilctx->devctx, &response);
+		ret = vkil_read((void *)ilctx->devctx, &response, WAIT);
 		if (VKDRV_RD_ERR(ret, sizeof(response)))
 			goto fail_read;
 
@@ -618,7 +611,7 @@ int32_t vkil_get_parameter(void *handle,
 		response->queue_id    = ilctx->context_essential.queue_id;
 		response->context_id  = ilctx->context_essential.handle;
 		response->size        = msg_size;
-		ret = vkil_wait_probe_read((void *)ilctx->devctx, response);
+		ret = vkil_read((void *)ilctx->devctx, response, WAIT);
 		if (VKDRV_RD_ERR(ret, sizeof(response)))
 			goto fail_read;
 
@@ -876,7 +869,7 @@ int32_t vkil_transfer_buffer(void *component_handle,
 		response.queue_id    = ilctx->context_essential.queue_id;
 		response.context_id  = ilctx->context_essential.handle;
 		response.size        = 0;
-		ret = vkil_wait_probe_read((void *)ilctx->devctx, &response);
+		ret = vkil_read((void *)ilctx->devctx, &response, WAIT);
 		if (VKDRV_RD_ERR(ret, sizeof(response)))
 			goto fail_read;
 
