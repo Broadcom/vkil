@@ -120,7 +120,7 @@ fail:
  * @return    zero on succes, error code otherwise
  */
 static int32_t preset_host2vk_msg(host2vk_msg *msg2vk, void *handle,
-				  const char *functionname)
+				  vk_function_id_t fid)
 {
 	vkil_context *ilctx = handle;
 	int32_t ret;
@@ -136,7 +136,7 @@ static int32_t preset_host2vk_msg(host2vk_msg *msg2vk, void *handle,
 	msg2vk->msg_id = ret;
 	msg2vk->queue_id = ilctx->context_essential.queue_id;
 	msg2vk->context_id  = ilctx->context_essential.handle;
-	msg2vk->function_id = vkil_get_function_id(functionname);
+	msg2vk->function_id = fid;
 	msg2vk->size        = 0;
 	return 0;
 
@@ -171,7 +171,7 @@ static int32_t vkil_deinit_com(void *handle)
 		return 0;
 	}
 
-	ret = preset_host2vk_msg(&msg2vk, handle, "deinit");
+	ret = preset_host2vk_msg(&msg2vk, handle, VK_FID_DEINIT);
 	if (ret)
 		goto fail_write;
 
@@ -235,7 +235,7 @@ static int32_t vkil_init_com(void *handle)
 
 	VK_ASSERT(ilpriv);
 
-	ret = preset_host2vk_msg(&msg2vk, handle, "init");
+	ret = preset_host2vk_msg(&msg2vk, handle, VK_FID_INIT);
 	if (ret)
 		goto fail_write;
 	if (msg2vk.context_id == VK_NEW_CTX) {
@@ -519,7 +519,7 @@ int32_t vkil_set_parameter(void *handle,
 	ilpriv = ilctx->priv_data;
 	VK_ASSERT(ilpriv);
 
-	ret = preset_host2vk_msg(message, handle, "set_parameter");
+	ret = preset_host2vk_msg(message, handle, VK_FID_SET_PARAM);
 	if (ret)
 		goto fail_write;
 	/* complete message setting */
@@ -591,7 +591,7 @@ int32_t vkil_get_parameter(void *handle,
 	/* TODO: non blocking option not yet implemented */
 	VK_ASSERT(cmd & VK_CMD_BLOCKING);
 
-	ret = preset_host2vk_msg(message, handle, "get_parameter");
+	ret = preset_host2vk_msg(message, handle, VK_FID_GET_PARAM);
 	if (ret)
 		goto fail_write;
 	/* complete setting */
@@ -775,7 +775,7 @@ static int32_t vkil_mem_transfer_buffer(uint32_t *msg_id,
 	 * pointer is sufficient, in case of a SGL need to be transferred
 	 * it can be done in 2 way, a pointer to a SGL structure
 	 */
-	ret = preset_host2vk_msg(message, component_handle, "transfer_buffer");
+	ret = preset_host2vk_msg(message, component_handle, VK_FID_TRANS_BUF);
 	if (ret)
 		goto fail_write;
 	/* complete setting */
@@ -847,7 +847,7 @@ int32_t vkil_transfer_buffer(void *component_handle,
 		default:
 			/* tunnelled operations */
 			ret = preset_host2vk_msg(&message, component_handle,
-						 "transfer_buffer");
+						 VK_FID_TRANS_BUF);
 			if (ret)
 				goto fail_write;
 			/* complete message setting */
