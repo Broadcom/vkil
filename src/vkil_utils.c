@@ -105,3 +105,19 @@ vkil_node *vkil_ll_search(vkil_node *head,
 fail:
 	return NULL;
 }
+
+/**
+ * Log the content of a link list
+ * @param[in] loglevel
+ * @param[in] head of the linked list
+ * @return none
+ */
+void vkil_ll_log(const uint32_t loglevel, vkil_node *head)
+{
+	vkil_node *cursor = head;
+
+	while (cursor != NULL) {
+		VKIL_LOG_VK2HOST_MSG(loglevel, cursor->data);
+		cursor = cursor->next;
+	}
+}
