@@ -176,8 +176,10 @@ static int32_t vkil_deinit_com(void *handle)
 		goto fail_write;
 
 	ret = vkil_write((void *)ilctx->devctx, &msg2vk);
-	if (VKDRV_WR_ERR(ret, sizeof(msg2vk)))
+	if (VKDRV_WR_ERR(ret, sizeof(msg2vk))) {
+		vkil_return_msg_id(handle, msg2vk.msg_id);
 		goto fail_write;
+	}
 
 	memset(&msg2host, 0, sizeof(msg2host));
 	msg2host.msg_id = msg2vk.msg_id;
@@ -249,8 +251,10 @@ static int32_t vkil_init_com(void *handle)
 	}
 
 	ret = vkil_write((void *)ilctx->devctx, &msg2vk);
-	if (VKDRV_WR_ERR(ret, sizeof(msg2vk)))
+	if (VKDRV_WR_ERR(ret, sizeof(msg2vk))) {
+		vkil_return_msg_id(handle, msg2vk.msg_id);
 		goto fail_write;
+	}
 
 	memset(&msg2host, 0, sizeof(msg2host));
 	msg2host.msg_id = msg2vk.msg_id;
@@ -529,8 +533,10 @@ int32_t vkil_set_parameter(void *handle,
 	/* align  structure copy on 16 bytes boundary */
 	memcpy(&message->args[msg_size ? 2 : 1], value, field_size);
 	ret = vkil_write((void *)ilctx->devctx, message);
-	if (VKDRV_WR_ERR(ret, sizeof(message)))
+	if (VKDRV_WR_ERR(ret, sizeof(message))) {
+		vkil_return_msg_id(handle, message->msg_id);
 		goto fail_write;
+	}
 
 	if (cmd & VK_CMD_BLOCKING) {
 		/* we wait for the the card response */
@@ -600,8 +606,10 @@ int32_t vkil_get_parameter(void *handle,
 	memcpy(&message->args[msg_size ? 2 : 1], value, field_size);
 
 	ret = vkil_write((void *)ilctx->devctx, message);
-	if (VKDRV_WR_ERR(ret, sizeof(message)))
+	if (VKDRV_WR_ERR(ret, sizeof(message))) {
+		vkil_return_msg_id(handle, message->msg_id);
 		goto fail_write;
+	}
 
 	if (cmd & VK_CMD_BLOCKING) {
 		/* we wait for the the card response */
@@ -787,8 +795,10 @@ static int32_t vkil_mem_transfer_buffer(uint32_t *msg_id,
 
 	/* then we write the command to the queue */
 	ret = vkil_write((void *)ilctx->devctx, message);
-	if (VKDRV_WR_ERR(ret, sizeof(host2vk_msg)*(msg_size + 1)))
+	if (VKDRV_WR_ERR(ret, sizeof(host2vk_msg)*(msg_size + 1))) {
+		vkil_return_msg_id(component_handle, message->msg_id);
 		goto fail_write;
+	}
 
 	*msg_id = message->msg_id;
 	return 0;
@@ -843,6 +853,8 @@ int32_t vkil_transfer_buffer(void *component_handle,
 						       component_handle,
 						       buffer_handle,
 						       cmd);
+			if (ret)
+				goto fail_write;
 			break;
 		default:
 			/* tunnelled operations */
@@ -855,8 +867,11 @@ int32_t vkil_transfer_buffer(void *component_handle,
 			message.args[1]     = buffer->handle;
 
 			ret = vkil_write((void *)ilctx->devctx, &message);
-			if (VKDRV_WR_ERR(ret, sizeof(message)))
+			if (VKDRV_WR_ERR(ret, sizeof(message))) {
+				vkil_return_msg_id(component_handle,
+						   message.msg_id);
 				goto fail_write;
+			}
 
 			msg_id = message.msg_id;
 		}
