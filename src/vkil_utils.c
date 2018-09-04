@@ -24,22 +24,26 @@
 vkil_node *vkil_ll_append(vkil_node **head, void *data)
 {
 	vkil_node *cursor = *head;
+	vkil_node *newnode;
 	int32_t ret;
 
-	while (cursor != NULL)
-		cursor = cursor->next;
-
-	ret = vk_mallocz((void **)&cursor, sizeof(vkil_node));
+	ret = vk_mallocz((void **)&newnode, sizeof(vkil_node));
 	if (ret)
 		goto fail;
-	if (*head == NULL)
-		*head = cursor;
 
-	cursor->data = data;
-	return cursor;
+	if (*head == NULL)
+		*head = newnode;
+	else {
+		while (cursor->next != NULL)
+			cursor = cursor->next;
+		cursor->next = newnode;
+	}
+
+	newnode->data = data;
+	return newnode;
 
 fail:
-	return (NULL);
+	return NULL;
 }
 
 /**
