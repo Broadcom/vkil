@@ -861,7 +861,7 @@ int32_t vkil_transfer_buffer(void *component_handle,
 		default:
 			/* tunnelled operations */
 			ret = preset_host2vk_msg(&message, component_handle,
-						 VK_FID_TRANS_BUF);
+						 VK_FID_PROC_BUF);
 			if (ret)
 				goto fail_write;
 			/* complete message setting */
