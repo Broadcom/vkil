@@ -102,17 +102,7 @@ typedef struct _vkil_api {
 	int32_t (*transfer_buffer)(void *ctx_handle,
 			       void *buffer_handle,
 			       const vkil_command_t cmd);
-
-	/*
-	 * the below functions are intended to be deprecated,
-	 * DMA operation is now expected to be trigerred by
-	 * the transfer_buffer function with relevant
-	 * cmd (VK_CMD_UPLOAD or VK_CMD_DOWLOAD)
-	 */
-	int32_t (*send_buffer)(void *ctx_handle,
-			       void *buffer_handle,
-			       const vkil_command_t cmd);
-	int32_t (*receive_buffer)(void *ctx_handle,
+	int32_t (*process_buffer)(void *ctx_handle,
 			       void *buffer_handle,
 			       const vkil_command_t cmd);
 } vkil_api;

@@ -750,22 +750,21 @@ static int32_t get_vkil2vk_buffer_size(const void *il_buffer)
 }
 
 /**
- * Uploads buffers
- * @param[out] message id
- * @param[in] component_handle    handle to a vkil_context
- * @param[in] host_buffer         buffer to upload
- * @param[in] cmd                 vkil command of the dma operation
- * @return                    zero on success, error code otherwise
+ * transfer buffers
+ * @param[in] component_handle handle to a vkil_context
+ * @param[in] host_buffer      buffer to transfer
+ * @param[in] cmd              transfer direction (upload/download) and mode
+ * @return                     zero on success, error code otherwise
  */
-static int32_t vkil_mem_transfer_buffer(uint32_t *msg_id,
-					void *component_handle,
-					void *host_buffer,
-					const vkil_command_t cmd)
+static int32_t vkil_transfer_buffer(void *component_handle,
+				    void *buffer_handle,
+				    const vkil_command_t cmd)
 {
-	int32_t ret;
+	int32_t ret, msg_id = 0;
+	vkil_buffer *buffer = buffer_handle;
 	const vkil_context *ilctx = component_handle;
 	const vkil_command_t load_mode = cmd & VK_CMD_MAX;
-	int32_t size = get_vkil2vk_buffer_size(host_buffer);
+	int32_t size = get_vkil2vk_buffer_size(buffer);
 	vkil_context_internal *ilpriv;
 	int32_t msg_size = MSG_SIZE(size);
 	host2vk_msg message[msg_size + 1];
@@ -785,24 +784,45 @@ static int32_t vkil_mem_transfer_buffer(uint32_t *msg_id,
 	 * pointer is sufficient, in case of a SGL need to be transferred
 	 * it can be done in 2 way, a pointer to a SGL structure
 	 */
-	ret = preset_host2vk_msg(message, component_handle, VK_FID_TRANS_BUF);
-	if (ret)
-		goto fail_write;
-	/* complete setting */
-	message->size        = msg_size;
-	message->args[0]     = load_mode;
+	if (!(cmd & VK_CMD_CB)) {
+		ret = preset_host2vk_msg(message,
+					 component_handle,
+					 VK_FID_TRANS_BUF);
+		if (ret)
+			goto fail_write;
 
-	/* we convert the il frontend structure into a backend one */
-	convert_vkil2vk_buffer(&message->args[2], host_buffer);
+		/* complete setting */
+		message->size        = msg_size;
+		message->args[0]     = load_mode;
 
-	/* then we write the command to the queue */
-	ret = vkil_write((void *)ilctx->devctx, message);
-	if (VKDRV_WR_ERR(ret, sizeof(host2vk_msg)*(msg_size + 1))) {
-		vkil_return_msg_id(component_handle, message->msg_id);
-		goto fail_write;
+		/* we convert the il frontend structure into a backend one */
+		convert_vkil2vk_buffer(&message->args[2], buffer);
+
+		/* then we write the command to the queue */
+		ret = vkil_write((void *)ilctx->devctx, message);
+		if (VKDRV_WR_ERR(ret, sizeof(host2vk_msg)*(msg_size + 1))) {
+			vkil_return_msg_id(component_handle, message->msg_id);
+			goto fail_write;
+		}
+		msg_id = message->msg_id;
 	}
 
-	*msg_id = message->msg_id;
+	if ((cmd & VK_CMD_BLOCKING) || (cmd & VK_CMD_CB)) {
+		/* we check for the the card response */
+		vk2host_msg response;
+
+		response.function_id  = VK_FID_TRANS_BUF_DONE;
+		response.msg_id      = msg_id;
+		response.queue_id    = ilctx->context_essential.queue_id;
+		response.context_id  = ilctx->context_essential.handle;
+		response.size        = 0;
+		ret = vkil_read((void *)ilctx->devctx, &response, WAIT);
+		if (VKDRV_RD_ERR(ret, sizeof(response)))
+			goto fail_read;
+
+		buffer->handle = response.arg;
+		vkil_return_msg_id(component_handle, response.msg_id);
+	}
 	return 0;
 
 fail_write:
@@ -810,24 +830,39 @@ fail_write:
 	 * the input queue could be full (ENOBUFS),
 	 * so not necessarily always an real error
 	 */
-	VKIL_LOG(VK_LOG_ERROR, "failure %d on writing message in context %x ",
-		 ret, ilctx);
+	VKIL_LOG(VK_LOG_ERROR,
+		 "failure %d on writing message in context %x ",
+		 ret,
+		 ilctx);
+	return ret;
+
+fail_read:
+	/*
+	 * the response could take more time to return (ETIMEOUT),
+	 * so not necessarily always a real error
+	 */
+	if ((ret == -ENOMSG) || (ret == -EAGAIN))
+		return -EAGAIN; /* request the host to try again */
+
+	VKIL_LOG(VK_LOG_WARNING,
+		 "failure %d on reading message in context %x",
+		 ret,
+		 ilctx);
 	return ret;
 
 };
 
 /**
- * transfer buffer
+ * process buffer
  *
  * @param component_handle    handle to a vkil_context
- * @param buffer_handle       buffer to send
- * @param cmd                 vkil command of the dma operation
- * @return                    number of buffers sent on success, error code
- *                            otherwise
+ * @param buffer_handle       buffer to process
+ * @param cmd                 options (blocking, call back call,...)
+ * @return                    zero on success, error code otherwise
  */
-int32_t vkil_transfer_buffer(void *component_handle,
-			 void *buffer_handle,
-			 const vkil_command_t cmd)
+int32_t vkil_process_buffer(void *component_handle,
+			    void *buffer_handle,
+			    const vkil_command_t cmd)
 {
 	const vkil_context *ilctx = component_handle;
 	vkil_context_internal *ilpriv;
@@ -848,40 +883,30 @@ int32_t vkil_transfer_buffer(void *component_handle,
 	if (!(cmd & VK_CMD_CB)) {
 		host2vk_msg message;
 
-		switch (cmd & VK_CMD_MAX) {
-		case VK_CMD_UPLOAD:
-		case VK_CMD_DOWNLOAD:
-			ret = vkil_mem_transfer_buffer(&msg_id,
-						       component_handle,
-						       buffer_handle,
-						       cmd);
-			if (ret)
-				goto fail_write;
-			break;
-		default:
-			/* tunnelled operations */
-			ret = preset_host2vk_msg(&message, component_handle,
-						 VK_FID_PROC_BUF);
-			if (ret)
-				goto fail_write;
-			/* complete message setting */
-			message.args[0]     = (cmd & VK_CMD_MAX);
-			message.args[1]     = buffer->handle;
+		ret = preset_host2vk_msg(&message, component_handle,
+					 VK_FID_PROC_BUF);
+		if (ret)
+			goto fail_write;
 
-			ret = vkil_write((void *)ilctx->devctx, &message);
-			if (VKDRV_WR_ERR(ret, sizeof(message))) {
-				vkil_return_msg_id(component_handle,
-						   message.msg_id);
-				goto fail_write;
-			}
+		/* complete message setting */
+		message.args[0]     = cmd & VK_CMD_MAX;
+		message.args[1]     = buffer->handle;
 
-			msg_id = message.msg_id;
+		ret = vkil_write((void *)ilctx->devctx, &message);
+		if (VKDRV_WR_ERR(ret, sizeof(message))) {
+			vkil_return_msg_id(component_handle,
+					   message.msg_id);
+			goto fail_write;
 		}
+
+		msg_id = message.msg_id;
 	}
+
 	if ((cmd & VK_CMD_BLOCKING) || (cmd & VK_CMD_CB)) {
 		/* we check for the the card response */
 		vk2host_msg response;
 
+		response.function_id = VK_FID_PROC_BUF_DONE;
 		response.msg_id      = msg_id;
 		response.queue_id    = ilctx->context_essential.queue_id;
 		response.context_id  = ilctx->context_essential.handle;
@@ -900,7 +925,7 @@ fail_write:
 	 * the input queue could be full (ENOBUFS),
 	 * so not necessarily always a real error
 	 */
-	if (ret == (-ENOBUFS))
+	if (ret == -ENOBUFS)
 		/*
 		 * This is probably caused by a backlog on the return queue.
 		 * The host should thain drain this queue first before
@@ -908,8 +933,10 @@ fail_write:
 		 */
 		return ret; /* request the host to drain the queue first */
 
-	VKIL_LOG(VK_LOG_ERROR, "failure %d on writing message in context %x",
-		 ret, ilctx);
+	VKIL_LOG(VK_LOG_ERROR,
+		 "failure %d on writing message in context %x",
+		 ret,
+		 ilctx);
 	return ret;
 
 fail_read:
@@ -917,11 +944,13 @@ fail_read:
 	 * the response could take more time to return (ETIMEOUT),
 	 * so not necessarily always a real error
 	 */
-	if ((ret == (-ENOMSG)) || (ret == (-EAGAIN)))
-		return (-EAGAIN); /* request the host to try again */
+	if ((ret == -ENOMSG) || (ret == -EAGAIN))
+		return -EAGAIN; /* request the host to try again */
 
-	VKIL_LOG(VK_LOG_WARNING, "failure %d on reading message in context %x",
-		 ret, ilctx);
+	VKIL_LOG(VK_LOG_WARNING,
+		 "failure %d on reading message in context %x",
+		 ret,
+		 ilctx);
 	return ret;
 };
 
@@ -945,8 +974,7 @@ void *vkil_create_api(void)
 		.set_parameter         = vkil_set_parameter,
 		.get_parameter         = vkil_get_parameter,
 		.transfer_buffer       = vkil_transfer_buffer,
-		.send_buffer           = vkil_transfer_buffer,
-		.receive_buffer        = vkil_transfer_buffer,
+		.process_buffer        = vkil_process_buffer,
 	};
 
 	return ilapi;
