@@ -38,77 +38,6 @@
 /** this wait factor tells vkil_read to wait "extra time" for message */
 #define WAIT_INIT (WAIT * 10)
 
-/*
- * this refers to the maximum number of intransit message into a single context
- * with unique msg_id. The maximum size is (1<<12), since the msg has
- * a 12 bits field to encode the msg_id
- * there is 2 options to generate a unique msg_id, among intransit message:
- * 1/ use a large of digit (counter increment can then just be good enough...
- * it is not?)
- * 2/ use a reasonnably finite number of predefined id, and tag the intransit
- * message with it...this require the management of a list of id
- * we prefer the the second option, since output of the HW need to be anyway
- * paired with input (for the passing of ancillary filed, such as timestamp)
- * and so the mantenance of a list is a given
- */
-#define MSG_LIST_SIZE 256
-
-static int32_t vkil_return_msg_id(void *handle, const int32_t msg_id)
-{
-	vkil_context *ilctx = handle;
-	vkil_context_internal *ilpriv;
-	vkil_msg_id *msg_list;
-
-	VK_ASSERT(handle);
-	VK_ASSERT((msg_id >= 0) && (msg_id < MSG_LIST_SIZE));
-
-	ilpriv = ilctx->priv_data;
-	VK_ASSERT(ilpriv);
-
-	msg_list = ilpriv->msg_list;
-	VK_ASSERT(msg_list);
-
-	VK_ASSERT(msg_list[msg_id].used);
-
-	msg_list[msg_id].used = 0;
-	return 0;
-}
-
-static int32_t vkil_get_msg_id(void *handle)
-{
-	int32_t ret, i;
-	vkil_context *ilctx = handle;
-	vkil_context_internal *ilpriv;
-	vkil_msg_id *msg_list;
-
-	VK_ASSERT(handle);
-
-	ilpriv = ilctx->priv_data;
-	VK_ASSERT(ilpriv);
-
-	msg_list = ilpriv->msg_list;
-	VK_ASSERT(msg_list);
-
-	pthread_mutex_lock(&(ilpriv->mwx));
-	/* msg_id zero is reserved */
-	for (i = 1; i < MSG_LIST_SIZE; i++) {
-		if (!msg_list[i].used) {
-			msg_list[i].used = 1;
-			break;
-		}
-	}
-	pthread_mutex_unlock(&(ilpriv->mwx));
-
-	if (i >= MSG_LIST_SIZE)
-		goto fail;
-
-	return i;
-fail:
-	VKIL_LOG(VK_LOG_ERROR, "unable to get an msg id in context %x",
-		 ilctx);
-	return (-ENOBUFS);
-}
-
 /**
  * prepopulate the command message with control field
  * argument, need to be prpeopulated in addition of it
@@ -128,7 +57,7 @@ static int32_t preset_host2vk_msg(host2vk_msg *msg2vk, void *handle,
 	VK_ASSERT(handle);
 	VK_ASSERT(msg2vk);
 
-	ret = vkil_get_msg_id(handle);
+	ret = vkil_get_msg_id(ilctx->devctx);
 	if (ret < 0)
 		/* unable to get an id, too much message in transit */
 		goto fail;
@@ -177,7 +106,7 @@ static int32_t vkil_deinit_com(void *handle)
 
 	ret = vkil_write((void *)ilctx->devctx, &msg2vk);
 	if (VKDRV_WR_ERR(ret, sizeof(msg2vk))) {
-		vkil_return_msg_id(handle, msg2vk.msg_id);
+		vkil_return_msg_id(ilctx->devctx, msg2vk.msg_id);
 		goto fail_write;
 	}
 
@@ -195,7 +124,7 @@ static int32_t vkil_deinit_com(void *handle)
 	if (VKDRV_RD_ERR(ret, sizeof(msg2host)))
 		goto fail_read;
 
-	vkil_return_msg_id(handle, msg2host.msg_id);
+	vkil_return_msg_id(ilctx->devctx, msg2host.msg_id);
 
 	VKIL_LOG(VK_LOG_DEBUG, "devctx = %llx, context_id=%llx",
 		ilctx->devctx, ilctx->context_essential.handle);
@@ -252,7 +181,7 @@ static int32_t vkil_init_com(void *handle)
 
 	ret = vkil_write((void *)ilctx->devctx, &msg2vk);
 	if (VKDRV_WR_ERR(ret, sizeof(msg2vk))) {
-		vkil_return_msg_id(handle, msg2vk.msg_id);
+		vkil_return_msg_id(ilctx->devctx, msg2vk.msg_id);
 		goto fail_write;
 	}
 
@@ -267,7 +196,7 @@ static int32_t vkil_init_com(void *handle)
 	if (VKDRV_RD_ERR(ret, sizeof(msg2host)))
 		goto fail_read;
 
-	vkil_return_msg_id(handle, msg2host.msg_id);
+	vkil_return_msg_id(ilctx->devctx, msg2host.msg_id);
 	if (msg2vk.context_id == VK_NEW_CTX)
 		ilctx->context_essential.handle = msg2host.context_id;
 
@@ -345,56 +274,6 @@ fail_session:
 }
 
 /**
- * De-initializes a message list and associated component
- *
- * @param handle    handle to a vkil_context
- * @return          zero on succes, error code otherwise
- */
-static int32_t vkil_deinit_msglist(void *handle)
-{
-	vkil_context *ilctx = handle;
-	vkil_context_internal *ilpriv = ilctx->priv_data;
-	int32_t ret = 0;
-
-	vk_free((void **)&ilpriv->msg_list);
-	ret |= pthread_mutex_destroy(&(ilpriv->mwx));
-
-	if (ret)
-		goto fail;
-
-	return 0;
-
-fail:
-	VKIL_LOG(VK_LOG_ERROR, "failure");
-	return VKILERROR(EPERM);
-}
-
-/**
- * Initializes a message list and associated component
- *
- * @param handle    handle to a vkil_context
- * @return          zero on succes, error code otherwise
- */
-static int32_t vkil_init_msglist(void *handle)
-{
-	vkil_context *ilctx = handle;
-	vkil_context_internal *ilpriv = ilctx->priv_data;
-	int32_t ret;
-
-	ret = vk_mallocz((void **)&ilpriv->msg_list,
-					 sizeof(vkil_msg_id)*MSG_LIST_SIZE);
-	if (ret)
-		goto fail;
-
-	pthread_mutex_init(&(ilpriv->mwx), NULL);
-	return 0;
-
-fail:
-	VKIL_LOG(VK_LOG_ERROR, "failure on %x", ret);
-	return ret;
-}
-
-/**
  * De-initializes a vkil_context, and its associated h/w contents
  *
  * @param handle    handle to a vkil_context
@@ -418,8 +297,6 @@ int32_t vkil_deinit(void **handle)
 		ilpriv = ilctx->priv_data;
 		if (ilctx->devctx)
 			vkil_deinit_dev(&ilctx->devctx);
-		if (ilpriv->msg_list)
-			ret |= vkil_deinit_msglist(ilctx);
 		vk_free((void **)&ilpriv);
 	}
 	vk_free(handle);
@@ -452,11 +329,6 @@ int32_t vkil_init(void **handle)
 
 		if (!ilctx->priv_data) {
 			ret = vkil_init_ctx(*handle);
-			if (ret)
-				goto fail;
-		}
-		if (!((vkil_context_internal *)(ilctx->priv_data))->msg_list) {
-			ret = vkil_init_msglist(ilctx);
 			if (ret)
 				goto fail;
 		}
@@ -536,7 +408,7 @@ int32_t vkil_set_parameter(void *handle,
 	memcpy(&message->args[msg_size ? 2 : 1], value, field_size);
 	ret = vkil_write((void *)ilctx->devctx, message);
 	if (VKDRV_WR_ERR(ret, sizeof(message))) {
-		vkil_return_msg_id(handle, message->msg_id);
+		vkil_return_msg_id(ilctx->devctx, message->msg_id);
 		goto fail_write;
 	}
 
@@ -552,7 +424,7 @@ int32_t vkil_set_parameter(void *handle,
 		if (VKDRV_RD_ERR(ret, sizeof(response)))
 			goto fail_read;
 
-		vkil_return_msg_id(handle, response.msg_id);
+		vkil_return_msg_id(ilctx->devctx, response.msg_id);
 	}
 	return 0;
 
@@ -609,7 +481,7 @@ int32_t vkil_get_parameter(void *handle,
 
 	ret = vkil_write((void *)ilctx->devctx, message);
 	if (VKDRV_WR_ERR(ret, sizeof(message))) {
-		vkil_return_msg_id(handle, message->msg_id);
+		vkil_return_msg_id(ilctx->devctx, message->msg_id);
 		goto fail_write;
 	}
 
@@ -625,7 +497,7 @@ int32_t vkil_get_parameter(void *handle,
 		if (VKDRV_RD_ERR(ret, sizeof(response)))
 			goto fail_read;
 
-		vkil_return_msg_id(handle, response->msg_id);
+		vkil_return_msg_id(ilctx->devctx, response->msg_id);
 		memcpy(value,
 			&((&(response->arg))[msg_size ? 1 : 0]), field_size);
 	}
@@ -801,7 +673,7 @@ static int32_t vkil_transfer_buffer(void *component_handle,
 		/* then we write the command to the queue */
 		ret = vkil_write((void *)ilctx->devctx, message);
 		if (VKDRV_WR_ERR(ret, sizeof(host2vk_msg)*(msg_size + 1))) {
-			vkil_return_msg_id(component_handle, message->msg_id);
+			vkil_return_msg_id(ilctx->devctx, message->msg_id);
 			goto fail_write;
 		}
 		msg_id = message->msg_id;
@@ -821,7 +693,7 @@ static int32_t vkil_transfer_buffer(void *component_handle,
 			goto fail_read;
 
 		buffer->handle = response.arg;
-		vkil_return_msg_id(component_handle, response.msg_id);
+		vkil_return_msg_id(ilctx->devctx, response.msg_id);
 	}
 	return 0;
 
@@ -894,7 +766,7 @@ int32_t vkil_process_buffer(void *component_handle,
 
 		ret = vkil_write((void *)ilctx->devctx, &message);
 		if (VKDRV_WR_ERR(ret, sizeof(message))) {
-			vkil_return_msg_id(component_handle,
+			vkil_return_msg_id(ilctx->devctx,
 					   message.msg_id);
 			goto fail_write;
 		}
@@ -916,7 +788,7 @@ int32_t vkil_process_buffer(void *component_handle,
 			goto fail_read;
 
 		buffer->handle = response.arg;
-		vkil_return_msg_id(component_handle, response.msg_id);
+		vkil_return_msg_id(ilctx->devctx, response.msg_id);
 	}
 	return ret;
 

@@ -25,6 +25,124 @@
 /** in the ffmpeg context ms order to magnitude is OK */
 #define VKIL_PROBE_INTERVAL_US 1000
 
+/*
+ * this refers to the maximum number of intransit message into a single context
+ * with unique msg_id. The maximum size is (1<<12), since the msg has
+ * a 12 bits field to encode the msg_id
+ * there is 2 options to generate a unique msg_id, among intransit message:
+ * 1/ use a large of digit (counter increment can then just be good enough...
+ * it is not?)
+ * 2/ use a reasonnably finite number of predefined id, and tag the intransit
+ * message with it...this require the management of a list of id
+ * we prefer the the second option, since output of the HW need to be anyway
+ * paired with input (for the passing of ancillary filed, such as timestamp)
+ * and so the mantenance of a list is a given
+ */
+#define MSG_LIST_SIZE 256
+
+/**
+ * Return a message id, indicate there is no more message in the system
+ * (including the HW, with the assigned msg_id
+ *
+ * @param  handle to a vkil_devctx
+ * @param  msg_id to return
+ * @return zero if success, error code otherwise
+ */
+int32_t vkil_return_msg_id(void *handle, const int32_t msg_id)
+{
+	vkil_devctx *devctx = handle;
+	vkil_msg_id *msg_list = devctx->msgid_ctx.msg_list;
+
+	VK_ASSERT((msg_id >= 0) && (msg_id < MSG_LIST_SIZE));
+
+	VK_ASSERT(msg_list[msg_id].used);
+
+	msg_list[msg_id].used = 0;
+	return 0;
+}
+
+/**
+ * Get a unique message id
+ *
+ * @param  handle to a vkil_devctx
+ * @return msg_id if positive, error code otherwise
+ */
+int32_t vkil_get_msg_id(void *handle)
+{
+	int32_t ret, i;
+	vkil_devctx *devctx = handle;
+	vkil_msg_id *msg_list = devctx->msgid_ctx.msg_list;
+
+	pthread_mutex_lock(&(devctx->msgid_ctx.mwx));
+	/* msg_id zero is reserved */
+	for (i = 1; i < MSG_LIST_SIZE; i++) {
+		if (!msg_list[i].used) {
+			msg_list[i].used = 1;
+			break;
+		}
+	}
+	pthread_mutex_unlock(&(devctx->msgid_ctx.mwx));
+
+	if (i >= MSG_LIST_SIZE)
+		goto fail;
+
+	return i;
+fail:
+	VKIL_LOG(VK_LOG_ERROR, "unable to get an msg id in context %x",
+		 devctx);
+	return -ENOBUFS;
+}
+
+/**
+ * De-initializes a message list and associated component
+ *
+ * @param  handle to a vkil_devctx
+ * @return zero on succes, error code otherwise
+ */
+static int32_t vkil_deinit_msglist(void *handle)
+{
+	int32_t ret;
+	vkil_devctx *devctx = handle;
+	vkil_msg_id *msg_list = devctx->msgid_ctx.msg_list;
+
+
+	vk_free((void **)&devctx->msgid_ctx.msg_list);
+	ret |= pthread_mutex_destroy(&(devctx->msgid_ctx.mwx));
+
+	if (ret)
+		goto fail;
+
+	return 0;
+
+fail:
+	VKIL_LOG(VK_LOG_ERROR, "failure");
+	return VKILERROR(EPERM);
+}
+
+/**
+ * Initializes a message list and associated component
+ *
+ * @param  handle to a vkil_devctx
+ * @return zero on succes, error code otherwise
+ */
+static int32_t vkil_init_msglist(void *handle)
+{
+	vkil_devctx *devctx = handle;
+	int32_t ret;
+
+	ret = vk_mallocz((void **)&devctx->msgid_ctx.msg_list,
+			 sizeof(vkil_msg_id) * MSG_LIST_SIZE);
+	if (ret)
+		goto fail;
+
+	pthread_mutex_init(&(devctx->msgid_ctx.mwx), NULL);
+	return 0;
+
+fail:
+	VKIL_LOG(VK_LOG_ERROR, "failure on %x", ret);
+	return ret;
+}
+
 /**
  * try to call a function with given parameters and timeout
  * after VK_TIMEOUT_MS
@@ -303,6 +421,7 @@ int32_t vkil_deinit_dev(void **handle)
 
 		devctx->ref--;
 		if (!devctx->ref) {
+			vkil_deinit_msglist(devctx);
 			vkdrv_close(devctx->fd);
 			pthread_mutex_destroy(&devctx->mwx);
 			vk_free(handle);
@@ -344,6 +463,7 @@ int32_t vkil_init_dev(void **handle)
 		if (devctx->fd < 0)
 			goto fail;
 
+		vkil_init_msglist(devctx);
 		pthread_mutex_init(&devctx->mwx, NULL);
 	}
 	devctx = *handle;
