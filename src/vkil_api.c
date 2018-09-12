@@ -682,13 +682,14 @@ static int32_t vkil_transfer_buffer(void *component_handle,
 	if ((cmd & VK_CMD_BLOCKING) || (cmd & VK_CMD_CB)) {
 		/* we check for the the card response */
 		vk2host_msg response;
+		int32_t wait = (cmd & VK_CMD_BLOCKING) ? WAIT : 0;
 
 		response.function_id  = VK_FID_TRANS_BUF_DONE;
 		response.msg_id      = msg_id;
 		response.queue_id    = ilctx->context_essential.queue_id;
 		response.context_id  = ilctx->context_essential.handle;
 		response.size        = 0;
-		ret = vkil_read((void *)ilctx->devctx, &response, WAIT);
+		ret = vkil_read((void *)ilctx->devctx, &response, wait);
 		if (VKDRV_RD_ERR(ret, sizeof(response)))
 			goto fail_read;
 
@@ -777,13 +778,14 @@ int32_t vkil_process_buffer(void *component_handle,
 	if ((cmd & VK_CMD_BLOCKING) || (cmd & VK_CMD_CB)) {
 		/* we check for the the card response */
 		vk2host_msg response;
+		int32_t wait = (cmd & VK_CMD_BLOCKING) ? WAIT : 0;
 
 		response.function_id = VK_FID_PROC_BUF_DONE;
 		response.msg_id      = msg_id;
 		response.queue_id    = ilctx->context_essential.queue_id;
 		response.context_id  = ilctx->context_essential.handle;
 		response.size        = 0;
-		ret = vkil_read((void *)ilctx->devctx, &response, WAIT);
+		ret = vkil_read((void *)ilctx->devctx, &response, wait);
 		if (VKDRV_RD_ERR(ret, sizeof(response)))
 			goto fail_read;
 

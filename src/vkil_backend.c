@@ -146,9 +146,9 @@ fail:
 /**
  * try to call a function with given parameters and timeout
  * after VK_TIMEOUT_MS
- * @param pointer to function
- * @param handle to the component
- * @param message to process
+ * @param[in] driver
+ * @param[in|out] buffer to populate
+ * @param[in] max wait factor (=default_wait*wait_x, zero means no wait)
  * @return zero if success otherwise error message
  */
 static ssize_t vkil_wait_probe_msg(int fd, void *buf, const uint32_t wait_x)
@@ -161,6 +161,7 @@ static ssize_t vkil_wait_probe_msg(int fd, void *buf, const uint32_t wait_x)
 		ret = vkdrv_read(fd, buf, nbytes);
 		if (ret > 0)
 			return ret;
+
 #if (VKDRV_KERNEL)
 		if ((ret < 0) && (errno == EMSGSIZE))
 #else
@@ -197,7 +198,7 @@ ssize_t vkil_write(void *handle, host2vk_msg *message)
  * @param[in] reference message
  * @return 0 if matching, error code otherwise
  */
-static int32_t search_msg_id(const void *data, const void *data_ref)
+static int32_t cmp_msg_id(const void *data, const void *data_ref)
 {
 	const vk2host_msg *msg = data;
 	const vk2host_msg *msg_ref = data_ref;
@@ -209,18 +210,24 @@ static int32_t search_msg_id(const void *data, const void *data_ref)
 }
 
 /**
- * Search a message via context_id matching
+ * Search a message via function_id matching
  * @param[in] message to look
  * @param[in] reference message
  * @return 0 if matching, error code otherwise
  */
-static int32_t search_context(const void *data, const void *data_ref)
+static int32_t cmp_function(const void *data, const void *data_ref)
 {
 	const vk2host_msg *msg = data;
 	const vk2host_msg *msg_ref = data_ref;
 
-	if (msg->context_id == msg_ref->context_id)
-		return 0;
+	/*
+	 * checking order doesn't matter but for efficiency we check from the
+	 * least probable to the most
+	 */
+	if (msg->function_id == msg_ref->function_id)
+		/* The message need to belong to the same context */
+		if (msg->context_id == msg_ref->context_id)
+			return 0;
 
 	return (-EINVAL);
 }
@@ -252,12 +259,12 @@ static int32_t retrieve_message(vkil_node **pvk2host_ll, vk2host_msg *message)
 		goto out;
 	}
 
+	vkil_ll_log(VK_LOG_DEBUG, vk2host_ll);
+
 	if (message->msg_id) /* search msg_id */
-		node = vkil_ll_search(vk2host_ll, search_msg_id,
-				      message);
-	else /* no msg_id set, search by context all msg non tagged blocking */
-		node = vkil_ll_search(vk2host_ll, search_context,
-				      message);
+		node = vkil_ll_search(vk2host_ll, cmp_msg_id, message);
+	else /* no msg_id set, search by function all msg non tagged blocking */
+		node = vkil_ll_search(vk2host_ll, cmp_function, message);
 
 	if (!node) {
 		ret = -EAGAIN; /* message is not there yet */
@@ -274,6 +281,12 @@ static int32_t retrieve_message(vkil_node **pvk2host_ll, vk2host_msg *message)
 		/* message too long to be copied */
 		message->size = msg->size; /* requested size */
 		ret = -EMSGSIZE;
+		goto out;
+	}
+
+	if (message->hw_status == VK_STATE_ERROR) {
+		VKIL_LOG_VK2HOST_MSG(VK_LOG_ERROR, message);
+		ret = -EPERM; /* TODO: to be more specific */
 		goto out;
 	}
 
@@ -342,9 +355,13 @@ static int32_t vkil_flush_read(void *handle, vk2host_msg *message, int32_t wait)
 			 * if no message id specified or message id specified
 			 * has been retrieved no need to wait any longer
 			 */
-			if (!message->msg_id ||
-			    (message->msg_id == msg->msg_id))
+			if (message->msg_id == msg->msg_id)
 				wait = 0;
+			else if (!message->msg_id) {
+				int32_t still_wait = cmp_function(msg, message);
+
+				wait = still_wait ? wait : 0;
+			}
 		} else
 			vk_free((void **)&msg);
 	} while (ret >= 0);
@@ -389,6 +406,8 @@ ssize_t vkil_read(void *handle, vk2host_msg *message, int32_t wait)
 		 * either message has been retrieved, or some other problem
 		 * has occcured, such has message size bigger than expected
 		 */
+		VKIL_LOG_VK2HOST_MSG(VK_LOG_DEBUG, message);
+		VKIL_LOG(VK_LOG_DEBUG, "ret=%d", ret);
 		pthread_mutex_unlock(&(devctx->mwx));
 		return ret;
 	}
@@ -398,6 +417,12 @@ ssize_t vkil_read(void *handle, vk2host_msg *message, int32_t wait)
 		goto out;
 
 	ret = retrieve_message(&devctx->vk2host[message->queue_id], message);
+
+	if (ret != -EAGAIN) {
+		VKIL_LOG_VK2HOST_MSG(VK_LOG_DEBUG, message);
+		VKIL_LOG(VK_LOG_DEBUG, "ret=%d", ret);
+	} else
+		VKIL_LOG(VK_LOG_DEBUG, "message not retrieved yet");
 
 out:
 	pthread_mutex_unlock(&devctx->mwx);
