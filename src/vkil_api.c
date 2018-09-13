@@ -38,6 +38,43 @@
 /** this wait factor tells vkil_read to wait "extra time" for message */
 #define WAIT_INIT (WAIT * 10)
 
+/** max expected return message size, can be locally overidden */
+#define VKIL_RET_MSG_MAX_SIZE 4
+
+
+static int32_t set_buffer(void *handle, const vk2host_msg *vk2host)
+{
+	vkil_buffer *buffer = handle;
+
+	if (!vk2host->size) {
+		/* a singe handle is returned */
+		buffer->handle = vk2host->arg;
+	} else if (buffer->type == VKIL_BUF_AG_BUFFERS) {
+		uint32_t nhandles, i;
+		vkil_aggregated_buffers *ag_buf = handle;
+		/*
+		 * a more complete answer is returned, the default
+		 * is a collection of handles, so that supposes that
+		 * the buffer is a n aggregation of buffers
+		 */
+
+		/* max number of returned handle */
+		nhandles = MIN(1 + (vk2host->size * 4),
+			       VKIL_MAX_AGGREGATED_BUFFERS);
+		for (i = 0; i < nhandles ; i++) {
+			/* a null handle indicate a list termination */
+			if (!(((uint32_t *)&(vk2host->arg))[i]))
+				break;
+
+			ag_buf->buffer[i]->handle =
+				((uint32_t *)&(vk2host->arg))[i];
+		}
+		ag_buf->nbuffers = i;
+	}
+	return 0;
+}
+
+
 /**
  * prepopulate the command message with control field
  * argument, need to be prpeopulated in addition of it
@@ -48,10 +85,11 @@
  * @param[in] function name to be transmitted into the messaage
  * @return    zero on succes, error code otherwise
  */
-static int32_t preset_host2vk_msg(host2vk_msg *msg2vk, void *handle,
-				  vk_function_id_t fid)
+static int32_t preset_host2vk_msg(host2vk_msg *msg2vk, const void *handle,
+				  const vk_function_id_t fid)
 {
-	vkil_context *ilctx = handle;
+	const vkil_context *ilctx = handle;
+
 	int32_t ret;
 
 	VK_ASSERT(handle);
@@ -537,9 +575,9 @@ static int32_t convert_vkil2vk_buffer_surface(vk_buffer_surface *surface,
 	 */
 	VK_ASSERT(sizeof(void *) == sizeof(uint64_t));
 
-	surface->handle	       = il_surface->handle;
-	surface->user_data_tag = il_surface->user_data_tag;
-	surface->flags = il_surface->flags;
+	surface->handle	       = il_surface->prefix.handle;
+	surface->user_data_tag = il_surface->prefix.user_data_tag;
+	surface->flags         = il_surface->prefix.flags;
 	surface->plane_top[0] = (uint64_t)il_surface->plane_top[0];
 	surface->plane_top[1] = (uint64_t)il_surface->plane_top[1];
 	surface->plane_bot[0] = (uint64_t)il_surface->plane_bot[0];
@@ -569,9 +607,9 @@ static int32_t convert_vkil2vk_buffer_packet(vk_buffer_packet *packet,
 	 */
 	VK_ASSERT(sizeof(void *) == sizeof(uint64_t));
 
-	packet->handle	      = il_packet->handle;
-	packet->user_data_tag = il_packet->user_data_tag;
-	packet->flags	      = il_packet->flags;
+	packet->handle	      = il_packet->prefix.handle;
+	packet->user_data_tag = il_packet->prefix.user_data_tag;
+	packet->flags	      = il_packet->prefix.flags;
 	packet->size	      = il_packet->size;
 	packet->data	      = (uint64_t)il_packet->data;
 	return 0;
@@ -586,15 +624,13 @@ static int32_t convert_vkil2vk_buffer_packet(vk_buffer_packet *packet,
  */
 static int32_t convert_vkil2vk_buffer(void *buffer, const void *il_buffer)
 {
-	const vkil_buffer *vk_buffer = il_buffer;
-
 	VK_ASSERT(il_buffer);
 	VK_ASSERT(buffer);
 
-	switch (vk_buffer->type) {
-	case	VK_BUF_PACKET:
+	switch (((vkil_buffer *)il_buffer)->type) {
+	case	VKIL_BUF_PACKET:
 		return convert_vkil2vk_buffer_packet(buffer, il_buffer);
-	case	VK_BUF_SURFACE:
+	case	VKIL_BUF_SURFACE:
 		return convert_vkil2vk_buffer_surface(buffer, il_buffer);
 	}
 
@@ -610,13 +646,11 @@ static int32_t convert_vkil2vk_buffer(void *buffer, const void *il_buffer)
  */
 static int32_t get_vkil2vk_buffer_size(const void *il_buffer)
 {
-	const vkil_buffer *buffer = il_buffer;
-
 	VK_ASSERT(il_buffer);
 
-	switch (buffer->type) {
-	case	VK_BUF_PACKET:  return sizeof(vk_buffer_packet);
-	case	VK_BUF_SURFACE: return sizeof(vk_buffer_surface);
+	switch (((vkil_buffer *)il_buffer)->type) {
+	case	VKIL_BUF_PACKET:  return sizeof(vk_buffer_packet);
+	case	VKIL_BUF_SURFACE: return sizeof(vk_buffer_surface);
 	}
 	return -(EINVAL);
 }
@@ -777,20 +811,22 @@ int32_t vkil_process_buffer(void *component_handle,
 
 	if ((cmd & VK_CMD_BLOCKING) || (cmd & VK_CMD_CB)) {
 		/* we check for the the card response */
-		vk2host_msg response;
+		vk2host_msg response[VKIL_RET_MSG_MAX_SIZE];
 		int32_t wait = (cmd & VK_CMD_BLOCKING) ? WAIT : 0;
 
-		response.function_id = VK_FID_PROC_BUF_DONE;
-		response.msg_id      = msg_id;
-		response.queue_id    = ilctx->context_essential.queue_id;
-		response.context_id  = ilctx->context_essential.handle;
-		response.size        = 0;
-		ret = vkil_read((void *)ilctx->devctx, &response, wait);
-		if (VKDRV_RD_ERR(ret, sizeof(response)))
+		response->function_id = VK_FID_PROC_BUF_DONE;
+		response->msg_id      = msg_id;
+		response->queue_id    = ilctx->context_essential.queue_id;
+		response->context_id  = ilctx->context_essential.handle;
+		response->size        = VKIL_RET_MSG_MAX_SIZE - 1;
+		ret = vkil_read((void *)ilctx->devctx, response, wait);
+		if (VKDRV_RD_ERR(ret,
+				 sizeof(vk2host_msg) * (response->size + 1)))
 			goto fail_read;
 
-		buffer->handle = response.arg;
-		vkil_return_msg_id(ilctx->devctx, response.msg_id);
+		set_buffer(buffer, response);
+
+		vkil_return_msg_id(ilctx->devctx, response->msg_id);
 	}
 	return ret;
 

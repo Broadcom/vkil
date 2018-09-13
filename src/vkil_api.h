@@ -15,13 +15,17 @@
 #include <stdint.h>
 #include "vkil_backend.h"
 
-typedef enum _vkil_buffer_type {
-	VK_BUF_UNDEF     =    0,
-	VK_BUF_PACKET    =  0x8,
-	VK_BUF_SURFACE   = 0x10,
-	VK_BUF_MAX	 = 0xFF
-} vkil_buffer_type;
+#define VKIL_MAX_AGGREGATED_BUFFERS 4
 
+typedef enum _vkil_buffer_type {
+	VKIL_BUF_UNDEF       =    0,
+	VK_BUF_PACKET        =  0x8, /* deprecated: currently used by vkapi */
+	VKIL_BUF_PACKET      =  0x8,
+	VK_BUF_SURFACE       = 0x10, /* deprecated: currently used by vkapi */
+	VKIL_BUF_SURFACE     = 0x10,
+	VKIL_BUF_AG_BUFFERS  = 0x20,
+	VKIL_BUF_MAX         = 0xFF
+} vkil_buffer_type;
 
 /* all vkil buffer share the same prefix */
 typedef struct _vkil_buffer {
@@ -35,10 +39,16 @@ typedef struct _vkil_buffer {
 #define VKIL_BUFFER_PACKET_FLAG_EOS 0x1
 
 typedef struct _vkil_buffer_packet {
-	uint32_t handle; /**< handle provided by the vk card */
-	uint32_t user_data_tag;
-	uint32_t flags:24;
-	uint32_t type:8; /**< buffer type */
+	union {
+		vkil_buffer prefix;
+		/* the structure below is deprecated, use prefix instead */
+		struct {
+			uint32_t handle;
+			uint32_t user_data_tag;
+			uint32_t flags:24;
+			uint32_t type:8;
+		};
+	};
 	uint32_t size;   /**< size of packet in byte */
 	void     *data;   /**< Pointer to buffer start */
 } vkil_buffer_packet;
@@ -57,12 +67,17 @@ typedef enum _vkil_format_type {
 	VKIL_FORMAT_MAX = 0xFFFF, /**< format type is encoded on 16 bytes */
 } vkil_format_type;
 
-
 typedef struct _vkil_buffer_surface {
-	uint32_t handle; /**< handle provided by the vk card */
-	uint32_t user_data_tag;
-	uint32_t flags:24;
-	uint32_t type:8; /**< buffer type */
+	union {
+		vkil_buffer prefix;
+		/* the structure below is deprecated, use prefix instead */
+		struct {
+			uint32_t handle;
+			uint32_t user_data_tag;
+			uint32_t flags:24;
+			uint32_t type:8;
+		};
+	};
 	uint16_t max_frame_width;
 	uint16_t max_frame_height;
 	uint16_t xoffset; /**< Luma x crop */
@@ -76,6 +91,12 @@ typedef struct _vkil_buffer_surface {
 	void     *plane_bot[2]; /**< bottom field (interlace only) */
 } vkil_buffer_surface;
 
+typedef struct _vkil_aggregated_buffers {
+	vkil_buffer prefix;
+	uint32_t    nbuffers; /**< nmbers of aggregated buffers */
+	uint32_t    reserved;
+	vkil_buffer *buffer[VKIL_MAX_AGGREGATED_BUFFERS];
+} vkil_aggregated_buffers;
 
 typedef struct _vkil_context {
 	vkil_context_essential context_essential;
