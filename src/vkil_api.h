@@ -17,47 +17,50 @@
 
 #define VKIL_MAX_AGGREGATED_BUFFERS 4
 
+/** Buffer type descriptor */
 typedef enum _vkil_buffer_type {
 	VKIL_BUF_UNDEF       =    0,
-	VK_BUF_PACKET        =  0x8, /* deprecated: currently used by vkapi */
+	VKIL_BUF_META_DATAS  =  0x4,
 	VKIL_BUF_PACKET      =  0x8,
-	VK_BUF_SURFACE       = 0x10, /* deprecated: currently used by vkapi */
 	VKIL_BUF_SURFACE     = 0x10,
 	VKIL_BUF_AG_BUFFERS  = 0x20,
 	VKIL_BUF_MAX         = 0xFF
 } vkil_buffer_type;
 
-/* all vkil buffer share the same prefix */
+/** all vkil buffers share the same prefix */
 typedef struct _vkil_buffer {
 	uint32_t handle; /**< handle provided by the vk card */
 	uint32_t user_data_tag;
-	uint32_t flags:24;
-	uint32_t type:8; /**< buffer type */
+	uint16_t flags:16;
+	uint16_t port_id:8; /**< port_id for the buffer */
+	uint16_t type:8;     /**< buffer type */
 } vkil_buffer;
 
-/* flags used by vkil_buffer_packet */
+/**
+ * buffer used to store metadata (qpmap, statistic, ssim,... values)
+ * the type of metadata transmitted is opaque to this container
+ */
+typedef struct _vkil_buffer_metadata {
+	vkil_buffer prefix;
+	uint32_t    size;    /**< meta data size in bytes */
+	void        *data;   /**< Pointer to metadata     */
+} vkil_buffer_metadata;
+
+/** flags used by vkil_buffer_packet */
 #define VKIL_BUFFER_PACKET_FLAG_EOS 0x1
 
+/** buffer used to store a bitstream */
 typedef struct _vkil_buffer_packet {
-	union {
-		vkil_buffer prefix;
-		/* the structure below is deprecated, use prefix instead */
-		struct {
-			uint32_t handle;
-			uint32_t user_data_tag;
-			uint32_t flags:24;
-			uint32_t type:8;
-		};
-	};
+	vkil_buffer prefix;
 	uint32_t size;   /**< size of packet in byte */
 	void     *data;   /**< Pointer to buffer start */
 } vkil_buffer_packet;
 
-/* flags used by vkil_buffer_surface */
+/** flags used by vkil_buffer_surface */
 #define VKIL_BUFFER_SURFACE_FLAG_INTERLACE 0x000001
 #define VKIL_BUFFER_SURFACE_FLAG_EOS       0x010000
 
-/* vkil_buffer_surface format type including pixel depth */
+/** vkil_buffer_surface format type including pixel depth */
 typedef enum _vkil_format_type {
 	VKIL_FORMAT_UNDEF = 0,
 	VKIL_FORMAT_YOL8,	 /**< hw surface 8 bits  */
@@ -68,16 +71,7 @@ typedef enum _vkil_format_type {
 } vkil_format_type;
 
 typedef struct _vkil_buffer_surface {
-	union {
-		vkil_buffer prefix;
-		/* the structure below is deprecated, use prefix instead */
-		struct {
-			uint32_t handle;
-			uint32_t user_data_tag;
-			uint32_t flags:24;
-			uint32_t type:8;
-		};
-	};
+	vkil_buffer prefix;
 	uint16_t max_frame_width;
 	uint16_t max_frame_height;
 	uint16_t xoffset; /**< Luma x crop */
