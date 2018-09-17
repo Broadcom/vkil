@@ -133,8 +133,9 @@ static int32_t vkil_deinit_com(void *handle)
 
 	if (ilctx->context_essential.handle < VK_START_VALID_HANDLE) {
 		/* the call is allowed, but not necessarily expected */
-		VKIL_LOG(VK_LOG_WARNING, "context %llx is not valid",
-			 ilctx->context_essential.handle);
+		VKIL_LOG(VK_LOG_WARNING,
+			 "in ilctx=%p, context 0x%x is not valid",
+			 ilctx, ilctx->context_essential.handle);
 		return 0;
 	}
 
@@ -164,13 +165,13 @@ static int32_t vkil_deinit_com(void *handle)
 
 	vkil_return_msg_id(ilctx->devctx, msg2host.msg_id);
 
-	VKIL_LOG(VK_LOG_DEBUG, "devctx = %llx, context_id=%llx",
-		ilctx->devctx, ilctx->context_essential.handle);
+	VKIL_LOG(VK_LOG_DEBUG, "ilctx=%p, devctx=%p, context_id=0x%lx",
+		 ilctx, ilctx->devctx, ilctx->context_essential.handle);
 	return 0;
 
 fail_write:
 	/* the queue could be full (ENOFUS), so not a real error */
-	VKIL_LOG(VK_LOG_ERROR, "failure %d on writing message in context %x",
+	VKIL_LOG(VK_LOG_ERROR, "failure %d on writing message in ilctx %p",
 		 ret, ilctx);
 	return ret;
 
@@ -179,7 +180,7 @@ fail_read:
 	 * the response could take more time to return (ETIMEOUT),
 	 * so not a real error
 	 */
-	VKIL_LOG(VK_LOG_ERROR, "failure %d on reading message in context %x",
+	VKIL_LOG(VK_LOG_ERROR, "failure %d on reading message in ilctx %p",
 		 ret, ilctx);
 	return ret;
 }
@@ -238,13 +239,13 @@ static int32_t vkil_init_com(void *handle)
 	if (msg2vk.context_id == VK_NEW_CTX)
 		ilctx->context_essential.handle = msg2host.context_id;
 
-	VKIL_LOG(VK_LOG_DEBUG, "card inited %d\n, with context_id=%llx",
-			ilctx->devctx, ilctx->context_essential.handle);
+	VKIL_LOG(VK_LOG_DEBUG, "ilctx=%p: card inited %p for context_id=0x%x",
+		 ilctx, ilctx->devctx, ilctx->context_essential.handle);
 	return 0;
 
 fail_write:
 	/* the queue could be full (ENOFUS), so not a real error */
-	VKIL_LOG(VK_LOG_ERROR, "failure %d on writing message in context %x",
+	VKIL_LOG(VK_LOG_ERROR, "failure %d on writing message in ilctx %p",
 		 ret, ilctx);
 	return ret;
 
@@ -253,7 +254,7 @@ fail_read:
 	 * the response could take more time to return (ETIMEOUT),
 	 * so not a real error
 	 */
-	VKIL_LOG(VK_LOG_ERROR, "failure %d on reading message in context %x",
+	VKIL_LOG(VK_LOG_ERROR, "failure %d on reading message in ilctx %p",
 		 ret, ilctx);
 	return ret;
 }
@@ -378,11 +379,11 @@ int32_t vkil_init(void **handle)
 
 fail_malloc:
 	VKIL_LOG(VK_LOG_ERROR, "failed malloc");
-	return VKILERROR(ret);
+	return ret;
 
 fail:
 	vkil_deinit(handle);
-	return VKILERROR(ret);
+	return ret;
 };
 
 /**
@@ -468,7 +469,7 @@ int32_t vkil_set_parameter(void *handle,
 
 fail_write:
 	/* the queue could be full (ENOFUS), so not a real error */
-	VKIL_LOG(VK_LOG_ERROR, "failure %d on writing message in context %x",
+	VKIL_LOG(VK_LOG_ERROR, "failure %d on writing message in ilctx %p",
 		 ret, ilctx);
 	return ret;
 
@@ -477,7 +478,7 @@ fail_read:
 	 * the response could take more time to return (ETIMEOUT),
 	 * so not a real error
 	 */
-	VKIL_LOG(VK_LOG_WARNING, "failure %d on reading message in context %x",
+	VKIL_LOG(VK_LOG_WARNING, "failure %d on reading message in ilctx %p",
 		 ret, ilctx);
 	return ret;
 };
@@ -543,7 +544,7 @@ int32_t vkil_get_parameter(void *handle,
 
 fail_write:
 	/* the queue could be full (ENOFUS), so not a real error */
-	VKIL_LOG(VK_LOG_ERROR, "failure %d on writing message in context %x",
+	VKIL_LOG(VK_LOG_ERROR, "failure %d on writing message in ilctx %p",
 		 ret, ilctx);
 	return ret;
 
@@ -552,11 +553,34 @@ fail_read:
 	 * the response could take more time to return (ETIMEOUT),
 	 * so not necessarily a real error
 	 */
-	VKIL_LOG(VK_LOG_WARNING, "failure %d on reading message in context %x",
+	VKIL_LOG(VK_LOG_WARNING, "failure %d on reading message in ilctx %p",
 		 ret, ilctx);
 	return ret;
 };
 
+/**
+ * convert a front end buffer prefix structure into a backend one
+ * (they can be different or the same).
+ * @param[out] surface    handle to the backend structure
+ * @param[in]  il_surface handle to a front hand packet structure
+ * @return          zero on succes, error code otherwise
+ */
+static int32_t convert_vkil2vk_buffer_prefix(vk_buffer *dst,
+					     const vkil_buffer *org)
+{
+	/*
+	 * here we assume we are on a 64 bit architecture
+	 * the below is expected to work on 32 bits arch too but has not been
+	 * tested
+	 */
+	VK_ASSERT(sizeof(void *) == sizeof(uint64_t));
+
+	dst->handle        = org->handle;
+	dst->user_data_tag = org->user_data_tag;
+	dst->flags         = org->flags;
+	dst->port_id       = org->port_id;
+	return 0;
+}
 
 /**
  * convert a front end surface structure into a backend one
@@ -575,9 +599,8 @@ static int32_t convert_vkil2vk_buffer_surface(vk_buffer_surface *surface,
 	 */
 	VK_ASSERT(sizeof(void *) == sizeof(uint64_t));
 
-	surface->handle	       = il_surface->prefix.handle;
-	surface->user_data_tag = il_surface->prefix.user_data_tag;
-	surface->flags         = il_surface->prefix.flags;
+	convert_vkil2vk_buffer_prefix(&surface->prefix, &il_surface->prefix);
+	surface->prefix.type  = VK_BUF_SURFACE;
 	surface->plane_top[0] = (uint64_t)il_surface->plane_top[0];
 	surface->plane_top[1] = (uint64_t)il_surface->plane_top[1];
 	surface->plane_bot[0] = (uint64_t)il_surface->plane_bot[0];
@@ -607,9 +630,8 @@ static int32_t convert_vkil2vk_buffer_packet(vk_buffer_packet *packet,
 	 */
 	VK_ASSERT(sizeof(void *) == sizeof(uint64_t));
 
-	packet->handle	      = il_packet->prefix.handle;
-	packet->user_data_tag = il_packet->prefix.user_data_tag;
-	packet->flags	      = il_packet->prefix.flags;
+	convert_vkil2vk_buffer_prefix(&packet->prefix, &il_packet->prefix);
+	packet->prefix.type   = VK_BUF_PACKET;
 	packet->size	      = il_packet->size;
 	packet->data	      = (uint64_t)il_packet->data;
 	return 0;
@@ -634,7 +656,7 @@ static int32_t convert_vkil2vk_buffer(void *buffer, const void *il_buffer)
 		return convert_vkil2vk_buffer_surface(buffer, il_buffer);
 	}
 
-	return  -(EINVAL);
+	return -EINVAL;
 }
 
 /**
@@ -652,7 +674,8 @@ static int32_t get_vkil2vk_buffer_size(const void *il_buffer)
 	case	VKIL_BUF_PACKET:  return sizeof(vk_buffer_packet);
 	case	VKIL_BUF_SURFACE: return sizeof(vk_buffer_surface);
 	}
-	return -(EINVAL);
+
+	return -EINVAL;
 }
 
 /**
@@ -675,7 +698,10 @@ static int32_t vkil_transfer_buffer(void *component_handle,
 	int32_t msg_size = MSG_SIZE(size);
 	host2vk_msg message[msg_size + 1];
 
-	VKIL_LOG(VK_LOG_DEBUG, "ilctx = %x, message = %llx", ilctx, message);
+	VKIL_LOG(VK_LOG_DEBUG, "ilctx=%p, buffer=%p, cmd=%0x",
+		 ilctx,
+		 buffer_handle,
+		 cmd);
 	VK_ASSERT(component_handle);
 	VK_ASSERT(cmd);
 
@@ -738,7 +764,7 @@ fail_write:
 	 * so not necessarily always an real error
 	 */
 	VKIL_LOG(VK_LOG_ERROR,
-		 "failure %d on writing message in context %x ",
+		 "failure %d on writing message in ilctx %p ",
 		 ret,
 		 ilctx);
 	return ret;
@@ -752,7 +778,7 @@ fail_read:
 		return -EAGAIN; /* request the host to try again */
 
 	VKIL_LOG(VK_LOG_WARNING,
-		 "failure %d on reading message in context %x",
+		 "failure %d on reading message in ilctx %p",
 		 ret,
 		 ilctx);
 	return ret;
@@ -777,7 +803,10 @@ int32_t vkil_process_buffer(void *component_handle,
 	int32_t ret;
 	int32_t msg_id = 0;
 
-	VKIL_LOG(VK_LOG_DEBUG, "");
+	VKIL_LOG(VK_LOG_DEBUG, "ilctx=%p, buffer=%p, cmd=0x%x",
+		 ilctx,
+		 buffer_handle,
+		 cmd);
 
 	VK_ASSERT(component_handle);
 	VK_ASSERT(buffer_handle);
@@ -844,7 +873,7 @@ fail_write:
 		return ret; /* request the host to drain the queue first */
 
 	VKIL_LOG(VK_LOG_ERROR,
-		 "failure %d on writing message in context %x",
+		 "failure %d on writing message in ilctx %p",
 		 ret,
 		 ilctx);
 	return ret;
@@ -858,7 +887,7 @@ fail_read:
 		return -EAGAIN; /* request the host to try again */
 
 	VKIL_LOG(VK_LOG_WARNING,
-		 "failure %d on reading message in context %x",
+		 "failure %d on reading message in ilctx %p",
 		 ret,
 		 ilctx);
 	return ret;
@@ -904,3 +933,4 @@ int vkil_destroy_api(void **ilapi)
 
 	return 0;
 }
+

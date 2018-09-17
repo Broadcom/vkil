@@ -21,7 +21,7 @@
  * long enough to allow for non real time transcoding scheme
  * short enough to bail-out quickly on unresponsive card
  */
-#define VKIL_TIMEOUT_US  (1000 * 1000)
+#define VKIL_TIMEOUT_US  (3000 * 1000)
 /** in the ffmpeg context ms order to magnitude is OK */
 #define VKIL_PROBE_INTERVAL_US 1000
 
@@ -88,7 +88,7 @@ int32_t vkil_get_msg_id(void *handle)
 
 	return i;
 fail:
-	VKIL_LOG(VK_LOG_ERROR, "unable to get an msg id in context %x",
+	VKIL_LOG(VK_LOG_ERROR, "unable to get an msg id in devctx %p",
 		 devctx);
 	return -ENOBUFS;
 }
@@ -116,7 +116,7 @@ static int32_t vkil_deinit_msglist(void *handle)
 
 fail:
 	VKIL_LOG(VK_LOG_ERROR, "failure");
-	return VKILERROR(EPERM);
+	return -EPERM;
 }
 
 /**
@@ -139,7 +139,7 @@ static int32_t vkil_init_msglist(void *handle)
 	return 0;
 
 fail:
-	VKIL_LOG(VK_LOG_ERROR, "failure on %x", ret);
+	VKIL_LOG(VK_LOG_ERROR, "failure on %d", ret);
 	return ret;
 }
 
@@ -162,19 +162,19 @@ static ssize_t vkil_wait_probe_msg(int fd, void *buf, const uint32_t wait_x)
 		if (ret > 0)
 			return ret;
 
-#if (VKDRV_KERNEL)
+#if VKDRV_KERNEL
 		if ((ret < 0) && (errno == EMSGSIZE))
 #else
 		/* in sw simulation only we don't use system errno */
-		if (ret == (-EMSGSIZE))
+		if (ret == -EMSGSIZE)
 #endif
-			return (-EMSGSIZE);
+			return -EMSGSIZE;
 		if (!wait_x)
-			return (-ENOMSG);
+			return -ENOMSG;
 		usleep(VKIL_PROBE_INTERVAL_US);
 		i++;
 	} while (i < (wait_x * VKIL_TIMEOUT_US) / VKIL_PROBE_INTERVAL_US);
-	return (-ETIMEDOUT); /* if we are here we have timed out */
+	return -ETIMEDOUT; /* if we are here we have timed out */
 }
 
 /**
@@ -206,7 +206,7 @@ static int32_t cmp_msg_id(const void *data, const void *data_ref)
 	if (msg->msg_id == msg_ref->msg_id)
 		return 0;
 
-	return (-EINVAL);
+	return -EINVAL;
 }
 
 /**
@@ -229,7 +229,7 @@ static int32_t cmp_function(const void *data, const void *data_ref)
 		if (msg->context_id == msg_ref->context_id)
 			return 0;
 
-	return (-EINVAL);
+	return -EINVAL;
 }
 
 /**
@@ -258,8 +258,6 @@ static int32_t retrieve_message(vkil_node **pvk2host_ll, vk2host_msg *message)
 		ret = -EAGAIN; /* message is not there yet */
 		goto out;
 	}
-
-	vkil_ll_log(VK_LOG_DEBUG, vk2host_ll);
 
 	if (message->msg_id) /* search msg_id */
 		node = vkil_ll_search(vk2host_ll, cmp_msg_id, message);
@@ -407,7 +405,6 @@ ssize_t vkil_read(void *handle, vk2host_msg *message, int32_t wait)
 		 * has occcured, such has message size bigger than expected
 		 */
 		VKIL_LOG_VK2HOST_MSG(VK_LOG_DEBUG, message);
-		VKIL_LOG(VK_LOG_DEBUG, "ret=%d", ret);
 		pthread_mutex_unlock(&(devctx->mwx));
 		return ret;
 	}
@@ -418,10 +415,9 @@ ssize_t vkil_read(void *handle, vk2host_msg *message, int32_t wait)
 
 	ret = retrieve_message(&devctx->vk2host[message->queue_id], message);
 
-	if (ret != -EAGAIN) {
+	if (ret != -EAGAIN)
 		VKIL_LOG_VK2HOST_MSG(VK_LOG_DEBUG, message);
-		VKIL_LOG(VK_LOG_DEBUG, "ret=%d", ret);
-	} else
+	else
 		VKIL_LOG(VK_LOG_DEBUG, "message not retrieved yet");
 
 out:
@@ -465,7 +461,7 @@ int32_t vkil_deinit_dev(void **handle)
 int32_t vkil_init_dev(void **handle)
 {
 	vkil_devctx *devctx;
-	int32_t ret = -ENODEV;
+	int32_t ret;
 	char dev_name[30]; /* format: /dev/bcm-vk.x */
 
 	if (!(*handle)) {
@@ -475,6 +471,8 @@ int32_t vkil_init_dev(void **handle)
 		if (ret)
 			goto fail_malloc;
 		devctx = *handle;
+
+		ret = -ENODEV; /* value to be used for below fails */
 
 		devctx->id = vkil_get_card_id();
 		if (devctx->id < 0)
@@ -488,7 +486,10 @@ int32_t vkil_init_dev(void **handle)
 		if (devctx->fd < 0)
 			goto fail;
 
-		vkil_init_msglist(devctx);
+		ret = vkil_init_msglist(devctx);
+		if (ret)
+			goto fail;
+
 		pthread_mutex_init(&devctx->mwx, NULL);
 	}
 	devctx = *handle;
@@ -501,6 +502,6 @@ int32_t vkil_init_dev(void **handle)
 fail:
 	vk_free(handle);
 fail_malloc:
-	VKIL_LOG(VK_LOG_DEBUG, "device context creation failure");
+	VKIL_LOG(VK_LOG_DEBUG, "device context creation failure %d", ret);
 	return ret;
 }

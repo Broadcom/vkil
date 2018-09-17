@@ -20,7 +20,7 @@
 /** Buffer type descriptor */
 typedef enum _vkil_buffer_type {
 	VKIL_BUF_UNDEF       =    0,
-	VKIL_BUF_META_DATAS  =  0x4,
+	VKIL_BUF_META_DATA   =  0x4,
 	VKIL_BUF_PACKET      =  0x8,
 	VKIL_BUF_SURFACE     = 0x10,
 	VKIL_BUF_AG_BUFFERS  = 0x20,
