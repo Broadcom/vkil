@@ -632,8 +632,32 @@ static int32_t convert_vkil2vk_buffer_packet(vk_buffer_packet *packet,
 
 	convert_vkil2vk_buffer_prefix(&packet->prefix, &il_packet->prefix);
 	packet->prefix.type   = VK_BUF_PACKET;
-	packet->size	      = il_packet->size;
-	packet->data	      = (uint64_t)il_packet->data;
+	packet->size          = il_packet->size;
+	packet->data          = (uint64_t)il_packet->data;
+	return 0;
+}
+
+/**
+ * convert a front end metadata structure into a backend one
+ * (they can be different or the same).
+ * @param[out] packet    handle to the backend structur
+ * @param[in]  il_packet    handle to a front hand packet structuree
+ * @return          zero on succes, error code otherwise
+ */
+static int32_t convert_vkil2vk_buffer_metadata(vk_buffer_metadata *mdata,
+					const vkil_buffer_metadata *il_mdata)
+{
+	/*
+	 * here we assume we are on a 64 bit architecture
+	 * the below is expected to work on 32 bits arch too but has not been
+	 * tested
+	 */
+	VK_ASSERT(sizeof(void *) == sizeof(uint64_t));
+
+	convert_vkil2vk_buffer_prefix(&mdata->prefix, &il_mdata->prefix);
+	mdata->prefix.type     = VK_BUF_METADATA;
+	mdata->size            = il_mdata->size;
+	mdata->data            = (uint64_t)il_mdata->data;
 	return 0;
 }
 
@@ -654,6 +678,8 @@ static int32_t convert_vkil2vk_buffer(void *buffer, const void *il_buffer)
 		return convert_vkil2vk_buffer_packet(buffer, il_buffer);
 	case	VKIL_BUF_SURFACE:
 		return convert_vkil2vk_buffer_surface(buffer, il_buffer);
+	case	VKIL_BUF_META_DATA:
+		return convert_vkil2vk_buffer_metadata(buffer, il_buffer);
 	}
 
 	return -EINVAL;
@@ -673,6 +699,7 @@ static int32_t get_vkil2vk_buffer_size(const void *il_buffer)
 	switch (((vkil_buffer *)il_buffer)->type) {
 	case	VKIL_BUF_PACKET:  return sizeof(vk_buffer_packet);
 	case	VKIL_BUF_SURFACE: return sizeof(vk_buffer_surface);
+	case	VKIL_BUF_META_DATA: return sizeof(vk_buffer_metadata);
 	}
 
 	return -EINVAL;
