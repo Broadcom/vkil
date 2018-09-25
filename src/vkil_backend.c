@@ -107,7 +107,7 @@ static int32_t vkil_deinit_msglist(void *handle)
 
 
 	vk_free((void **)&devctx->msgid_ctx.msg_list);
-	ret |= pthread_mutex_destroy(&(devctx->msgid_ctx.mwx));
+	ret = pthread_mutex_destroy(&(devctx->msgid_ctx.mwx));
 
 	if (ret)
 		goto fail;
