@@ -105,10 +105,8 @@ static int32_t vkil_deinit_msglist(void *handle)
 	vkil_devctx *devctx = handle;
 	vkil_msg_id *msg_list = devctx->msgid_ctx.msg_list;
 
-
-	vk_free((void **)&devctx->msgid_ctx.msg_list);
+	vkil_free((void **)&devctx->msgid_ctx.msg_list);
 	ret = pthread_mutex_destroy(&(devctx->msgid_ctx.mwx));
-
 	if (ret)
 		goto fail;
 
@@ -130,7 +128,7 @@ static int32_t vkil_init_msglist(void *handle)
 	vkil_devctx *devctx = handle;
 	int32_t ret;
 
-	ret = vk_mallocz((void **)&devctx->msgid_ctx.msg_list,
+	ret = vkil_mallocz((void **)&devctx->msgid_ctx.msg_list,
 			 sizeof(vkil_msg_id) * MSG_LIST_SIZE);
 	if (ret)
 		goto fail;
@@ -274,7 +272,7 @@ static int32_t retrieve_message(vkil_node **pvk2host_ll, vk2host_msg *message)
 		memcpy(message, msg, sizeof(vk2host_msg) * (msg->size + 1));
 		ret = sizeof(vk2host_msg) * (msg->size + 1);
 		vkil_ll_delete(pvk2host_ll, node);
-		vk_free((void **)&msg);
+		vkil_free((void **)&msg);
 	} else {
 		/* message too long to be copied */
 		message->size = msg->size; /* requested size */
@@ -322,8 +320,8 @@ static int32_t vkil_flush_read(void *handle, vk2host_msg *message, int32_t wait)
 		msg = NULL;
 		do {
 			if (msg)
-				vk_free((void **)&msg);
-			ret = vk_mallocz((void **)&msg,
+				vkil_free((void **)&msg);
+			ret = vkil_mallocz((void **)&msg,
 					sizeof(vk2host_msg)*(size + 1));
 			if (ret)
 				goto fail;
@@ -345,7 +343,7 @@ static int32_t vkil_flush_read(void *handle, vk2host_msg *message, int32_t wait)
 		if (ret >= 0) {
 			node = vkil_ll_append(&(devctx->vk2host[q_id]), msg);
 			if (!node) {
-				vk_free((void **)&msg);
+				vkil_free((void **)&msg);
 				ret = -ENOMEM;
 				goto fail;
 			}
@@ -361,7 +359,7 @@ static int32_t vkil_flush_read(void *handle, vk2host_msg *message, int32_t wait)
 				wait = still_wait ? wait : 0;
 			}
 		} else
-			vk_free((void **)&msg);
+			vkil_free((void **)&msg);
 	} while (ret >= 0);
 
 	/*
@@ -445,7 +443,7 @@ int32_t vkil_deinit_dev(void **handle)
 			vkil_deinit_msglist(devctx);
 			vkdrv_close(devctx->fd);
 			pthread_mutex_destroy(&devctx->mwx);
-			vk_free(handle);
+			vkil_free(handle);
 		}
 	}
 	return 0;
@@ -467,7 +465,7 @@ int32_t vkil_init_dev(void **handle)
 	if (!(*handle)) {
 		VKIL_LOG(VK_LOG_DEBUG, "init a new device");
 
-		ret = vk_mallocz(handle, sizeof(vkil_devctx));
+		ret = vkil_mallocz(handle, sizeof(vkil_devctx));
 		if (ret)
 			goto fail_malloc;
 		devctx = *handle;
@@ -500,7 +498,7 @@ int32_t vkil_init_dev(void **handle)
 	return devctx->id;
 
 fail:
-	vk_free(handle);
+	vkil_free(handle);
 fail_malloc:
 	VKIL_LOG(VK_LOG_DEBUG, "device context creation failure %d", ret);
 	return ret;

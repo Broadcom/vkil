@@ -44,6 +44,11 @@
 	((vk2host_msg *)msg)->hw_status,				\
 	((vk2host_msg *)msg)->arg)
 
+
+int vkil_malloc(void **ptr, size_t size);
+int vkil_mallocz(void **ptr, size_t size);
+void vkil_free(void **ptr);
+
 vkil_node *vkil_ll_append(vkil_node **head, void *data);
 int32_t vkil_ll_delete(vkil_node **head, vkil_node *nd);
 vkil_node *vkil_ll_search(vkil_node *head,

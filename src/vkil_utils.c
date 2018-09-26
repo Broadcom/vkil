@@ -15,6 +15,52 @@
 #include "vkil_utils.h"
 
 /**
+ * alloc memory
+ * @param pointer
+ * @param memory size
+ * @return zero on success, error code otherwise
+ */
+int vkil_malloc(void **ptr, size_t size)
+{
+	/*
+	 * we use posix_memealign because it provide the more robust way to
+	 * allocate memory
+	 * see http://man7.org/linux/man-pages/man3/posix_memalign.3.html
+	 */
+	return posix_memalign(ptr, VK_ALIGN, size);
+}
+
+/**
+ * alloc memory and set it to zero
+ * @param pointer
+ * @param memory size
+ * @return zero on success, error code otherwise
+ */
+int vkil_mallocz(void **ptr, size_t size)
+{
+	int ret;
+
+	ret = vkil_malloc(ptr, size);
+	if (!ret)
+		memset(*ptr, 0, size);
+	return ret;
+}
+
+/**
+ * free memory
+ * @param pointer
+ */
+void vkil_free(void **ptr)
+{
+	free(*ptr);
+	/*
+	 * Since the validity of pointer is often checked by its non "NULL"
+	 * value, we set it to NULL after freeing
+	 */
+	*ptr = NULL;
+}
+
+/**
  * Append a node at the the end of a linked list
  * if the linked list is not existing yet, create one
  * @param[in,out] head of the linked list
@@ -27,7 +73,7 @@ vkil_node *vkil_ll_append(vkil_node **head, void *data)
 	vkil_node *newnode;
 	int32_t ret;
 
-	ret = vk_mallocz((void **)&newnode, sizeof(vkil_node));
+	ret = vkil_mallocz((void **)&newnode, sizeof(vkil_node));
 	if (ret)
 		goto fail;
 
@@ -77,7 +123,7 @@ int32_t vkil_ll_delete(vkil_node **head, vkil_node *nd)
 	} else
 		prev->next = cursor->next;
 
-	vk_free((void **)&cursor);
+	vkil_free((void **)&cursor);
 	return 0;
 
 fail:

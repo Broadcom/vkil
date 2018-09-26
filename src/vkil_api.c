@@ -286,7 +286,7 @@ static int32_t vkil_init_ctx(void *handle)
 		goto fail_session;
 
 	/* the priv_data structure size could be component specific */
-	ret = vk_mallocz(&ilctx->priv_data, sizeof(vkil_context_internal));
+	ret = vkil_mallocz(&ilctx->priv_data, sizeof(vkil_context_internal));
 	if (ret)
 		goto fail_malloc;
 
@@ -302,7 +302,7 @@ static int32_t vkil_init_ctx(void *handle)
 	return 0;
 
 fail:
-	vk_free(&ilctx->priv_data);
+	vkil_free(&ilctx->priv_data);
 
 fail_malloc:
 	VKIL_LOG(VK_LOG_ERROR, "failed malloc");
@@ -336,9 +336,9 @@ int32_t vkil_deinit(void **handle)
 		ilpriv = ilctx->priv_data;
 		if (ilctx->devctx)
 			vkil_deinit_dev(&ilctx->devctx);
-		vk_free((void **)&ilpriv);
+		vkil_free((void **)&ilpriv);
 	}
-	vk_free(handle);
+	vkil_free(handle);
 
 	return ret;
 };
@@ -358,7 +358,7 @@ int32_t vkil_init(void **handle)
 	VKIL_LOG(VK_LOG_DEBUG, "");
 
 	if (*handle == NULL) {
-		ret = vk_mallocz(handle, sizeof(vkil_context));
+		ret = vkil_mallocz(handle, sizeof(vkil_context));
 		if (ret)
 			goto fail_malloc;
 
@@ -931,7 +931,7 @@ void *vkil_create_api(void)
 
 	VKIL_LOG(VK_LOG_DEBUG, "");
 
-	if (vk_mallocz((void **)&ilapi, sizeof(vkil_api)))
+	if (vkil_mallocz((void **)&ilapi, sizeof(vkil_api)))
 		return NULL;
 
 	*ilapi = (vkil_api) {
@@ -956,7 +956,7 @@ int vkil_destroy_api(void **ilapi)
 {
 	VKIL_LOG(VK_LOG_DEBUG, "");
 
-	vk_free(ilapi);
+	vkil_free(ilapi);
 
 	return 0;
 }
