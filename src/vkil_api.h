@@ -63,21 +63,39 @@ typedef struct _vkil_buffer_packet {
 /** vkil_buffer_surface format type including pixel depth */
 typedef enum _vkil_format_type {
 	VKIL_FORMAT_UNDEF = 0,
-	VKIL_FORMAT_YOL8,	 /**< hw surface 8 bits  */
-	VKIL_FORMAT_YOL10,	 /**< hw surface 10 bits */
-	VKIL_FORMAT_YUV420_NV12, /**< sw surface 8 bits  */
-	VKIL_FORMAT_YUV420_P010, /**< sw surface 10 bits */
+	VKIL_FORMAT_YOL8,         /**< hw surface  8 bits  */
+	VKIL_FORMAT_YOL10,        /**< hw surface 10 bits */
+	VKIL_FORMAT_YUV420_NV12,  /**< sw surface 8 bits  */
+	VKIL_FORMAT_YUV420_P010,  /**< sw surface 10 bits */
 	VKIL_FORMAT_MAX = 0xFFFF, /**< format type is encoded on 16 bytes */
 } vkil_format_type;
 
+typedef union vkil_size_ {
+	struct {
+		uint32_t  width:16; /**< is to be the 16 lsb */
+		uint32_t height:16; /**< is to be the 16 msb */
+	};
+	uint32_t size;
+} vkil_size;
+
 typedef struct _vkil_buffer_surface {
 	vkil_buffer prefix;
-	uint16_t max_frame_width;
-	uint16_t max_frame_height;
+	union {
+		struct {
+			uint16_t max_frame_width;
+			uint16_t max_frame_height;
+		};
+		vkil_size max_size;
+	};
+	union {
+		struct {
+			uint16_t visible_frame_width;
+			uint16_t visible_frame_height;
+		};
+		vkil_size visible_size;
+	};
 	uint16_t xoffset; /**< Luma x crop */
 	uint16_t yoffset; /**< Luma y crop */
-	uint16_t visible_frame_height;
-	uint16_t visible_frame_width;
 	uint16_t format; /** color format and pixel depth */
 	uint16_t reserved0; /**< for 32 and 64 bits alignment */
 	uint32_t stride[2]; /**< Stride between rows, in bytes */

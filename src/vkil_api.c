@@ -583,6 +583,35 @@ static int32_t convert_vkil2vk_buffer_prefix(vk_buffer *dst,
 }
 
 /**
+ * get the number of planes to transfer
+ * @param[in]  il_packet    handle to a front hand packet structure
+ * @return                  number of pointer to convey to the card
+ */
+static int32_t get_vkil_nplanes(const void *il_buffer)
+{
+	int32_t ret;
+
+	VK_ASSERT(il_buffer);
+
+	switch (((vkil_buffer *)il_buffer)->type) {
+	case VKIL_BUF_PACKET:
+	case VKIL_BUF_META_DATA:
+		ret = 1;
+		break;
+	case VKIL_BUF_SURFACE:
+		ret = 4;
+		break;
+	default:
+		goto fail;
+	}
+	return ret;
+
+fail:
+	VKIL_LOG(VK_LOG_ERROR, "error in ilbuffer=%p", il_buffer);
+	return -EINVAL;
+}
+
+/**
  * convert a front end surface structure into a backend one
  * (they can be different or the same).
  * @param[out] surface    handle to the backend structure
@@ -590,8 +619,10 @@ static int32_t convert_vkil2vk_buffer_prefix(vk_buffer *dst,
  * @return          zero on succes, error code otherwise
  */
 static int32_t convert_vkil2vk_buffer_surface(vk_buffer_surface *surface,
-					const vkil_buffer_surface *il_surface)
+					const vkil_buffer_surface *ilsurface)
 {
+	int32_t is_interlaced, height, size[2];
+
 	/*
 	 * here we assume we are on a 64 bit architecture
 	 * the below is expected to work on 32 bits arch too but has not been
@@ -599,18 +630,60 @@ static int32_t convert_vkil2vk_buffer_surface(vk_buffer_surface *surface,
 	 */
 	VK_ASSERT(sizeof(void *) == sizeof(uint64_t));
 
-	convert_vkil2vk_buffer_prefix(&surface->prefix, &il_surface->prefix);
+	convert_vkil2vk_buffer_prefix(&surface->prefix, &ilsurface->prefix);
 	surface->prefix.type  = VK_BUF_SURFACE;
-	surface->plane_top[0] = (uint64_t)il_surface->plane_top[0];
-	surface->plane_top[1] = (uint64_t)il_surface->plane_top[1];
-	surface->plane_bot[0] = (uint64_t)il_surface->plane_bot[0];
-	surface->plane_bot[1] = (uint64_t)il_surface->plane_bot[1];
-	surface->stride[0]    = il_surface->stride[0];
-	surface->stride[1]    = il_surface->stride[1];
-	surface->max_frame_width  = il_surface->max_frame_width;
-	surface->max_frame_height = il_surface->max_frame_height;
-	surface->format           = il_surface->format;
+	surface->stride[0]    = ilsurface->stride[0];
+	surface->stride[1]    = ilsurface->stride[1];
+
+	is_interlaced = ((vkil_buffer *)ilsurface)->flags &
+				VKIL_BUFFER_SURFACE_FLAG_INTERLACE;
+	height = ilsurface->max_size.height;
+	if (is_interlaced) /* make height a  multiple of 2 */
+		height += height % 2;
+
+	switch (((vkil_buffer_surface *)ilsurface)->format) {
+	case VKIL_FORMAT_YOL8: /* intentional fall thru */
+	case VKIL_FORMAT_YOL10:
+		/*
+		 * in YOL, we use 2x2 pels block, so the height is expressed
+		 * in this unit
+		 */
+		height >>= 1; /* each pel will take 2 bytes */
+		size[1] = 0;
+		surface->format = VK_FORMAT_YOL2;
+		break;
+	case VKIL_FORMAT_YUV420_P010:
+		size[1] = (((height + 1) / 2) * ilsurface->stride[1]) >>
+							     is_interlaced;
+		surface->format = VK_FORMAT_P010;
+		break;
+	case VKIL_FORMAT_YUV420_NV12:
+		size[1] = (((height + 1) / 2) * ilsurface->stride[1]) >>
+							     is_interlaced;
+		surface->format = VK_FORMAT_NV12;
+		break;
+	default:
+		goto fail;
+	}
+
+	size[0] = (height * ilsurface->stride[0]) >> is_interlaced;
+
+	surface->max_size.width   = ilsurface->max_size.width;
+	surface->max_size.height  = ilsurface->max_size.height;
+
+	surface->planes[0].address = (uint64_t)ilsurface->plane_top[0];
+	surface->planes[0].size    = size[0];
+	surface->planes[1].address = (uint64_t)ilsurface->plane_top[1];
+	surface->planes[1].size    = size[1];
+	surface->planes[2].address = (uint64_t)ilsurface->plane_bot[0];
+	surface->planes[2].size    = size[0];
+	surface->planes[3].address = (uint64_t)ilsurface->plane_top[1];
+	surface->planes[3].size    = size[1];
 	return 0;
+
+fail:
+	VKIL_LOG(VK_LOG_ERROR, "error in ilbuffer=%p", ilsurface);
+	return -EINVAL;
 }
 
 /**
@@ -681,7 +754,6 @@ static int32_t convert_vkil2vk_buffer(void *buffer, const void *il_buffer)
 	case	VKIL_BUF_META_DATA:
 		return convert_vkil2vk_buffer_metadata(buffer, il_buffer);
 	}
-
 	return -EINVAL;
 }
 
@@ -753,6 +825,13 @@ static int32_t vkil_transfer_buffer(void *component_handle,
 		/* complete setting */
 		message->size        = msg_size;
 		message->args[0]     = load_mode;
+
+		ret = get_vkil_nplanes(buffer_handle);
+		if (ret < 0) {
+			VKIL_LOG(VK_LOG_WARNING, "");
+			goto fail_write;
+		}
+		message->args[0]     |= ret;
 
 		/* we convert the il frontend structure into a backend one */
 		convert_vkil2vk_buffer(&message->args[2], buffer);
