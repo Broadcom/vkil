@@ -48,9 +48,8 @@
  * @param  msg_id to return
  * @return zero if success, error code otherwise
  */
-int32_t vkil_return_msg_id(void *handle, const int32_t msg_id)
+int32_t vkil_return_msg_id(vkil_devctx *devctx, const int32_t msg_id)
 {
-	vkil_devctx *devctx = handle;
 	vkil_msg_id *msg_list = devctx->msgid_ctx.msg_list;
 
 	VK_ASSERT((msg_id >= 0) && (msg_id < MSG_LIST_SIZE));
@@ -67,10 +66,9 @@ int32_t vkil_return_msg_id(void *handle, const int32_t msg_id)
  * @param  handle to a vkil_devctx
  * @return msg_id if positive, error code otherwise
  */
-int32_t vkil_get_msg_id(void *handle)
+int32_t vkil_get_msg_id(vkil_devctx *devctx)
 {
 	int32_t ret, i;
-	vkil_devctx *devctx = handle;
 	vkil_msg_id *msg_list = devctx->msgid_ctx.msg_list;
 
 	pthread_mutex_lock(&(devctx->msgid_ctx.mwx));
@@ -99,10 +97,9 @@ fail:
  * @param  handle to a vkil_devctx
  * @return zero on succes, error code otherwise
  */
-static int32_t vkil_deinit_msglist(void *handle)
+static int32_t vkil_deinit_msglist(vkil_devctx *devctx)
 {
 	int32_t ret;
-	vkil_devctx *devctx = handle;
 	vkil_msg_id *msg_list = devctx->msgid_ctx.msg_list;
 
 	vkil_free((void **)&devctx->msgid_ctx.msg_list);
@@ -123,9 +120,8 @@ fail:
  * @param  handle to a vkil_devctx
  * @return zero on succes, error code otherwise
  */
-static int32_t vkil_init_msglist(void *handle)
+static int32_t vkil_init_msglist(vkil_devctx *devctx)
 {
-	vkil_devctx *devctx = handle;
 	int32_t ret;
 
 	ret = vkil_mallocz((void **)&devctx->msgid_ctx.msg_list,
@@ -149,14 +145,18 @@ fail:
  * @param[in] max wait factor (=default_wait*wait_x, zero means no wait)
  * @return zero if success otherwise error message
  */
-static ssize_t vkil_wait_probe_msg(int fd, void *buf, const uint32_t wait_x)
+static ssize_t vkil_wait_probe_msg(int fd,
+				   vk2host_msg *msg,
+				   const uint32_t wait_x)
 {
-	int32_t ret, i = 0;
-	vk2host_msg *msg = (vk2host_msg *)buf;
-	int32_t nbytes = sizeof(vk2host_msg)*(msg->size + 1);
+	int32_t ret, nbytes, i = 0;
+
+	VK_ASSERT(msg);
+
+	nbytes = sizeof(vk2host_msg) * (msg->size + 1);
 
 	do {
-		ret = vkdrv_read(fd, buf, nbytes);
+		ret = vkdrv_read(fd, msg, nbytes);
 		if (ret > 0)
 			return ret;
 
@@ -182,10 +182,8 @@ static ssize_t vkil_wait_probe_msg(int fd, void *buf, const uint32_t wait_x)
  * @param[in] message to write
  * @return 0 or written size if success, error code otherwise
  */
-ssize_t vkil_write(void *handle, host2vk_msg *message)
+ssize_t vkil_write(vkil_devctx *devctx, host2vk_msg *message)
 {
-	vkil_devctx *devctx = handle;
-
 	return vkdrv_write(devctx->fd, message,
 			sizeof(host2vk_msg)*(message->size + 1));
 }
@@ -298,10 +296,11 @@ out:
  * @param[in] wait for incoming message carrying specific field  (msg_id,...)
  * @return (-ETIMEDOUT) or (-ENOMSG) on flushing completion
  */
-static int32_t vkil_flush_read(void *handle, vk2host_msg *message, int32_t wait)
+static int32_t vkil_flush_read(vkil_devctx *devctx,
+			       vk2host_msg *message,
+			       int32_t wait)
 {
 	int32_t ret, q_id;
-	vkil_devctx *devctx = handle;
 	vk2host_msg *msg;
 	vkil_node *node;
 	int32_t size;
@@ -379,14 +378,13 @@ fail:
  * @param[in] where to write the read message
  * @return 0 or read size if success, error code otherwise
  */
-ssize_t vkil_read(void *handle, vk2host_msg *message, int32_t wait)
+ssize_t vkil_read(vkil_devctx *devctx, vk2host_msg *message, int32_t wait)
 {
 	int32_t ret;
-	vkil_devctx *devctx = handle;
 
 	/* sanity check */
 	VK_ASSERT(message);
-	VK_ASSERT(handle);
+	VK_ASSERT(devctx);
 
 	/*
 	 * Thought it is expected concurrent driver access are handled
@@ -407,7 +405,7 @@ ssize_t vkil_read(void *handle, vk2host_msg *message, int32_t wait)
 		return ret;
 	}
 
-	ret = vkil_flush_read(handle, message, wait);
+	ret = vkil_flush_read(devctx, message, wait);
 	if (ret)
 		goto out;
 
