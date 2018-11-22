@@ -675,10 +675,18 @@ static int32_t convert_vkil2vk_buffer_surface(vk_buffer_surface *surface,
 	surface->planes[0].size    = size[0];
 	surface->planes[1].address = (uint64_t)ilsurface->plane_top[1];
 	surface->planes[1].size    = size[1];
-	surface->planes[2].address = (uint64_t)ilsurface->plane_bot[0];
-	surface->planes[2].size    = size[0];
-	surface->planes[3].address = (uint64_t)ilsurface->plane_top[1];
-	surface->planes[3].size    = size[1];
+
+	if (is_interlaced) {
+		surface->planes[2].address = (uint64_t)ilsurface->plane_bot[0];
+		surface->planes[2].size    = size[0];
+		surface->planes[3].address = (uint64_t)ilsurface->plane_top[1];
+		surface->planes[3].size    = size[1];
+	} else {
+		surface->planes[2].address = 0;
+		surface->planes[2].size = 0;
+		surface->planes[3].address = 0;
+		surface->planes[3].size = 0;
+	}
 	return 0;
 
 fail:
