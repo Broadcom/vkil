@@ -17,11 +17,11 @@
 
 #define BIG_MSG_SIZE_INC   2
 /**
- * we allow up to 1 second,
+ * we allow up to 30 second,
  * long enough to allow for non real time transcoding scheme
  * short enough to bail-out quickly on unresponsive card
  */
-#define VKIL_TIMEOUT_US  (3000 * 1000)
+#define VKIL_TIMEOUT_US  (30 * 1000 * 1000)
 /** in the ffmpeg context ms order to magnitude is OK */
 #define VKIL_PROBE_INTERVAL_US 1000
 
