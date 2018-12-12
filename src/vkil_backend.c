@@ -5,6 +5,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -17,13 +18,13 @@
 
 #define BIG_MSG_SIZE_INC   2
 /**
- * we allow up to 30 second,
- * long enough to allow for non real time transcoding scheme
+ * we should wait long enough to allow for non real time transcoding scheme
  * short enough to bail-out quickly on unresponsive card
+ * if VKIL_TIMEOUT_MS is set to zero, wait can then be infinite.
  */
-#define VKIL_TIMEOUT_US  (30 * 1000 * 1000)
+#define VKIL_TIMEOUT_MS  (900 * 1000)
 /** in the ffmpeg context ms order to magnitude is OK */
-#define VKIL_PROBE_INTERVAL_US 1000
+#define VKIL_PROBE_INTERVAL_MS 1
 
 /*
  * this refers to the maximum number of intransit message into a single context
@@ -150,8 +151,10 @@ static ssize_t vkil_wait_probe_msg(int fd,
 				   const uint32_t wait_x)
 {
 	int32_t ret, nbytes, i = 0;
+	int32_t infinite_wait = (wait_x && (!VKIL_TIMEOUT_MS)) ? 1 : 0;
 
 	VK_ASSERT(msg);
+	VK_ASSERT(msg->size < UCHAR_MAX);
 
 	nbytes = sizeof(vk2host_msg) * (msg->size + 1);
 
@@ -169,9 +172,10 @@ static ssize_t vkil_wait_probe_msg(int fd,
 			return -EMSGSIZE;
 		if (!wait_x)
 			return -ENOMSG;
-		usleep(VKIL_PROBE_INTERVAL_US);
+		usleep(1000 * VKIL_PROBE_INTERVAL_MS);
 		i++;
-	} while (i < (wait_x * VKIL_TIMEOUT_US) / VKIL_PROBE_INTERVAL_US);
+	} while (i < ((wait_x * VKIL_TIMEOUT_MS) / VKIL_PROBE_INTERVAL_MS) ||
+		 infinite_wait);
 	return -ETIMEDOUT; /* if we are here we have timed out */
 }
 
