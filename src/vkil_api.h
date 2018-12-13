@@ -30,10 +30,10 @@ typedef enum _vkil_buffer_type {
 /** all vkil buffers share the same prefix */
 typedef struct _vkil_buffer {
 	uint32_t handle; /**< handle provided by the vk card */
-	uint32_t user_data_tag;
 	uint16_t flags:16;
 	uint16_t port_id:8; /**< port_id for the buffer */
 	uint16_t type:8;     /**< buffer type */
+	uint64_t user_data;
 } vkil_buffer;
 
 /**

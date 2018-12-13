@@ -42,16 +42,19 @@
 #define VKIL_RET_MSG_MAX_SIZE 4
 
 
-static int32_t set_buffer(void *handle, const vk2host_msg *vk2host)
+static int32_t set_buffer(void *handle, const vk2host_msg *vk2host,
+			  const uint64_t user_data)
 {
 	vkil_buffer *buffer = handle;
 
 	if (!vk2host->size) {
 		/* a singe handle is returned */
 		buffer->handle = vk2host->arg;
+		buffer->user_data = user_data;
 	} else if (buffer->type == VKIL_BUF_AG_BUFFERS) {
 		uint32_t nhandles, i;
 		vkil_aggregated_buffers *ag_buf = handle;
+
 		/*
 		 * a more complete answer is returned, the default
 		 * is a collection of handles, so that supposes that
@@ -68,8 +71,10 @@ static int32_t set_buffer(void *handle, const vk2host_msg *vk2host)
 
 			ag_buf->buffer[i]->handle =
 				((uint32_t *)&(vk2host->arg))[i];
+			ag_buf->buffer[i]->user_data = user_data;
 		}
 		ag_buf->nbuffers = i;
+		ag_buf->prefix.user_data = user_data;
 	}
 	return 0;
 }
@@ -86,21 +91,27 @@ static int32_t set_buffer(void *handle, const vk2host_msg *vk2host)
  * @return    zero on succes, error code otherwise
  */
 static int32_t preset_host2vk_msg(host2vk_msg *msg2vk, const void *handle,
-				  const vk_function_id_t fid)
+				  const vk_function_id_t fid,
+				  const int64_t user_data)
 {
 	const vkil_context *ilctx = handle;
 
-	int32_t ret;
+	int32_t ret, msg_id;
 
 	VK_ASSERT(handle);
 	VK_ASSERT(msg2vk);
 
-	ret = vkil_get_msg_id(ilctx->devctx);
-	if (ret < 0)
+	msg_id = vkil_get_msg_id(ilctx->devctx);
+	if (msg_id < 0)
 		/* unable to get an id, too much message in transit */
 		goto fail;
 
-	msg2vk->msg_id = ret;
+	ret = vkil_set_msg_user_data(ilctx->devctx, msg_id, user_data);
+	if (ret < 0)
+		/* unable to set the user data */
+		goto fail;
+
+	msg2vk->msg_id = msg_id;
 	msg2vk->queue_id = ilctx->context_essential.queue_id;
 	msg2vk->context_id  = ilctx->context_essential.handle;
 	msg2vk->function_id = fid;
@@ -108,6 +119,8 @@ static int32_t preset_host2vk_msg(host2vk_msg *msg2vk, const void *handle,
 	return 0;
 
 fail:
+	VKIL_LOG(VK_LOG_ERROR, "error %d on preset msg %p in ilctx %p",
+		 ret, msg2vk, ilctx);
 	return ret;
 }
 
@@ -139,7 +152,7 @@ static int32_t vkil_deinit_com(void *handle)
 		return 0;
 	}
 
-	ret = preset_host2vk_msg(&msg2vk, handle, VK_FID_DEINIT);
+	ret = preset_host2vk_msg(&msg2vk, handle, VK_FID_DEINIT, 0);
 	if (ret)
 		goto fail_write;
 
@@ -205,7 +218,7 @@ static int32_t vkil_init_com(void *handle)
 
 	VK_ASSERT(ilpriv);
 
-	ret = preset_host2vk_msg(&msg2vk, handle, VK_FID_INIT);
+	ret = preset_host2vk_msg(&msg2vk, handle, VK_FID_INIT, 0);
 	if (ret)
 		goto fail_write;
 	if (msg2vk.context_id == VK_NEW_CTX) {
@@ -436,7 +449,7 @@ int32_t vkil_set_parameter(void *handle,
 	ilpriv = ilctx->priv_data;
 	VK_ASSERT(ilpriv);
 
-	ret = preset_host2vk_msg(message, handle, VK_FID_SET_PARAM);
+	ret = preset_host2vk_msg(message, handle, VK_FID_SET_PARAM, 0);
 	if (ret)
 		goto fail_write;
 	/* complete message setting */
@@ -510,7 +523,7 @@ int32_t vkil_get_parameter(void *handle,
 	/* TODO: non blocking option not yet implemented */
 	VK_ASSERT(cmd & VK_CMD_BLOCKING);
 
-	ret = preset_host2vk_msg(message, handle, VK_FID_GET_PARAM);
+	ret = preset_host2vk_msg(message, handle, VK_FID_GET_PARAM, 0);
 	if (ret)
 		goto fail_write;
 	/* complete setting */
@@ -576,7 +589,7 @@ static int32_t convert_vkil2vk_buffer_prefix(vk_buffer *dst,
 	VK_ASSERT(sizeof(void *) == sizeof(uint64_t));
 
 	dst->handle        = org->handle;
-	dst->user_data_tag = org->user_data_tag;
+	dst->user_data_tag = org->user_data;
 	dst->flags         = org->flags;
 	dst->port_id       = org->port_id;
 	return 0;
@@ -826,7 +839,8 @@ static int32_t vkil_transfer_buffer(void *component_handle,
 	if (!(cmd & VK_CMD_CB)) {
 		ret = preset_host2vk_msg(message,
 					 component_handle,
-					 VK_FID_TRANS_BUF);
+					 VK_FID_TRANS_BUF,
+					 buffer->user_data);
 		if (ret)
 			goto fail_write;
 
@@ -868,7 +882,12 @@ static int32_t vkil_transfer_buffer(void *component_handle,
 			goto fail_read;
 
 		buffer->handle = response.arg;
+		ret = vkil_get_msg_user_data(ilctx->devctx, response.msg_id,
+					     &buffer->user_data);
+		/* we return the message no matter the error status above */
 		vkil_return_msg_id(ilctx->devctx, response.msg_id);
+		if (ret)
+			goto fail_read;
 	}
 	return 0;
 
@@ -934,7 +953,8 @@ int32_t vkil_process_buffer(void *component_handle,
 		host2vk_msg message;
 
 		ret = preset_host2vk_msg(&message, component_handle,
-					 VK_FID_PROC_BUF);
+					 VK_FID_PROC_BUF,
+					 buffer->user_data);
 		if (ret)
 			goto fail_write;
 
@@ -956,6 +976,7 @@ int32_t vkil_process_buffer(void *component_handle,
 		/* we check for the the card response */
 		vk2host_msg response[VKIL_RET_MSG_MAX_SIZE];
 		int32_t wait = (cmd & VK_CMD_BLOCKING) ? WAIT : 0;
+		int64_t user_data;
 
 		response->function_id = VK_FID_PROC_BUF_DONE;
 		response->msg_id      = msg_id;
@@ -967,9 +988,14 @@ int32_t vkil_process_buffer(void *component_handle,
 				 sizeof(vk2host_msg) * (response->size + 1)))
 			goto fail_read;
 
-		set_buffer(buffer, response);
-
+		ret = vkil_get_msg_user_data(ilctx->devctx, response->msg_id,
+					     &user_data);
+		/* we return the message no matter the error status above */
 		vkil_return_msg_id(ilctx->devctx, response->msg_id);
+		if (ret)
+			goto fail_read;
+
+		set_buffer(buffer, response, user_data);
 	}
 	return ret;
 

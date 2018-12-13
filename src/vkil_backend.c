@@ -42,6 +42,51 @@
 #define MSG_LIST_SIZE 256
 
 /**
+ * set user data for the msg_id
+ * (including the HW, with the assigned msg_id)
+ *
+ * @param[in]  handle to a vkil_devctx
+ * @param[in]  msg_id to set
+ * @param[in]  user data
+ * @return zero if success, error code otherwise
+ */
+int32_t vkil_set_msg_user_data(vkil_devctx *devctx,
+			       const int32_t msg_id,
+			       const uint64_t user_data)
+{
+	vkil_msg_id *msg_list = devctx->msgid_ctx.msg_list;
+
+	VK_ASSERT((msg_id >= 0) && (msg_id < MSG_LIST_SIZE));
+	VK_ASSERT(msg_list[msg_id].used);
+
+	msg_list[msg_id].user_data = user_data;
+	return 0;
+}
+
+/**
+ * set user data for the msg_id
+ * (including the HW, with the assigned msg_id
+ *
+ * @param[in]  handle to a vkil_devctx
+ * @param[in]  msg_id to set
+ * @param[out] ptr to user data to be retrieved
+ * @return zero if success, error code otherwise
+ */
+int32_t vkil_get_msg_user_data(vkil_devctx *devctx,
+			       const int32_t msg_id,
+			       uint64_t *user_data)
+{
+	vkil_msg_id *msg_list = devctx->msgid_ctx.msg_list;
+
+	VK_ASSERT((msg_id >= 0) && (msg_id < MSG_LIST_SIZE));
+	VK_ASSERT(msg_list[msg_id].used);
+
+	*user_data = msg_list[msg_id].user_data;
+
+	return 0;
+}
+
+/**
  * Return a message id, indicate there is no more message in the system
  * (including the HW, with the assigned msg_id
  *

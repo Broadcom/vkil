@@ -54,4 +54,9 @@ int32_t vkil_deinit_dev(void **handle);
 int32_t vkil_get_msg_id(vkil_devctx *devctx);
 int32_t vkil_return_msg_id(vkil_devctx *devctx, const int32_t msg_id);
 
+int32_t vkil_set_msg_user_data(vkil_devctx *devctx, const int32_t msg_id,
+			       const uint64_t user_data);
+int32_t vkil_get_msg_user_data(vkil_devctx *devctx, const int32_t msg_id,
+			       uint64_t *user_data);
+
 #endif
