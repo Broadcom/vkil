@@ -19,7 +19,18 @@
 
 #include "vk_utils.h"
 
+/*
+ * In the long-run, all the log related core macros will be moved
+ * to vk_utils.h, ie, the following defines will be removed eventually.
+ * *** Add the check !defined() for now, which allows us to
+ * override it in the vksim's vk_utils.h, so that check-in in
+ * vksim would build and pass smoke, as long as it has it defined in
+ * a new way.
+ */
+#if !defined(VKIL_LOG)
 #define VKIL_LOG(...) vk_log(__func__, __VA_ARGS__)
+#endif
+
 #define VKIL_LOG_HOST2VK_MSG(loglevel, msg) VKIL_LOG(loglevel,		\
 	"host2vk_msg=%p: function_id=%d, size=%d, queue_id=%d, "	\
 	"msg_id=0x%x, context_id=0x%x args[0]=0x%x, args[1]=0x%x",	\
