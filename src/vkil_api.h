@@ -15,7 +15,7 @@
 #include <stdint.h>
 #include "vkil_backend.h"
 
-#define VKIL_MAX_AGGREGATED_BUFFERS 4
+#define VKIL_MAX_AGGREGATED_BUFFERS 16
 
 /** Buffer type descriptor */
 typedef enum _vkil_buffer_type {
