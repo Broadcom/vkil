@@ -39,7 +39,7 @@
 #define WAIT_INIT (WAIT * 10)
 
 /** max expected return message size, can be locally overidden */
-#define VKIL_RET_MSG_MAX_SIZE 4
+#define VKIL_RET_MSG_MAX_SIZE 8
 
 
 static int32_t set_buffer(void *handle, const vk2host_msg *vk2host,
@@ -55,28 +55,46 @@ static int32_t set_buffer(void *handle, const vk2host_msg *vk2host,
 		uint32_t nhandles, i;
 		vkil_aggregated_buffers *ag_buf = handle;
 
+		ag_buf->nbuffers = 0; /* default: no buffer are written */
+
 		/*
 		 * a more complete answer is returned, the default
 		 * is a collection of handles, so that supposes that
 		 * the buffer is a n aggregation of buffers
 		 */
 
+		if (1 + (vk2host->size * 4) > VKIL_MAX_AGGREGATED_BUFFERS)
+			goto fail;
+
 		/* max number of returned handle */
 		nhandles = MIN(1 + (vk2host->size * 4),
 			       VKIL_MAX_AGGREGATED_BUFFERS);
-		for (i = 0; i < nhandles ; i++) {
-			/* a null handle indicate a list termination */
-			if (!(((uint32_t *)&(vk2host->arg))[i]))
-				break;
 
-			ag_buf->buffer[i]->handle =
-				((uint32_t *)&(vk2host->arg))[i];
-			ag_buf->buffer[i]->user_data = user_data;
+		for (i = 0; i < nhandles ; i++) {
+			/*
+			 * if we have an handle without a matching buffer to
+			 * write it, we fail, since we could loose track of
+			 * the handle otherwise
+			 * A NULL handle is however accepted to not have a
+			 * corrsponding buffer
+			 */
+			if (!ag_buf->buffer[i] &&
+					((uint32_t *)&(vk2host->arg))[i])
+				goto fail;
+			else if (ag_buf->buffer[i]) {
+				ag_buf->buffer[i]->handle =
+					((uint32_t *)&(vk2host->arg))[i];
+				ag_buf->buffer[i]->user_data = user_data;
+			}
+			/* else no aggregatwd buffer but handle is null */
 		}
 		ag_buf->nbuffers = i;
 		ag_buf->prefix.user_data = user_data;
 	}
 	return 0;
+
+fail:
+	return -EOVERFLOW;
 }
 
 
@@ -994,8 +1012,9 @@ int32_t vkil_process_buffer(void *component_handle,
 		vkil_return_msg_id(ilctx->devctx, response->msg_id);
 		if (ret)
 			goto fail_read;
-
-		set_buffer(buffer, response, user_data);
+		ret = set_buffer(buffer, response, user_data);
+		if (ret)
+			goto fail_read;
 	}
 	return ret;
 
