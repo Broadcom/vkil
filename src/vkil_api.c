@@ -996,7 +996,7 @@ int32_t vkil_process_buffer(void *component_handle,
 		/* we check for the the card response */
 		vk2host_msg response[VKIL_RET_MSG_MAX_SIZE];
 		int32_t wait = (cmd & VK_CMD_BLOCKING) ? WAIT : 0;
-		int64_t user_data;
+		uint64_t user_data;
 
 		response->function_id = VK_FID_PROC_BUF_DONE;
 		response->msg_id      = msg_id;
