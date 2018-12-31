@@ -7,9 +7,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include "vk_error.h"
 #include "vkdrv_access.h"
 #include "vkil_backend.h"
-#include "vkil_error.h"
 #include "vkil_internal.h"
 #include "vkil_session.h"
 #include "vkil_utils.h"

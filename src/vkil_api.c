@@ -17,9 +17,10 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include "vk_error.h"
 #include "vkil_api.h"
 #include "vkil_backend.h"
-#include "vkil_error.h"
 #include "vkil_internal.h"
 #include "vkil_session.h"
 #include "vkil_utils.h"
@@ -41,6 +42,41 @@
 /** max expected return message size, can be locally overidden */
 #define VKIL_RET_MSG_MAX_SIZE 8
 
+#define VKILERROR(type) VKERROR_MAKE(VKIL, 0, vkil_error(__func__), type)
+
+/**
+ * Generate an index number from a function name
+ * To be used to build an error code
+ *
+ * @param functionname function name
+ * @return             function index
+ */
+static int32_t vkil_error(const char *functionname)
+{
+	static const char * const vkil_fun_list[] = {
+		"undefined",
+		"vkil_init",
+		"vkil_deinit",
+		"vkil_set_parameter",
+		"vkil_get_parameter",
+		"vkil_send_buffer",
+		"vkil_receive_buffer",
+		"vkil_upload_buffer",
+		"vkil_download_buffer",
+		"vkil_uploaded_buffer",
+		"vkil_downloaded_buffer"};
+	int32_t i;
+
+	for (i = 1; i < VK_ARRAY_SIZE(vkil_fun_list); i++) {
+		if (!strcmp(vkil_fun_list[i], functionname))
+			return i;
+	}
+	return 0;
+};
+
+/* macros for handling error condition */
+#define VKDRV_WR_ERR(_ret, _size)     ((_ret < 0) || (_ret != _size))
+#define VKDRV_RD_ERR(_ret, _size)     ((_ret < 0) || (_ret != _size))
 
 static int32_t set_buffer(void *handle, const vk2host_msg *vk2host,
 			  const uint64_t user_data)
