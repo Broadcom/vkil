@@ -120,9 +120,11 @@ static int32_t preset_host2vk_msg(host2vk_msg *msg2vk, const void *handle,
 	VK_ASSERT(msg2vk);
 
 	msg_id = vkil_get_msg_id(ilctx->devctx);
-	if (msg_id < 0)
+	if (msg_id < 0) {
+		ret = -ENOBUFS;
 		/* unable to get an id, too much message in transit */
 		goto fail;
+	}
 
 	ret = vkil_set_msg_user_data(ilctx->devctx, msg_id, user_data);
 	if (ret < 0)
