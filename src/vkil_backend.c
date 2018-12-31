@@ -113,7 +113,7 @@ int32_t vkil_return_msg_id(vkil_devctx *devctx, const int32_t msg_id)
  */
 int32_t vkil_get_msg_id(vkil_devctx *devctx)
 {
-	int32_t ret, i;
+	int32_t i;
 	vkil_msg_id *msg_list = devctx->msgid_ctx.msg_list;
 
 	pthread_mutex_lock(&(devctx->msgid_ctx.mwx));
@@ -147,7 +147,7 @@ static int32_t vkil_deinit_msglist(vkil_devctx *devctx)
 	int32_t ret;
 	vkil_msg_id *msg_list = devctx->msgid_ctx.msg_list;
 
-	vkil_free((void **)&devctx->msgid_ctx.msg_list);
+	vkil_free((void **)&msg_list);
 	ret = pthread_mutex_destroy(&(devctx->msgid_ctx.mwx));
 	if (ret)
 		goto fail;

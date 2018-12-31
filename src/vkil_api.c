@@ -189,7 +189,7 @@ fail:
  */
 static int32_t vkil_deinit_com(void *handle)
 {
-	int32_t ret, i;
+	int32_t ret;
 	vkil_context *ilctx = handle;
 	vkil_context_internal *ilpriv;
 	host2vk_msg msg2vk;
@@ -262,7 +262,7 @@ fail_read:
  */
 static int32_t vkil_init_com(void *handle)
 {
-	int32_t ret, i;
+	int32_t ret;
 	vkil_context *ilctx = handle;
 	vkil_context_internal *ilpriv;
 	host2vk_msg msg2vk;
@@ -336,9 +336,8 @@ fail_read:
  */
 static int32_t vkil_init_ctx(void *handle)
 {
-	int32_t ret, i;
+	int32_t ret;
 	vkil_context *ilctx = handle;
-	vkil_context_internal *ilpriv;
 
 	/*
 	 * we ensure we don't have a device context yet

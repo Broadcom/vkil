@@ -103,7 +103,6 @@ int32_t vkil_ll_delete(vkil_node **head, vkil_node *nd)
 {
 	vkil_node *cursor = *head;
 	vkil_node *prev   = NULL;
-	int32_t ret;
 
 	while (cursor != nd && cursor->next) {
 		prev = cursor;
@@ -112,7 +111,7 @@ int32_t vkil_ll_delete(vkil_node **head, vkil_node *nd)
 
 	if (cursor != nd)
 		// didn't find the node in the list
-		goto fail;
+		return -EINVAL;
 
 	if (!prev) {
 		// the node to remove is the head of the list
@@ -125,10 +124,6 @@ int32_t vkil_ll_delete(vkil_node **head, vkil_node *nd)
 
 	vkil_free((void **)&cursor);
 	return 0;
-
-fail:
-	return (-EINVAL);
-
 }
 
 /**
@@ -138,9 +133,10 @@ fail:
  * @param[in] data_ref pointer to search against
  * @return node containing the data, otherwise NULL
  */
-vkil_node *vkil_ll_search(vkil_node *head,
-		int32_t (*cmp_f)(const void *data, const void *data_ref),
-		const void *data_ref)
+vkil_node *vkil_ll_search
+		(vkil_node *head,
+		 int32_t (*cmp_f)(const void *data, const void *data_ref),
+		 const void *data_ref)
 {
 	vkil_node *cursor = head;
 	int32_t ret;
@@ -151,8 +147,6 @@ vkil_node *vkil_ll_search(vkil_node *head,
 			return cursor;
 		cursor = cursor->next;
 	}
-
-fail:
 	return NULL;
 }
 
