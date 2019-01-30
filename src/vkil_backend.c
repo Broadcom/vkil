@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include "vkdrv_access.h"
+#include "vkil_api.h"
 #include "vkil_backend.h"
 #include "vkil_internal.h"
 #include "vkil_session.h"
@@ -507,6 +508,7 @@ int32_t vkil_init_dev(void **handle)
 	vkil_devctx *devctx;
 	int32_t ret;
 	char dev_name[30]; /* format: /dev/bcm-vk.x */
+	const char *p_aff_dev;
 
 	if (!(*handle)) {
 		VKIL_LOG(VK_LOG_DEBUG, "init a new device");
@@ -518,7 +520,8 @@ int32_t vkil_init_dev(void **handle)
 
 		ret = -ENODEV; /* value to be used for below fails */
 
-		devctx->id = vkil_get_card_id();
+		p_aff_dev = vkil_get_affinity();
+		devctx->id = p_aff_dev ? atoi(p_aff_dev) : 0;
 		if (devctx->id < 0)
 			goto fail;
 

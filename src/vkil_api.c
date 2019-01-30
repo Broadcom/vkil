@@ -26,6 +26,13 @@
 #include "vkil_utils.h"
 
 /*
+ * store global configurations that are from CLI parser
+ */
+static struct _vkil_cfg {
+	const char *vkapi_device; /* device/affinity, which card to be used */
+} vkil_cfg;
+
+/*
  * usually we wait for response message up to TIMEOUT us
  * However, in certain case, (essentially component initialization)
  * we could need to provide more time for the card to do the initialization
@@ -1130,3 +1137,24 @@ int vkil_destroy_api(void **ilapi)
 	return 0;
 }
 
+/**
+ * Set device to be used, configured by user CLI
+ * @param device id in ASCII format
+ */
+void vkil_set_affinity(const char *device)
+{
+	VKIL_LOG(VK_LOG_DEBUG, "Device %s specified by user.",
+		 device ? device : "NULL");
+	vkil_cfg.vkapi_device = device;
+}
+
+/**
+ * Get device configured and used by user CLI
+ * @param device id in ASCII format
+ */
+const char *vkil_get_affinity(void)
+{
+	VKIL_LOG(VK_LOG_DEBUG, "Return %s chosen by user.",
+		 vkil_cfg.vkapi_device ? vkil_cfg.vkapi_device : "NULL");
+	return vkil_cfg.vkapi_device;
+}
