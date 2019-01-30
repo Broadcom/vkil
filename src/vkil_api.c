@@ -22,7 +22,6 @@
 #include "vkil_api.h"
 #include "vkil_backend.h"
 #include "vkil_internal.h"
-#include "vkil_session.h"
 #include "vkil_utils.h"
 
 /*
@@ -356,7 +355,7 @@ static int32_t vkil_init_ctx(void *handle)
 
 	/* we first get the session and card id*/
 
-	ilctx->context_essential.session_id = vkil_get_session_id();
+	ilctx->context_essential.session_id = 0;
 	if (ilctx->context_essential.session_id < 0)
 		goto fail_session;
 

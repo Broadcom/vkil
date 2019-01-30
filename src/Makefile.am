@@ -9,8 +9,6 @@ libvkil_la_SOURCES = \
     vkil_backend.c \
     vkil_error.h \
     vkil_internal.h \
-    vkil_session.c \
-    vkil_session.h \
     vkil_utils.c \
     vkil_utils.h
 
