@@ -506,7 +506,7 @@ int32_t vkil_set_parameter(void *handle,
 	VK_ASSERT(handle); /* sanity check */
 
 	/* TODO: non blocking option not yet implemented */
-	VK_ASSERT(cmd & VK_CMD_BLOCKING);
+	VK_ASSERT(cmd & VK_CMD_OPT_BLOCKING);
 
 	ilpriv = ilctx->priv_data;
 	VK_ASSERT(ilpriv);
@@ -519,14 +519,15 @@ int32_t vkil_set_parameter(void *handle,
 	message->args[0]     = field;
 
 	/* align  structure copy on 16 bytes boundary */
-	memcpy(&message->args[msg_size ? 2 : 1], value, field_size);
+	memcpy(msg_size ? (uint32_t *) &message[1] : &message->args[1],
+	       value, field_size);
 	ret = vkil_write((void *)ilctx->devctx, message);
 	if (VKDRV_WR_ERR(ret, sizeof(message))) {
 		vkil_return_msg_id(ilctx->devctx, message->msg_id);
 		goto fail_write;
 	}
 
-	if (cmd & VK_CMD_BLOCKING) {
+	if (cmd & VK_CMD_OPT_BLOCKING) {
 		/* we wait for the the card response */
 		vk2host_msg response;
 
@@ -583,7 +584,7 @@ int32_t vkil_get_parameter(void *handle,
 	VK_ASSERT(handle); /* sanity check */
 
 	/* TODO: non blocking option not yet implemented */
-	VK_ASSERT(cmd & VK_CMD_BLOCKING);
+	VK_ASSERT(cmd & VK_CMD_OPT_BLOCKING);
 
 	ret = preset_host2vk_msg(message, handle, VK_FID_GET_PARAM, 0);
 	if (ret)
@@ -591,7 +592,8 @@ int32_t vkil_get_parameter(void *handle,
 	/* complete setting */
 	message->size        = msg_size;
 	message->args[0]       = field;
-	memcpy(&message->args[msg_size ? 2 : 1], value, field_size);
+	memcpy(msg_size ? (uint32_t *) &message[1] : &message->args[1],
+	       value, field_size);
 
 	ret = vkil_write((void *)ilctx->devctx, message);
 	if (VKDRV_WR_ERR(ret, sizeof(message))) {
@@ -599,7 +601,7 @@ int32_t vkil_get_parameter(void *handle,
 		goto fail_write;
 	}
 
-	if (cmd & VK_CMD_BLOCKING) {
+	if (cmd & VK_CMD_OPT_BLOCKING) {
 		/* we wait for the the card response */
 		vk2host_msg response[msg_size + 1];
 
@@ -874,16 +876,18 @@ static int32_t vkil_transfer_buffer(void *component_handle,
 	int32_t ret, msg_id = 0;
 	vkil_buffer *buffer = buffer_handle;
 	const vkil_context *ilctx = component_handle;
-	const vkil_command_t load_mode = cmd & VK_CMD_MAX;
+	const vkil_command_t load_mode = cmd & VK_CMD_MASK;
 	int32_t size = get_vkil2vk_buffer_size(buffer);
 	vkil_context_internal *ilpriv;
 	int32_t msg_size = MSG_SIZE(size);
 	host2vk_msg message[msg_size + 1];
 
-	VKIL_LOG(VK_LOG_DEBUG, "ilctx=%p, buffer=%p, cmd=%0x",
+	VKIL_LOG(VK_LOG_DEBUG, "ilctx=%p, buffer=%p, cmd=0x%x (%s%s)",
 		 ilctx,
 		 buffer_handle,
-		 cmd);
+		 cmd,
+		 vkil_cmd_str(cmd),
+		 vkil_cmd_opts_str(cmd));
 	VK_ASSERT(component_handle);
 	VK_ASSERT(cmd);
 
@@ -898,7 +902,7 @@ static int32_t vkil_transfer_buffer(void *component_handle,
 	 * pointer is sufficient, in case of a SGL need to be transferred
 	 * it can be done in 2 way, a pointer to a SGL structure
 	 */
-	if (!(cmd & VK_CMD_CB)) {
+	if (!(cmd & VK_CMD_OPT_CB)) {
 		ret = preset_host2vk_msg(message,
 					 component_handle,
 					 VK_FID_TRANS_BUF,
@@ -929,10 +933,10 @@ static int32_t vkil_transfer_buffer(void *component_handle,
 		msg_id = message->msg_id;
 	}
 
-	if ((cmd & VK_CMD_BLOCKING) || (cmd & VK_CMD_CB)) {
+	if ((cmd & VK_CMD_OPT_BLOCKING) || (cmd & VK_CMD_OPT_CB)) {
 		/* we check for the the card response */
 		vk2host_msg response;
-		int32_t wait = (cmd & VK_CMD_BLOCKING) ? WAIT : 0;
+		int32_t wait = (cmd & VK_CMD_OPT_BLOCKING) ? WAIT : 0;
 
 		response.function_id  = VK_FID_TRANS_BUF_DONE;
 		response.msg_id      = msg_id;
@@ -998,10 +1002,12 @@ int32_t vkil_process_buffer(void *component_handle,
 	int32_t ret;
 	int32_t msg_id = 0;
 
-	VKIL_LOG(VK_LOG_DEBUG, "ilctx=%p, buffer=%p, cmd=0x%x",
+	VKIL_LOG(VK_LOG_DEBUG, "ilctx=%p, buffer=%p, cmd=0x%x (%s%s)",
 		 ilctx,
 		 buffer_handle,
-		 cmd);
+		 cmd,
+		 vkil_cmd_str(cmd),
+		 vkil_cmd_opts_str(cmd));
 
 	VK_ASSERT(component_handle);
 	VK_ASSERT(buffer_handle);
@@ -1011,7 +1017,7 @@ int32_t vkil_process_buffer(void *component_handle,
 
 	VK_ASSERT(ilpriv);
 
-	if (!(cmd & VK_CMD_CB)) {
+	if (!(cmd & VK_CMD_OPT_CB)) {
 		host2vk_msg message;
 
 		ret = preset_host2vk_msg(&message, component_handle,
@@ -1021,7 +1027,7 @@ int32_t vkil_process_buffer(void *component_handle,
 			goto fail_write;
 
 		/* complete message setting */
-		message.args[0]     = cmd & VK_CMD_MAX;
+		message.args[0]     = cmd & VK_CMD_MASK;
 		message.args[1]     = buffer->handle;
 
 		ret = vkil_write((void *)ilctx->devctx, &message);
@@ -1034,10 +1040,10 @@ int32_t vkil_process_buffer(void *component_handle,
 		msg_id = message.msg_id;
 	}
 
-	if ((cmd & VK_CMD_BLOCKING) || (cmd & VK_CMD_CB)) {
+	if ((cmd & VK_CMD_OPT_BLOCKING) || (cmd & VK_CMD_OPT_CB)) {
 		/* we check for the the card response */
 		vk2host_msg response[VKIL_RET_MSG_MAX_SIZE];
-		int32_t wait = (cmd & VK_CMD_BLOCKING) ? WAIT : 0;
+		int32_t wait = (cmd & VK_CMD_OPT_BLOCKING) ? WAIT : 0;
 		uint64_t user_data;
 
 		response->function_id = VK_FID_PROC_BUF_DONE;
