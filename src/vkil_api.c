@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include "vk_error.h"
 #include "vkil_api.h"
 #include "vkil_backend.h"
@@ -1146,11 +1147,26 @@ int vkil_destroy_api(void **ilapi)
  * Set device to be used, configured by user CLI
  * @param device id in ASCII format
  */
-void vkil_set_affinity(const char *device)
+int vkil_set_affinity(const char *device)
 {
+	char dev_name[30];
+
 	VKIL_LOG(VK_LOG_DEBUG, "Device %s specified by user.",
 		 device ? device : "NULL");
+
+	/* check if device exists or not */
+	if (device) {
+		if (!snprintf(dev_name, sizeof(dev_name),
+			      VKIL_DEV_DRV_NAME ".%s", device))
+			return -EINVAL;
+
+		if (access(dev_name, F_OK) != 0)
+			return -ENODEV;
+	}
+
 	vkil_cfg.vkapi_device = device;
+
+	return 0;
 }
 
 /**

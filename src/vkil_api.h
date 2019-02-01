@@ -143,7 +143,7 @@ typedef struct _vkil_api {
 extern void *vkil_create_api(void);
 extern int vkil_destroy_api(void **ilapi);
 
-extern void vkil_set_affinity(const char *device);
+extern int vkil_set_affinity(const char *device);
 extern const char *vkil_get_affinity(void);
 
 #endif

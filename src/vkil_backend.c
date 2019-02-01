@@ -524,8 +524,8 @@ int32_t vkil_init_dev(void **handle)
 		if (devctx->id < 0)
 			goto fail;
 
-		if (!snprintf(dev_name, sizeof(dev_name), "/dev/bcm-vk.%d",
-			devctx->id))
+		if (!snprintf(dev_name, sizeof(dev_name),
+			      VKIL_DEV_DRV_NAME ".%d", devctx->id))
 			goto fail;
 
 		devctx->fd = vkdrv_open(dev_name, O_RDWR);

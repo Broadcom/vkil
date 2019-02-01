@@ -12,6 +12,9 @@
 /** max number of message queue used shall not be gretaer than VK_MSG_Q_NR */
 #define VKIL_MSG_Q_MAX 3
 
+/* name of driver dev node */
+#define VKIL_DEV_DRV_NAME           "/dev/bcm-vk"
+
 typedef struct _vkil_node {
 	void *data;
 	struct _vkil_node *next;
