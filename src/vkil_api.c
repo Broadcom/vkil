@@ -199,7 +199,6 @@ fail:
 	return -EOVERFLOW;
 }
 
-
 /**
  * @brief prepopulate the command message with control field
  * arguments
@@ -494,9 +493,17 @@ int32_t vkil_init(void **handle)
 			if (ret)
 				goto fail;
 		}
-		ret = vkil_init_com(*handle);
-		if (ret)
-			goto fail;
+		if (ilctx->context_essential.component_role) {
+			/*
+			 * Host is not allowed to create context in the system
+			 * component, so we bypass this operation if such is the
+			 * case (e.g initialization without hw context by a
+			 * diagnostic tool)
+			 */
+			ret = vkil_init_com(*handle);
+			if (ret)
+				goto fail;
+		}
 	}
 	return 0;
 
@@ -554,6 +561,7 @@ int32_t vkil_set_parameter(void *handle,
 	host2vk_msg message[msg_size + 1];
 
 	VKIL_LOG(VK_LOG_DEBUG, "");
+
 	VK_ASSERT(handle); /* sanity check */
 
 	/* TODO: non blocking option not yet implemented */
