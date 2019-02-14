@@ -1,0 +1,2 @@
+SUBDIRS = \
+    flash_util
