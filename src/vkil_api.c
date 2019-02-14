@@ -495,7 +495,6 @@ int32_t vkil_set_parameter(void *handle,
 {
 	const vkil_context *ilctx = handle;
 	int32_t ret;
-	vkil_context_internal *ilpriv;
 	int32_t field_size = vkil_get_struct_size(field);
 	/* message size is expressed in 16 bytes unit */
 	int32_t msg_size = field_size == sizeof(uint32_t) ?
@@ -507,9 +506,6 @@ int32_t vkil_set_parameter(void *handle,
 
 	/* TODO: non blocking option not yet implemented */
 	VK_ASSERT(cmd & VK_CMD_OPT_BLOCKING);
-
-	ilpriv = ilctx->priv_data;
-	VK_ASSERT(ilpriv);
 
 	ret = preset_host2vk_msg(message, handle, VK_FID_SET_PARAM, 0);
 	if (ret)
@@ -620,8 +616,9 @@ int32_t vkil_get_parameter(void *handle,
 	return 0;
 
 fail_write:
-	/* the queue could be full (ENOFUS), so not a real error */
-	VKIL_LOG(VK_LOG_ERROR, "failure %d on writing message in ilctx %p",
+	/* the queue could be full (ENOBUFS), so not a real error */
+	VKIL_LOG(VK_LOG_WARNING,
+		 "can't write message to driver due to reason %d in ilctx %p",
 		 ret, ilctx);
 	return ret;
 
@@ -630,7 +627,8 @@ fail_read:
 	 * the response could take more time to return (ETIMEOUT),
 	 * so not necessarily a real error
 	 */
-	VKIL_LOG(VK_LOG_WARNING, "failure %d on reading message in ilctx %p",
+	VKIL_LOG(VK_LOG_WARNING,
+		 "can't read message from driver due to reason %d in ilctx %p",
 		 ret, ilctx);
 	return ret;
 };
@@ -698,7 +696,7 @@ fail:
 static int32_t convert_vkil2vk_buffer_surface(vk_buffer_surface *surface,
 					const vkil_buffer_surface *ilsurface)
 {
-	int32_t is_interlaced, height, size[2];
+	int32_t is_interlaced, height, size[2] = {0, 0};
 
 	/*
 	 * here we assume we are on a 64 bit architecture
@@ -718,31 +716,7 @@ static int32_t convert_vkil2vk_buffer_surface(vk_buffer_surface *surface,
 	if (is_interlaced) /* make height a  multiple of 2 */
 		height += height % 2;
 
-	switch (((vkil_buffer_surface *)ilsurface)->format) {
-	case VKIL_FORMAT_YOL8: /* intentional fall thru */
-	case VKIL_FORMAT_YOL10:
-		/*
-		 * in YOL, we use 2x2 pels block, so the height is expressed
-		 * in this unit
-		 */
-		height >>= 1; /* each pel will take 2 bytes */
-		size[1] = 0;
-		surface->format = VK_FORMAT_YOL2;
-		break;
-	case VKIL_FORMAT_YUV420_P010:
-		size[1] = (((height + 1) / 2) * ilsurface->stride[1]) >>
-							     is_interlaced;
-		surface->format = VK_FORMAT_P010;
-		break;
-	case VKIL_FORMAT_YUV420_NV12:
-		size[1] = (((height + 1) / 2) * ilsurface->stride[1]) >>
-							     is_interlaced;
-		surface->format = VK_FORMAT_NV12;
-		break;
-	default:
-		goto fail;
-	}
-
+	surface->format = ((vkil_buffer_surface *)ilsurface)->format;
 	size[0] = (height * ilsurface->stride[0]) >> is_interlaced;
 
 	surface->max_size.width   = ilsurface->max_size.width;
@@ -765,10 +739,6 @@ static int32_t convert_vkil2vk_buffer_surface(vk_buffer_surface *surface,
 		surface->planes[3].size = 0;
 	}
 	return 0;
-
-fail:
-	VKIL_LOG(VK_LOG_ERROR, "error in ilbuffer=%p", ilsurface);
-	return -EINVAL;
 }
 
 /**

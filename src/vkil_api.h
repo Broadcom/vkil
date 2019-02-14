@@ -60,15 +60,6 @@ typedef struct _vkil_buffer_packet {
 #define VKIL_BUFFER_SURFACE_FLAG_INTERLACE 0x000001
 #define VKIL_BUFFER_SURFACE_FLAG_EOS       0x010000
 
-/** vkil_buffer_surface format type including pixel depth */
-typedef enum _vkil_format_type {
-	VKIL_FORMAT_UNDEF = 0,
-	VKIL_FORMAT_YOL8,         /**< hw surface  8 bits  */
-	VKIL_FORMAT_YOL10,        /**< hw surface 10 bits */
-	VKIL_FORMAT_YUV420_NV12,  /**< sw surface 8 bits  */
-	VKIL_FORMAT_YUV420_P010,  /**< sw surface 10 bits */
-	VKIL_FORMAT_MAX = 0xFFFF, /**< format type is encoded on 16 bytes */
-} vkil_format_type;
 
 typedef union vkil_size_ {
 	struct {
