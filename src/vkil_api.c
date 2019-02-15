@@ -696,7 +696,7 @@ fail:
 static int32_t convert_vkil2vk_buffer_surface(vk_buffer_surface *surface,
 					const vkil_buffer_surface *ilsurface)
 {
-	int32_t is_interlaced, height, size[2] = {0, 0};
+	int32_t is_interlaced, height, size[2];
 
 	/*
 	 * here we assume we are on a 64 bit architecture
@@ -717,6 +717,25 @@ static int32_t convert_vkil2vk_buffer_surface(vk_buffer_surface *surface,
 		height += height % 2;
 
 	surface->format = ((vkil_buffer_surface *)ilsurface)->format;
+
+	switch (surface->format) {
+	case VK_FORMAT_YOL2:
+		/*
+		 * in YOL2, we use 2x2 pels block, so the height is expressed
+		 * in this unit
+		 */
+		height >>= 1; /* each pel will take 2 bytes */
+		size[1] = 0;
+		break;
+	case VK_FORMAT_P010:
+	case VK_FORMAT_NV21:
+	case VK_FORMAT_NV12:
+		size[1] = (((height + 1) / 2) * ilsurface->stride[1]) >>
+							     is_interlaced;
+		break;
+	default:
+		goto fail;
+	}
 	size[0] = (height * ilsurface->stride[0]) >> is_interlaced;
 
 	surface->max_size.width   = ilsurface->max_size.width;
@@ -739,6 +758,11 @@ static int32_t convert_vkil2vk_buffer_surface(vk_buffer_surface *surface,
 		surface->planes[3].size = 0;
 	}
 	return 0;
+
+fail:
+	VKIL_LOG(VK_LOG_ERROR, "invalid format request for ilbuffer %p",
+		 ilsurface);
+	return -EINVAL;
 }
 
 /**
