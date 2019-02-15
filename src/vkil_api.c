@@ -353,12 +353,10 @@ static int32_t vkil_init_ctx(void *handle)
 	VK_ASSERT(!ilctx->priv_data);
 
 	ilctx->context_essential.handle = VK_NEW_CTX;
-
-	/* we first get the session and card id*/
-
-	ilctx->context_essential.session_id = 0;
-	if (ilctx->context_essential.session_id < 0)
-		goto fail_session;
+	/*
+	 * TO ADD: when the definition changed in vksim
+	 * ilctx->context_essential.pid = getpid();
+	 */
 
 	/* the priv_data structure size could be component specific */
 	ret = vkil_mallocz(&ilctx->priv_data, sizeof(vkil_context_internal));
@@ -373,7 +371,6 @@ static int32_t vkil_init_ctx(void *handle)
 	if (ret < 0)
 		goto fail;
 
-	ilctx->context_essential.card_id = ret;
 	return 0;
 
 fail:
@@ -382,9 +379,6 @@ fail:
 fail_malloc:
 	VKIL_LOG(VK_LOG_ERROR, "failed malloc");
 	return VKILERROR(ret);
-
-fail_session:
-	return VKILERROR(ENOSPC);
 }
 
 /**
