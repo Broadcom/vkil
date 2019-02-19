@@ -49,6 +49,9 @@ static struct _vkil_cfg {
 /** max expected return message size, can be locally overidden */
 #define VKIL_RET_MSG_MAX_SIZE 8
 
+/** max msg size that can be sent to card */
+#define VKIL_SEND_MSG_MAX_SIZE 8
+
 #define VKILERROR(type) VKERROR_MAKE(VKIL, 0, vkil_error(__func__), type)
 
 /**
@@ -80,6 +83,47 @@ static int32_t vkil_error(const char *functionname)
 	}
 	return 0;
 };
+
+/**
+ * Extract handles from the input buffer
+ * that has to be processed
+ * @param[in] input buffer to be processed
+ * @param[out] number of buffers present in handle
+ * @param[out] handles extracted from input buffer
+ */
+static void get_buffer(void *handle, uint32_t *nbuf,
+		       uint32_t *handles)
+{
+	vkil_buffer *buffer = handle;
+	uint32_t i, nxt_msg_size_lvl;
+	vkil_aggregated_buffers *ag_buf;
+
+	if (buffer->type != VKIL_BUF_AG_BUFFERS) {
+		*nbuf = 1;
+		handles[0] = buffer->handle;
+		return;
+	}
+
+	/* We have aggregated buffers */
+	ag_buf = handle;
+	for (i = 0; i < VKIL_MAX_AGGREGATED_BUFFERS; i++) {
+		if (!ag_buf->buffer[i])
+			break;
+		buffer = ag_buf->buffer[i];
+		handles[i] = buffer->handle;
+	}
+
+	VK_ASSERT(i > 0);
+
+	if (i > 1) {
+		/* i will be rounded of to values - 5, 9, 13 & so on */
+		nxt_msg_size_lvl = 5 + (((i - 2) / 4) * 4);
+		while (i < nxt_msg_size_lvl)
+			handles[i++] = 0;
+	}
+
+	*nbuf = i;
+}
 
 /* macros for handling error condition */
 #define VKDRV_WR_ERR(_ret, _size)     ((_ret < 0) || (_ret != _size))
@@ -987,8 +1031,10 @@ int32_t vkil_process_buffer(void *component_handle,
 	const vkil_context *ilctx = component_handle;
 	vkil_context_internal *ilpriv;
 	vkil_buffer *buffer;
-	int32_t ret;
+	int32_t ret = 0;
 	int32_t msg_id = 0;
+	uint32_t handles[VKIL_MAX_AGGREGATED_BUFFERS];
+	uint32_t nbuf, msg_size;
 
 	VKIL_LOG(VK_LOG_DEBUG, "ilctx=%p, buffer=%p, cmd=0x%x (%s%s)",
 		 ilctx,
@@ -1006,26 +1052,31 @@ int32_t vkil_process_buffer(void *component_handle,
 	VK_ASSERT(ilpriv);
 
 	if (!(cmd & VK_CMD_OPT_CB)) {
-		host2vk_msg message;
+		host2vk_msg message[VKIL_SEND_MSG_MAX_SIZE];
 
-		ret = preset_host2vk_msg(&message, component_handle,
+		get_buffer(buffer_handle, &nbuf, handles);
+		/* handles[0] will always be primary buffer(packet/frame) */
+		msg_size = MSG_SIZE((nbuf - 1) * sizeof(uint32_t));
+
+		ret = preset_host2vk_msg(message, component_handle,
 					 VK_FID_PROC_BUF,
 					 buffer->user_data);
 		if (ret)
 			goto fail_write;
 
 		/* complete message setting */
-		message.args[0]     = cmd & VK_CMD_MASK;
-		message.args[1]     = buffer->handle;
+		message->args[0] = cmd & VK_CMD_MASK;
+		message->size    = msg_size;
+		memcpy(&message->args[1], handles, nbuf * sizeof(uint32_t));
 
-		ret = vkil_write((void *)ilctx->devctx, &message);
-		if (VKDRV_WR_ERR(ret, sizeof(message))) {
+		ret = vkil_write((void *)ilctx->devctx, message);
+		if (VKDRV_WR_ERR(ret, (msg_size + 1) * sizeof(host2vk_msg))) {
 			vkil_return_msg_id(ilctx->devctx,
-					   message.msg_id);
+					   message->msg_id);
 			goto fail_write;
 		}
 
-		msg_id = message.msg_id;
+		msg_id = message->msg_id;
 	}
 
 	if ((cmd & VK_CMD_OPT_BLOCKING) || (cmd & VK_CMD_OPT_CB)) {
