@@ -1,6 +1,5 @@
 # Initialize Autoconf
 AC_INIT([vkil], [0.0.0])
-AC_LANG_WERROR
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIRS([m4])
 
