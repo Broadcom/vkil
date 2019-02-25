@@ -1176,6 +1176,7 @@ void *vkil_create_api(void)
 {
 	vkil_api *ilapi;
 
+	vk_logger_init();
 	VKIL_LOG(VK_LOG_DEBUG, "");
 
 	if (vkil_mallocz((void **)&ilapi, sizeof(vkil_api)))
@@ -1202,6 +1203,7 @@ void *vkil_create_api(void)
 int vkil_destroy_api(void **ilapi)
 {
 	VKIL_LOG(VK_LOG_DEBUG, "");
+	vk_logger_deinit();
 
 	vkil_free(ilapi);
 
