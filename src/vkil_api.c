@@ -397,10 +397,7 @@ static int32_t vkil_init_ctx(void *handle)
 	VK_ASSERT(!ilctx->priv_data);
 
 	ilctx->context_essential.handle = VK_NEW_CTX;
-	/*
-	 * TO ADD: when the definition changed in vksim
-	 * ilctx->context_essential.pid = getpid();
-	 */
+	ilctx->context_essential.pid = getpid();
 
 	/* the priv_data structure size could be component specific */
 	ret = vkil_mallocz(&ilctx->priv_data, sizeof(vkil_context_internal));
