@@ -1,0 +1,100 @@
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * Copyright(c) 2019 Broadcom
+ */
+
+/**
+@mainpage vkil library
+
+
+@section overview Overview
+
+The vkil is the Valkyrie host interface library. It means to be called by the
+user application, and is abstracting the driver.
+
+@image html SwStack.svg
+@image latex SwStack.eps
+
+@section second High level description
+
+@li All front end egress/ingress to the vkil are managed by src/vkil_api.c,
+when the backend interfacing with the kernel driver is implemented in
+src/vkil_backend.c
+@li The front end API is defined in @ref _vkil_api, and is meant to be used as illustrated
+below (see @ref _vkil_api for more detail)
+
+@image html  currentTranscoding_scheme2.svg
+@image latex currentTranscoding_scheme2.eps
+
+the vkil converts the functions into messages to be either read/write to/by the hardware:
+message formatting is the same as the one used by hardware; the kernel driver essentially
+read/write those messages on a PCIE BAR.
+
+@section context context
+All interactions with the hardware are specific to a _vkil_context. A _vkil_context
+is a sofware context to which an opaque handle to an HW context is paired.
+
+@li The Hw context consists essentially of buffer pools, and is assigned a "role"
+@li the "role" is used to  assign a component; or group of; to perform the
+_vkil_context::process_buffer command.
+
+@section component the component
+@subsection prologue Generalities
+the _vkil_api::process_buffer instruction infers a component; or group of; which is decided
+upon the context role (each component will usually call an hardware accelerator to process the
+buffer). However a component can be seen as below:
+@li a component has several input and output ports. each one being connected to a
+buffer pool
+@li the component is controlled by _h2vk_msg message send to it via a queue, and the component
+respond via the _vk2h_msg queue. (those messages are handled by src/vkil_backend.c and travel
+usually untouched all the way to the hardware component)
+
+@image html  component.svg width=10cm
+@image latex component.eps width=10cm
+
+While a component has a common message queue for all the contexts using it, the wiring of its
+ports is context dependent; the buffer pools belong to the context not the component; and not
+all available ports need to be wired (depending on the context configuration).
+
+@subsection port port connection
+each component can have several input and output ports.which are connected to a
+buffer pool
+@li The buffer pool are automatically created unless otherwise specified by the
+user by setting the VK_PARAM_PORT field (via the _vkil_context::set_parameter)
+function
+
+Notice that the user can't create a pool itself, so to use the later possibility
+it will need to get the handle to an existing pool first
+(_vkil_context::get_parameter).
+in the above example, the output port of the decoder is directly connected to the scaler
+input_port. this is done as below
+
+@li first, obtain the decoder output pool handle;
+_vkil_api::get_parameter(...,VK_PARAM_PORT) applying to the decoder context;
+then provide this handle to the scaler context;
+_vkil_api::set_parameter(...,VK_PARAM_PORT)
+
+
+
+@subsection decoder decoder
+The decoder has a single input and output port.
+@subsection encoder encoder
+@li the encoder role combines the encoding and the SSIM computation capabilities.
+@li the encoder has 2 input ports, one for the video input stream, and the other for
+an optional qp map
+@li the encoder has 3 output ports, one for the outputted encoded video stream, another for
+the encoder statistic, and a third one for the ssim data
+@subsection scaler scaler
+@li the scaler role combines the scaling and the output of either variance and qp map.
+@li the scaler has 1 input port, for the  input video stream,
+@li the scaler has 14 output ports, 4 for the 4 scaled output video, 5 for the variance map of
+each video input and output, and 5 for the qp map of each video input and output
+@subsection scaler scaler
+@subsection Info
+The info role is used when one needs to monitor the HW at large; e.g. polling the
+temperature;
+
+because, the interaction with the Hardware is context driven, the info role is accessed via
+a persistent context (the user can't init an "info context"), which is always
+identified by the @ref VK_INFO_CTX handle by the host.
+*/

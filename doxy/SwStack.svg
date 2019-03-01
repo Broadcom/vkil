@@ -1,0 +1,604 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="201.08299mm"
+   height="140.22867mm"
+   viewBox="0 0 201.08299 140.22867"
+   version="1.1"
+   id="svg50421"
+   inkscape:version="0.92.2 (5c3e80d, 2017-08-06)"
+   sodipodi:docname="SwStack.svg">
+  <defs
+     id="defs50415" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.98994949"
+     inkscape:cx="77.867071"
+     inkscape:cy="268.77979"
+     inkscape:document-units="mm"
+     inkscape:current-layer="layer1"
+     showgrid="true"
+     inkscape:window-width="1920"
+     inkscape:window-height="1017"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0">
+    <inkscape:grid
+       type="xygrid"
+       id="grid54898"
+       originx="-7.9374996"
+       originy="-44.979673" />
+  </sodipodi:namedview>
+  <metadata
+     id="metadata50418">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-7.9375,-111.79167)">
+    <rect
+       style="opacity:0.58899997;fill:#808080;fill-opacity:1;stroke:none;stroke-width:0.14800002;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0.94117647"
+       id="rect55174-0"
+       width="166.6875"
+       height="63.499477"
+       x="7.9375024"
+       y="188.52083" />
+    <rect
+       style="opacity:0.58899997;fill:#808080;fill-opacity:1;stroke:none;stroke-width:0.16480583;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0.94117647"
+       id="rect55174"
+       width="166.6875"
+       height="68.791672"
+       x="7.9375005"
+       y="111.79167" />
+    <rect
+       style="opacity:0.58899997;fill:#cfe2f3;fill-opacity:1;stroke:none;stroke-width:0.14800003;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0.94117647"
+       id="rect54911-6-1"
+       width="76.729156"
+       height="13.229167"
+       x="95.25"
+       y="164.70834" />
+    <rect
+       style="opacity:0.58899997;fill:#ffd966;fill-opacity:1;stroke:none;stroke-width:0.148;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0.94117647"
+       id="rect54911"
+       width="82.020836"
+       height="13.229153"
+       x="10.583334"
+       y="114.43754" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888855px;line-height:3.88055563px;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="41.246925"
+       y="119.11559"
+       id="text54915"><tspan
+         sodipodi:role="line"
+         id="tspan54913"
+         x="41.246925"
+         y="119.11559"
+         style="line-height:3.88055563px;stroke-width:0.26458332">FFMPEG</tspan><tspan
+         sodipodi:role="line"
+         x="41.246925"
+         y="122.99615"
+         style="line-height:3.88055563px;stroke-width:0.26458332"
+         id="tspan68928" /></text>
+    <rect
+       style="opacity:0.58899997;fill:#cfe2f3;fill-opacity:1;stroke:none;stroke-width:0.148;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0.94117647"
+       id="rect54911-6"
+       width="82.020836"
+       height="13.229167"
+       x="10.583334"
+       y="148.83333" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888855px;line-height:2.82222223px;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="32.332569"
+       y="157.21559"
+       id="text54915-1"><tspan
+         sodipodi:role="line"
+         id="tspan54913-3"
+         x="32.332569"
+         y="157.21559"
+         style="stroke-width:0.26458332">Card driver (bcm-vk)</tspan></text>
+    <rect
+       style="opacity:0.58899997;fill:#cfe2f3;fill-opacity:1;stroke:none;stroke-width:0.148;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0.94117647"
+       id="rect54911-6-4"
+       width="82.020836"
+       height="37.041676"
+       x="10.243137"
+       y="191.16666" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888855px;line-height:2.82222223px;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="37.335197"
+       y="198.7471"
+       id="text54915-1-4"><tspan
+         sodipodi:role="line"
+         id="tspan54913-3-4"
+         x="37.335197"
+         y="198.7471"
+         style="stroke-width:0.26458332">Video Driver (vksim)</tspan></text>
+    <rect
+       style="opacity:1;fill:#c9daf8;fill-opacity:1;stroke:none;stroke-width:0.148;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0.94117647"
+       id="rect54959"
+       width="23.8125"
+       height="23.812506"
+       x="12.888977"
+       y="201.74998" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888855px;line-height:4.93888903px;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="25.330904"
+       y="212.53632"
+       id="text54915-8"><tspan
+         sodipodi:role="line"
+         id="tspan54913-4"
+         x="25.330904"
+         y="212.53632"
+         style="line-height:4.93888903px;text-align:center;text-anchor:middle;stroke-width:0.26458332">Video</tspan><tspan
+         sodipodi:role="line"
+         x="25.330904"
+         y="217.4752"
+         style="line-height:4.93888903px;text-align:center;text-anchor:middle;stroke-width:0.26458332"
+         id="tspan54981">Encoder</tspan><tspan
+         sodipodi:role="line"
+         x="25.330904"
+         y="222.41409"
+         style="font-size:3.88055563px;line-height:4.93888903px;text-align:center;text-anchor:middle;stroke-width:0.26458332"
+         id="tspan55044">(inc. SSIM)</tspan></text>
+    <flowRoot
+       xml:space="preserve"
+       id="flowRoot54983"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:18.66666603px;line-height:10.66666698px;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none"><flowRegion
+         id="flowRegion54985"><rect
+           id="rect54987"
+           width="30"
+           height="60"
+           x="260"
+           y="493.70081" /></flowRegion><flowPara
+         id="flowPara54989" /></flowRoot>    <rect
+       style="opacity:1;fill:#c9daf8;fill-opacity:1;stroke:none;stroke-width:0.148;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0.94117647"
+       id="rect54959-7"
+       width="23.8125"
+       height="23.812506"
+       x="39.347305"
+       y="201.74998" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888855px;line-height:4.93888903px;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="51.031693"
+       y="212.92554"
+       id="text54915-8-3"><tspan
+         sodipodi:role="line"
+         id="tspan54913-4-4"
+         x="51.031693"
+         y="212.92554"
+         style="line-height:4.93888903px;text-align:center;text-anchor:middle;stroke-width:0.26458332">Video</tspan><tspan
+         sodipodi:role="line"
+         x="51.031693"
+         y="217.86443"
+         style="line-height:4.93888903px;text-align:center;text-anchor:middle;stroke-width:0.26458332"
+         id="tspan54981-9">Decoder</tspan></text>
+    <rect
+       style="opacity:1;fill:#c9daf8;fill-opacity:1;stroke:none;stroke-width:0.148;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0.94117647"
+       id="rect54959-7-9"
+       width="23.8125"
+       height="23.812506"
+       x="66.145836"
+       y="201.74998" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888855px;line-height:4.93888903px;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="120.24313"
+       y="173.09061"
+       id="text54915-8-3-4"><tspan
+         sodipodi:role="line"
+         x="120.24313"
+         y="173.09061"
+         style="line-height:4.93888903px;text-align:center;text-anchor:middle;stroke-width:0.26458332"
+         id="tspan54981-9-6">SMBus Driver</tspan></text>
+    <rect
+       style="opacity:0.58899997;fill:#ffd966;fill-opacity:1;stroke:none;stroke-width:0.148;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0.94117647"
+       id="rect54911-0"
+       width="82.020836"
+       height="13.229167"
+       x="10.583327"
+       y="164.70834" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888855px;line-height:2.82222223px;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="33.919373"
+       y="173.09061"
+       id="text54915-88"><tspan
+         sodipodi:role="line"
+         id="tspan54913-5"
+         x="33.919373"
+         y="173.09061"
+         style="stroke-width:0.26458332">Host Pcie driver</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888855px;line-height:4.93888903px;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="77.909805"
+       y="215.42392"
+       id="text54915-8-3-4-1"><tspan
+         sodipodi:role="line"
+         x="77.909805"
+         y="215.42392"
+         style="line-height:4.93888903px;text-align:center;text-anchor:middle;stroke-width:0.26458332"
+         id="tspan54981-9-6-1">Scaler</tspan></text>
+    <rect
+       style="opacity:0.58899997;fill:#cfe2f3;fill-opacity:1;stroke:none;stroke-width:0.14800003;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0.94117647"
+       id="rect54911-6-1-5"
+       width="76.729156"
+       height="13.229167"
+       x="95.25"
+       y="130.31276" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888855px;line-height:4.93888903px;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="120.41557"
+       y="138.20547"
+       id="text54915-8-3-4-3"><tspan
+         sodipodi:role="line"
+         x="120.41557"
+         y="138.20547"
+         style="line-height:4.93888903px;text-align:center;text-anchor:middle;stroke-width:0.26458332"
+         id="tspan54981-9-6-4">Debug CLI</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888855px;line-height:4.93888903px;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="156.81444"
+       y="119.71863"
+       id="text54915-8-3-4-3-9"><tspan
+         sodipodi:role="line"
+         x="156.81444"
+         y="119.71863"
+         style="line-height:4.93888903px;text-align:center;text-anchor:middle;stroke-width:0.26458332"
+         id="tspan54981-9-6-4-5">Host Server</tspan></text>
+    <rect
+       style="opacity:0.58899997;fill:#cfe2f3;fill-opacity:1;stroke:none;stroke-width:0.148;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0.94117647"
+       id="rect54911-6-6"
+       width="50.270828"
+       height="13.229167"
+       x="121.70833"
+       y="230.85416" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888855px;line-height:2.82222223px;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="123.0472"
+       y="238.96918"
+       id="text54915-1-45"><tspan
+         sodipodi:role="line"
+         id="tspan54913-3-45"
+         x="123.0472"
+         y="238.96918"
+         style="stroke-width:0.26458332">BootRom/BootLoader</tspan></text>
+    <rect
+       style="opacity:0.58899997;fill:#ffd966;fill-opacity:1;stroke:none;stroke-width:0.148;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0.94117647"
+       id="rect54911-0-7"
+       width="42.333344"
+       height="13.229167"
+       x="10.583333"
+       y="230.85362" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888855px;line-height:2.82222223px;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="15.398553"
+       y="239.23592"
+       id="text54915-88-5"><tspan
+         sodipodi:role="line"
+         id="tspan54913-5-4"
+         x="15.398553"
+         y="239.23592"
+         style="stroke-width:0.26458332">Mali Firmware</tspan></text>
+    <rect
+       style="opacity:0.58899997;fill:#ffd966;fill-opacity:1;stroke:none;stroke-width:0.148;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0.94117647"
+       id="rect54911-0-7-4"
+       width="63.499985"
+       height="13.229167"
+       x="55.562515"
+       y="230.85362" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888855px;line-height:2.82222223px;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="80.473305"
+       y="239.23711"
+       id="text54915-88-5-2"><tspan
+         sodipodi:role="line"
+         id="tspan54913-5-4-3"
+         x="80.473305"
+         y="239.23711"
+         style="stroke-width:0.26458332">RTOS</tspan></text>
+    <rect
+       style="opacity:0.58899997;fill:#cfe2f3;fill-opacity:1;stroke:none;stroke-width:0.14800003;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0.94117647"
+       id="rect54911-6-1-5-3"
+       width="23.81251"
+       height="21.166658"
+       x="121.70854"
+       y="207.04164" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888855px;line-height:4.93888903px;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="132.06996"
+       y="216.89427"
+       id="text54915-8-3-4-3-98"><tspan
+         sodipodi:role="line"
+         x="132.06996"
+         y="216.89427"
+         style="line-height:4.93888903px;text-align:center;text-anchor:middle;stroke-width:0.26458332"
+         id="tspan54981-9-6-4-0">Flash</tspan><tspan
+         sodipodi:role="line"
+         x="132.06996"
+         y="221.83316"
+         style="line-height:4.93888903px;text-align:center;text-anchor:middle;stroke-width:0.26458332"
+         id="tspan55299">Driver</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888855px;line-height:2.82222223px;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="179.91667"
+       y="228.20834"
+       id="text55295"><tspan
+         sodipodi:role="line"
+         id="tspan55293"
+         x="179.91667"
+         y="230.98137"
+         style="stroke-width:0.26458332" /><tspan
+         sodipodi:role="line"
+         x="179.91667"
+         y="233.8036"
+         style="stroke-width:0.26458332"
+         id="tspan55297" /></text>
+    <rect
+       style="opacity:0.58899997;fill:#cfe2f3;fill-opacity:1;stroke:none;stroke-width:0.14800002;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0.94117647"
+       id="rect54911-6-1-5-3-9"
+       width="23.812502"
+       height="21.166658"
+       x="148.16667"
+       y="207.04166" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888855px;line-height:4.93888903px;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="161.17392"
+       y="216.89429"
+       id="text54915-8-3-4-3-98-2"><tspan
+         sodipodi:role="line"
+         x="161.17392"
+         y="216.89429"
+         style="line-height:4.93888903px;text-align:center;text-anchor:middle;stroke-width:0.26458332"
+         id="tspan54981-9-6-4-0-4">SMBus</tspan><tspan
+         sodipodi:role="line"
+         x="161.17392"
+         y="221.83318"
+         style="line-height:4.93888903px;text-align:center;text-anchor:middle;stroke-width:0.26458332"
+         id="tspan55299-6">Driver</tspan></text>
+    <rect
+       style="opacity:0.58899997;fill:#cfe2f3;fill-opacity:1;stroke:none;stroke-width:0.14800003;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0.94117647"
+       id="rect54911-6-1-5-3-3"
+       width="23.81251"
+       height="21.166658"
+       x="95.250267"
+       y="207.04166" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888855px;line-height:4.93888903px;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="105.61173"
+       y="216.89429"
+       id="text54915-8-3-4-3-98-6"><tspan
+         sodipodi:role="line"
+         x="105.61173"
+         y="216.89429"
+         style="line-height:4.93888903px;text-align:center;text-anchor:middle;stroke-width:0.26458332"
+         id="tspan54981-9-6-4-0-9">PCIE</tspan><tspan
+         sodipodi:role="line"
+         x="105.61173"
+         y="221.83318"
+         style="line-height:4.93888903px;text-align:center;text-anchor:middle;stroke-width:0.26458332"
+         id="tspan55299-7">Driver</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888855px;line-height:4.93888903px;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="160.31311"
+       y="248.93965"
+       id="text54915-8-3-4-3-9-2"><tspan
+         sodipodi:role="line"
+         x="160.31311"
+         y="248.93965"
+         style="line-height:4.93888903px;text-align:center;text-anchor:middle;stroke-width:0.26458332"
+         id="tspan54981-9-6-4-5-4">Valkyrie</tspan></text>
+    <rect
+       style="opacity:0.58899997;fill:#ffd966;fill-opacity:1;stroke:none;stroke-width:0.148;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0.94117647"
+       id="rect54911-0-7-4-3"
+       width="29.104155"
+       height="7.937552"
+       x="179.91634"
+       y="233.49945" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888855px;line-height:2.82222223px;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="182.61073"
+       y="238.71622"
+       id="text54915-88-5-2-8"><tspan
+         sodipodi:role="line"
+         id="tspan54913-5-4-3-6"
+         x="182.61073"
+         y="238.71622"
+         style="stroke-width:0.26458332">Third party</tspan></text>
+    <rect
+       style="opacity:0.58899997;fill:#cfe2f3;fill-opacity:1;stroke:none;stroke-width:0.14800002;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0.94117647"
+       id="rect54911-6-1-5-0"
+       width="29.104174"
+       height="7.937511"
+       x="179.91631"
+       y="244.08282" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888855px;line-height:2.82222223px;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="183.18227"
+       y="249.79045"
+       id="text54915-88-5-2-8-0"><tspan
+         sodipodi:role="line"
+         id="tspan54913-5-4-3-6-6"
+         x="183.18227"
+         y="249.79045"
+         style="stroke-width:0.26458332">Broadcom</tspan></text>
+    <flowRoot
+       xml:space="preserve"
+       id="flowRoot68888"
+       style="font-style:normal;font-weight:normal;font-size:8px;line-height:8px;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none"
+       transform="matrix(0.26458333,0,0,0.26458333,0,87)"><flowRegion
+         id="flowRegion68890"><rect
+           id="rect68892"
+           width="30"
+           height="10"
+           x="-80"
+           y="383.70078" /></flowRegion><flowPara
+         id="flowPara68894" /></flowRoot>    <rect
+       style="opacity:0.58899997;fill:#cfe2f3;fill-opacity:1;stroke:none;stroke-width:0.148;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0.94117647"
+       id="rect54911-6-7"
+       width="82.020836"
+       height="13.229167"
+       x="10.583331"
+       y="130.31253" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888855px;line-height:2.82222223px;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="31.054436"
+       y="138.696"
+       id="text54915-1-9"><tspan
+         sodipodi:role="line"
+         id="tspan54913-3-5"
+         x="31.054436"
+         y="138.696"
+         style="stroke-width:0.26458332">vk integration (vkil)</tspan></text>
+    <path
+       style="opacity:1;fill:none;stroke:#999999;stroke-width:0.50800002;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:2.03200011, 2.03200011;stroke-dashoffset:0;stroke-opacity:1"
+       d="m 7.9375,184.81666 c 170.39166,0 166.6875,0 166.6875,0"
+       id="path66311"
+       inkscape:connector-curvature="0" />
+    <flowRoot
+       xml:space="preserve"
+       id="flowRoot5140"
+       style="font-style:normal;font-weight:normal;font-size:40px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none"
+       transform="matrix(0.26458333,0,0,0.26458333,7.9375,114.4375)"><flowRegion
+         id="flowRegion5142"><rect
+           id="rect5144"
+           width="940"
+           height="680"
+           x="-130"
+           y="-69.999977" /></flowRegion><flowPara
+         id="flowPara5146" /></flowRoot>    <flowRoot
+       xml:space="preserve"
+       id="flowRoot5148"
+       style="font-style:normal;font-weight:normal;font-size:40px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none"
+       transform="matrix(0.26458333,0,0,0.26458333,7.9375,114.4375)"><flowRegion
+         id="flowRegion5150"><rect
+           id="rect5152"
+           width="730"
+           height="310"
+           x="-70"
+           y="-39.999973" /></flowRegion><flowPara
+         id="flowPara5154" /></flowRoot>    <rect
+       style="opacity:1;fill:#cfe2f3;fill-opacity:1;stroke:none;stroke-width:0.148;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:0.94117647"
+       id="rect54911-6-7-3"
+       width="76.729164"
+       height="6.8790169"
+       x="12.700001"
+       y="120.25854" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888855px;line-height:2.82222223px;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="30.390221"
+       y="125.46698"
+       id="text54915-1-9-1"><tspan
+         sodipodi:role="line"
+         id="tspan54913-3-5-9"
+         x="30.390221"
+         y="125.46698"
+         style="stroke-width:0.26458332">vk interface (vkapi)</tspan></text>
+    <flowRoot
+       xml:space="preserve"
+       id="flowRoot5994"
+       style="font-style:normal;font-weight:normal;font-size:40px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none"
+       transform="matrix(0.26458333,0,0,0.26458333,7.9375,114.4375)"><flowRegion
+         id="flowRegion5996"><rect
+           id="rect5998"
+           width="790"
+           height="280"
+           x="-100"
+           y="-99.999977" /></flowRegion><flowPara
+         id="flowPara6000" /></flowRoot>    <flowRoot
+       xml:space="preserve"
+       id="flowRoot6002"
+       style="font-style:normal;font-weight:normal;font-size:40px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none"
+       transform="matrix(0.26458333,0,0,0.26458333,7.9375,114.4375)"><flowRegion
+         id="flowRegion6004"><rect
+           id="rect6006"
+           width="730"
+           height="200"
+           x="-80"
+           y="-9.9999733" /></flowRegion><flowPara
+         id="flowPara6008" /></flowRoot>    <path
+       style="opacity:1;fill:none;stroke:#030408;stroke-width:0.50800002;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:2.03200013, 2.03200013;stroke-dashoffset:0;stroke-opacity:1"
+       d="m 11.112464,146.71642 c 164.441516,0 160.866706,0 160.866706,0"
+       id="path66311-9"
+       inkscape:connector-curvature="0" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888855px;line-height:2.82222223px;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="176.54411"
+       y="164.48523"
+       id="text54915-88-5-2-8-5"><tspan
+         sodipodi:role="line"
+         id="tspan54913-5-4-3-6-8"
+         x="176.54411"
+         y="164.48523"
+         style="stroke-width:0.26458332">Kernel space</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888855px;line-height:2.82222223px;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="177.34592"
+       y="185.79686"
+       id="text54915-88-5-2-8-5-5"><tspan
+         sodipodi:role="line"
+         id="tspan54913-5-4-3-6-8-7"
+         x="177.34592"
+         y="185.79686"
+         style="stroke-width:0.26458332">PCIe</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888855px;line-height:2.82222223px;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="176.51759"
+       y="130.53123"
+       id="text54915-88-5-2-8-5-2"><tspan
+         sodipodi:role="line"
+         id="tspan54913-5-4-3-6-8-5"
+         x="176.51759"
+         y="130.53123"
+         style="stroke-width:0.26458332">User space</tspan></text>
+  </g>
+</svg>
