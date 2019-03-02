@@ -3,13 +3,20 @@
  * Copyright(c) 2018 Broadcom
  */
 
+/**
+ * @file
+ * @brief VKIL internally used structures
+ *
+ * Those structures are not meant to be exposed either to the back or front end
+ */
+
 #ifndef VKIL_INTERNAL_H
 #define VKIL_INTERNAL_H
 
 #include <stdint.h>
 #include <pthread.h>
 
-/** max number of message queue used shall not be gretaer than VK_MSG_Q_NR */
+/** max number of message queues used shall not be gretaer than VK_MSG_Q_NR */
 #define VKIL_MSG_Q_MAX 3
 
 /* name of driver dev node */
@@ -20,12 +27,21 @@ typedef struct _vkil_node {
 	struct _vkil_node *next;
 } vkil_node;
 
+/**
+ * Each emitted message is associated to an unique message id, which can as
+ * well carries user_data.
+ * a command message is always paired to a response message, having then the
+ * same _vkil_msg_id (hence the same user data)
+ */
 typedef struct _vkil_msg_id {
 	int16_t used;         /**< indicte a associated intransit message */
 	int16_t reserved[3];  /**< byte alignment purpose */
 	int64_t user_data;    /**< associated sw data */
 } vkil_msg_id;
 
+/**
+ * @brief message list context keeping track of all intransit messages
+ */
 typedef struct _vkil_msgid_ctx {
 	vkil_msg_id *msg_list; /**< outgoing message list */
 	/**
@@ -35,6 +51,9 @@ typedef struct _vkil_msgid_ctx {
 	pthread_mutex_t mwx;
 } vkil_msgid_ctx;
 
+/**
+ * @brief The device context
+ */
 typedef struct _vkil_devctx {
 	int fd;      /**< driver */
 	int32_t ref; /**< number of vkilctx instance using the device */
@@ -47,7 +66,6 @@ typedef struct _vkil_devctx {
 typedef struct _vkil_context_internal {
 	int32_t reserved;
 } vkil_context_internal;
-
 
 ssize_t vkil_write(vkil_devctx *devctx, host2vk_msg *message);
 ssize_t vkil_read(vkil_devctx  *devctx, vk2host_msg *message, int32_t wait);
@@ -62,4 +80,7 @@ int32_t vkil_set_msg_user_data(vkil_devctx *devctx, const int32_t msg_id,
 int32_t vkil_get_msg_user_data(vkil_devctx *devctx, const int32_t msg_id,
 			       uint64_t *user_data);
 
+const char *vkil_function_id_str(uint32_t function_id);
+const char *vkil_cmd_str(uint32_t cmd);
+const char *vkil_cmd_opts_str(uint32_t cmd);
 #endif

@@ -1,22 +1,18 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
- * Copyright 2018 Broadcom
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License, version 2, as
- * published by the Free Software Foundation (the "GPL").
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License version 2 (GPLv2) for more details.
- *
- * You should have received a copy of the GNU General Public License
- * version 2 (GPLv2) along with this source code.
+ * Copyright(c) 201 Broadcom
  */
 
-#include <pthread.h>
+/**
+ * @file
+ * @brief front end vkil access functions
+ *
+ * This file defines all the front end functions, including the API to be
+ * exposed to the caller. The front end functions
+ * read, resp. write messages to the VKIL backend part (vkil_backend.c)
+ */
+
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include "vk_error.h"
@@ -86,10 +82,10 @@ static int32_t vkil_error(const char *functionname)
 
 /**
  * Extract handles from the input buffer
- * that has to be processed
- * @param[in] input buffer to be processed
- * @param[out] number of buffers present in handle
- * @param[out] handles extracted from input buffer
+ * that have to be processed
+ * @param[in] handle input buffer to be processed
+ * @param[out] nbuf number of buffers present in handle
+ * @param[out] handles extracted from the input buffer
  */
 static void get_buffer(void *handle, uint32_t *nbuf,
 		       uint32_t *handles)
@@ -129,6 +125,12 @@ static void get_buffer(void *handle, uint32_t *nbuf,
 #define VKDRV_WR_ERR(_ret, _size)     ((_ret < 0) || (_ret != _size))
 #define VKDRV_RD_ERR(_ret, _size)     ((_ret < 0) || (_ret != _size))
 
+/**
+ * Populate a buffer descriptor from a message
+ * @param[in,out] handle buffer descriptor to be populated
+ * @param[in] vk2host message to read
+ * @param[in] user_data user data to be used
+ */
 static int32_t set_buffer(void *handle, const vk2host_msg *vk2host,
 			  const uint64_t user_data)
 {
@@ -190,9 +192,10 @@ fail:
  * argument, need to be prpeopulated in addition of it
  * and size changed accordingly
  *
- * @param[in,out] msg2vk to prepolulate
- * @param[in] handle to context
- * @param[in] function name to be transmitted into the messaage
+ * @param[in,out] msg2vk message to prepolulate
+ * @param[in] handle handle to context
+ * @param[in] fid function name to be transmitted into the messaage
+ * @param[in] user_data user data to be used
  * @return    zero on succes, error code otherwise
  */
 static int32_t preset_host2vk_msg(host2vk_msg *msg2vk, const void *handle,
@@ -232,8 +235,9 @@ fail:
 }
 
 /**
- * deinitialzation to the vk card and
- * return on completion response from the card)
+ * @brief On card context deinitialization command
+ *
+ * This command is blocking and return on response from the card
  *
  * @param handle    handle to a vkil_context
  * @return          zero on succes, error code otherwise
@@ -306,7 +310,10 @@ fail_read:
 }
 
 /**
- * communicate initialzation to the vk card (return on repsonse from the card)
+ * @brief On card context initialization command
+ *
+ * This command is blocking and return on response from the card which provides
+ * the context handle
  *
  * @param handle    handle to a vkil_context
  * @return          zero on succes, error code otherwise
@@ -380,20 +387,24 @@ fail_read:
 }
 
 /**
- * Initialize the device context (driver)
+ * @brief Initialize the context
+ *
+ * @li this function create the private data container
+ * @li This function will load a device driver if required. If a device is
+ * already opened, it will add a reference to it
  *
  * @param handle    handle to a vkil_context
  * @return          zero on succes, error code otherwise
+ *
+ * @pre @p handle must already be a _vkil_context but it's private data
+ * no yet created.
  */
 static int32_t vkil_init_ctx(void *handle)
 {
 	int32_t ret;
 	vkil_context *ilctx = handle;
 
-	/*
-	 * we ensure we don't have a device context yet
-	 * so we create one here
-	 */
+	VK_ASSERT(ilctx);
 	VK_ASSERT(!ilctx->priv_data);
 
 	ilctx->context_essential.handle = VK_NEW_CTX;
@@ -423,7 +434,9 @@ fail_malloc:
 }
 
 /**
- * De-initializes a vkil_context, and its associated h/w contents
+ * @brief De-nitialize the device context
+ *
+ * This function will unload the device driver if not used anymore
  *
  * @param handle    handle to a vkil_context
  * @return          zero on succes, error code otherwise
@@ -454,9 +467,16 @@ int32_t vkil_deinit(void **handle)
 };
 
 /**
- * Initialize a vkil_context
- * The first pass creates the vkil_context, done in s/w
- * The second pass invokes the h/w
+ * @brief Initialize a vkil_context
+ *
+ * This function should be called twice:
+ * @li The first call creates a software only vkil_context. It is then the
+ * the caller responsability to populate the
+ * vkil_context::vkil_context_essential fields describing the context role
+ * then call the init function again
+ * @li the second call create the hw context associated to the sofware context
+ * using the vkil_context::vkil_context_essential description.
+ * the hw context is abstracted, and can't be accessed by the host
  *
  * @param handle    reference of a handle to a vkil_context
  * @return          zero on success, error codes otherwise
@@ -497,10 +517,10 @@ fail:
 };
 
 /**
- * return the size in bytes of the structure associated to the field
+ * return the size in bytes of the structure associated to a vkil_parameter_t
  *
- * @param field
- * @return          size of the structure aasociated to field
+ * @param  field the field to evaluate
+ * @return size of the structure aasociated to field
  */
 static int32_t vkil_get_struct_size(const vkil_parameter_t field)
 {
@@ -515,12 +535,13 @@ static int32_t vkil_get_struct_size(const vkil_parameter_t field)
 }
 
 /**
- * Sets a parameter of a vkil_context
+ * Set a parameter of a vkil_context
  *
  * @param handle    handle to a vkil_context
  * @param field     field to set
- * @param value     value to set the field to
- * @param cmd       some cmd file
+ * @param value     value to set the field to if the field is a uint32_t,
+ *                  pointer to a structure assciated to the field otherwise
+ * @param cmd       command describing if the function is blocking or not
  * @return          zero on success, error code otherwise
  */
 int32_t vkil_set_parameter(void *handle,
@@ -591,12 +612,14 @@ fail_read:
 };
 
 /**
- * Gets a parameter value of a vkil_context
+ * Get a parameter of a vkil_context
  *
- * @param handle    handle to a vkil_context
- * @param field     field to get
- * @param value     field value retrieved
- * @return          zero on success, error code otherwise
+ * @param handle handle to a vkil_context
+ * @param field  field to get
+ * @param value  pointer to a structure associated to the field where to
+		 write the read parameters
+ * @param cmd    command describing if the function is blocking or not
+ * @return	 zero on success, error code otherwise
  */
 int32_t vkil_get_parameter(void *handle,
 			   const vkil_parameter_t field,
@@ -672,7 +695,7 @@ fail_read:
  * convert a front end buffer prefix structure into a backend one
  * (they can be different or the same).
  * @param[out] surface    handle to the backend structure
- * @param[in]  il_surface handle to a front hand packet structure
+ * @param[in]  il_surface handle to a front hand buffer structure
  * @return          zero on succes, error code otherwise
  */
 static int32_t convert_vkil2vk_buffer_prefix(vk_buffer *dst,
@@ -803,8 +826,8 @@ fail:
 /**
  * convert a front end packet structure into a backend one
  * (they can be different or the same).
- * @param[out] packet    handle to the backend structur
- * @param[in]  il_packet    handle to a front hand packet structuree
+ * @param[out] packet    handle to the backend structure
+ * @param[in]  il_packet handle to a front hand packet structure
  * @return          zero on succes, error code otherwise
  */
 static int32_t convert_vkil2vk_buffer_packet(vk_buffer_packet *packet,
@@ -827,8 +850,8 @@ static int32_t convert_vkil2vk_buffer_packet(vk_buffer_packet *packet,
 /**
  * convert a front end metadata structure into a backend one
  * (they can be different or the same).
- * @param[out] packet    handle to the backend structur
- * @param[in]  il_packet    handle to a front hand packet structuree
+ * @param[out] packet    handle to the backend structure
+ * @param[in]  il_packet handle to a front hand packet structure
  * @return          zero on succes, error code otherwise
  */
 static int32_t convert_vkil2vk_buffer_metadata(vk_buffer_metadata *mdata,
@@ -851,7 +874,7 @@ static int32_t convert_vkil2vk_buffer_metadata(vk_buffer_metadata *mdata,
 /**
  * convert a front end buffer structure into a backend one
  * (they can be different or the same).
- * @param[in]  il_packet    handle to a front hand packet structure
+ * @param[in]  il_packet handle to a front hand packet structure
  * @param[out] packet    handle to the backend structure
  * @return          zero on succes, error code otherwise
  */
@@ -874,9 +897,9 @@ static int32_t convert_vkil2vk_buffer(void *buffer, const void *il_buffer)
 /**
  * get the size of the vk backend paired structure
  * (they can be different or the same).
- * @param[in]  il_packet    handle to a front hand packet structure
+ * @param[in]  il_packet handle to a front hand packet structure
  * @param[out] packet    handle to the backend structure
- * @return          szie of the backend structure
+ * @return               size of the backend structure
  */
 static int32_t get_vkil2vk_buffer_size(const void *il_buffer)
 {
@@ -892,11 +915,21 @@ static int32_t get_vkil2vk_buffer_size(const void *il_buffer)
 }
 
 /**
- * transfer buffers
- * @param[in] component_handle handle to a vkil_context
- * @param[in] host_buffer      buffer to transfer
- * @param[in] cmd              transfer direction (upload/download) and mode
- * @return                     zero on success, error code otherwise
+ * @brief transfer buffers
+ *
+ * This function need to be called for all buffer to transfer to/from the the
+ * Valkyrie card.
+ * @li all buffer transfer are done via DMA
+ * @li the card memory management are under the card control, typically an
+ * upload infers a memory allocation on the card, and a downlaod a memory
+ * freeing. the vkil see only opaque handle  to on card buffer descriptor
+ * in no case the host can see the on card used memory addresses
+ *
+ * @param[in] component_handle	handle to a vkil_context
+ * @param[in] host_buffer	buffer to transfer
+ * @param[in] cmd		transfer direction (upload/download) and mode
+ *				(blocking or not)
+ * @return			zero on success, error code otherwise
  */
 static int32_t vkil_transfer_buffer(void *component_handle,
 				    void *buffer_handle,
@@ -907,7 +940,6 @@ static int32_t vkil_transfer_buffer(void *component_handle,
 	const vkil_context *ilctx = component_handle;
 	const vkil_command_t load_mode = cmd & VK_CMD_MASK;
 	int32_t size = get_vkil2vk_buffer_size(buffer);
-	vkil_context_internal *ilpriv;
 	int32_t msg_size = MSG_SIZE(size);
 	host2vk_msg message[msg_size + 1];
 
@@ -920,18 +952,8 @@ static int32_t vkil_transfer_buffer(void *component_handle,
 	VK_ASSERT(component_handle);
 	VK_ASSERT(cmd);
 
-	ilpriv = ilctx->priv_data;
-	VK_ASSERT(ilpriv);
-
-	/* We need to write the dma command */
-
-	/* we could need to transfer a SGL list */
-	/*
-	 * at this time we assume a coherent memory addressing, so a single
-	 * pointer is sufficient, in case of a SGL need to be transferred
-	 * it can be done in 2 way, a pointer to a SGL structure
-	 */
 	if (!(cmd & VK_CMD_OPT_CB)) {
+		/* We need to write the dma command */
 		ret = preset_host2vk_msg(message,
 					 component_handle,
 					 VK_FID_TRANS_BUF,
@@ -1014,10 +1036,16 @@ fail_read:
 };
 
 /**
- * process buffer
+ * @brief process a buffer
+ *
+ * the process buffer will typically "consume" the buffer provided in input;
+ * that is free the input buffer which will not available anymore; and produce
+ * a buffer; malloc a buffer; which can be either conveyed to another,
+ * processing, that is calling the same function again; or retrieved to the
+ * host, via the vkil_transfer_buffer function.
  *
  * @param component_handle    handle to a vkil_context
- * @param buffer_handle       buffer to process
+ * @param buffer_handle       handle to the buffer to process
  * @param cmd                 options (blocking, call back call,...)
  * @return                    zero on success, error code otherwise
  */
@@ -1139,8 +1167,9 @@ fail_read:
 };
 
 /**
- * Creates and initialize a vkil_api
+ * @brief Creates and initialize a vkil_api
  *
+ * The vkil_api provide the intercae to the Valkyrie card.
  * @return an inited vkil_api on success, NULL otherwise
  */
 void *vkil_create_api(void)
@@ -1180,7 +1209,7 @@ int vkil_destroy_api(void **ilapi)
 }
 
 /**
- * Set device to be used, configured by user CLI
+ * Set the device to be used, configured by user CLI
  * @param device id in ASCII format
  */
 int vkil_set_affinity(const char *device)
@@ -1206,7 +1235,7 @@ int vkil_set_affinity(const char *device)
 }
 
 /**
- * Get device configured and used by user CLI
+ * Get the device configured and used by user CLI
  * @param device id in ASCII format
  */
 const char *vkil_get_affinity(void)

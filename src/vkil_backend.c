@@ -3,11 +3,24 @@
  * Copyright(c) 2018 Broadcom
  */
 
+/**
+ * @file
+ * @brief backend vkil functions
+ *
+ * This file defines all the functions interfacing with the kernel driver;
+ * including the opening and closing of it.
+ *
+ * It also implements all functions required for proper message handling from
+ * the backend viewpoint, that is providing a unique message id, and handling
+ * of the message read from the driver into an intermediate linked list
+ * the driver read message queue act as a FIFO, but the host need to read
+ * messages in "random" order.
+ */
+
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <unistd.h>
 #include "vkdrv_access.h"
 #include "vkil_api.h"
@@ -33,9 +46,9 @@
  * 1/ use a large of digit (counter increment can then just be good enough...
  * it is not?)
  * 2/ use a reasonnably finite number of predefined id, and tag the intransit
- * message with it...this require the management of a list of id
+ * message with it...this requires the management of a list of id
  * we prefer the the second option, since output of the HW need to be anyway
- * paired with input (for the passing of ancillary filed, such as timestamp)
+ * paired with input (for the passing of ancillary field, such as timestamp)
  * and so the mantenance of a list is a given
  */
 #define MSG_LIST_SIZE 256
@@ -63,12 +76,12 @@ int32_t vkil_set_msg_user_data(vkil_devctx *devctx,
 }
 
 /**
- * set user data for the msg_id
+ * get user data froma message id
  * (including the HW, with the assigned msg_id
  *
- * @param[in]  handle to a vkil_devctx
- * @param[in]  msg_id to set
- * @param[out] ptr to user data to be retrieved
+ * @param[in]  devctx handle to a device context
+ * @param[in]  msg_id id of the message to retrieve
+ * @param[in,out] retrieved user data
  * @return zero if success, error code otherwise
  */
 int32_t vkil_get_msg_user_data(vkil_devctx *devctx,
@@ -86,11 +99,11 @@ int32_t vkil_get_msg_user_data(vkil_devctx *devctx,
 }
 
 /**
- * Return a message id, indicate there is no more message in the system
- * (including the HW, with the assigned msg_id
+ * Recycle a message id, indicate there is no more message in the system;
+ * including the HW; with the assigned msg_id
  *
- * @param  handle to a vkil_devctx
- * @param  msg_id to return
+ * @param  devctx device context
+ * @param  msg_id id to recycle
  * @return zero if success, error code otherwise
  */
 int32_t vkil_return_msg_id(vkil_devctx *devctx, const int32_t msg_id)
@@ -108,8 +121,8 @@ int32_t vkil_return_msg_id(vkil_devctx *devctx, const int32_t msg_id)
 /**
  * Get a unique message id
  *
- * @param  handle to a vkil_devctx
- * @return msg_id if positive, error code otherwise
+ * @param  devctx device context
+ * @return an unique msg_id if positive, error code otherwise
  */
 int32_t vkil_get_msg_id(vkil_devctx *devctx)
 {
@@ -137,9 +150,9 @@ fail:
 }
 
 /**
- * De-initializes a message list and associated component
+ * De-initialize a message list
  *
- * @param  handle to a vkil_devctx
+ * @param  devctx device context
  * @return zero on succes, error code otherwise
  */
 static int32_t vkil_deinit_msglist(vkil_devctx *devctx)
@@ -160,9 +173,9 @@ fail:
 }
 
 /**
- * Initializes a message list and associated component
+ * Initializes a message list
  *
- * @param  handle to a vkil_devctx
+ * @param  devctx device context
  * @return zero on succes, error code otherwise
  */
 static int32_t vkil_init_msglist(vkil_devctx *devctx)
@@ -183,10 +196,9 @@ fail:
 }
 
 /**
- * try to call a function with given parameters and timeout
- * after VK_TIMEOUT_MS
- * @param[in] driver
- * @param[in|out] buffer to populate
+ * probe a driver for message up to VKIL_TIMEOUT_MS * wait_x
+ * @param[in] driver to poll
+ * @param[in|out] message returned on success
  * @param[in] max wait factor (=default_wait*wait_x, zero means no wait)
  * @return zero if success otherwise error message
  */
@@ -225,9 +237,9 @@ static ssize_t vkil_wait_probe_msg(int fd,
 
 /**
  * Write a message to the device
- * if it is the only node in the list, the list will be deleted
- * @param[in] handle to the device
- * @param[in] message to write
+
+ * @param devctx device context
+ * @param message to write
  * @return 0 or written size if success, error code otherwise
  */
 ssize_t vkil_write(vkil_devctx *devctx, host2vk_msg *message)
@@ -237,9 +249,9 @@ ssize_t vkil_write(vkil_devctx *devctx, host2vk_msg *message)
 }
 
 /**
- * Search a message via msg_id matching
- * @param[in] message to look
- * @param[in] reference message
+ * Compare vk2host_msg::msg_id
+ * @param first message to compare
+ * @param second message to compare
  * @return 0 if matching, error code otherwise
  */
 static int32_t cmp_msg_id(const void *data, const void *data_ref)
@@ -254,9 +266,9 @@ static int32_t cmp_msg_id(const void *data, const void *data_ref)
 }
 
 /**
- * Search a message via function_id matching
- * @param[in] message to look
- * @param[in] reference message
+ * Compare vk2host_msg::function_id
+ * @param first message to compare
+ * @param second message to compare
  * @return 0 if matching, error code otherwise
  */
 static int32_t cmp_function(const void *data, const void *data_ref)
@@ -277,10 +289,15 @@ static int32_t cmp_function(const void *data, const void *data_ref)
 }
 
 /**
- * extract a message from a linked list
- * if it belong to the only node in the list, the list will be deleted
+ * @brief retrieve a message from a linked list
+ *
+ * if it belongs to the only node in the list, the list will be deleted
  * @param[in|out] handle to the linked list
- * @param[in] where to write the read message, field indicate search method
+ * @param[in] where to write the read message,
+ *	@li if a vk2host_msg::msg_id is provided, will extract only a message
+ *	    matching the provided vk2host_msg::msg_id
+ *	@li otherwise return message matching the provided
+ *	    vk2host_msg::function_id
  * @return 0 or read size if success, error code otherwise
  */
 static int32_t retrieve_message(vkil_node **pvk2host_ll, vk2host_msg *message)
@@ -338,8 +355,7 @@ out:
 
 /**
  * flush the driver reading queue into a SW linked list
- * if it is the only node in the list, the list will be deleted
- * @param[in] handle to the context
+ * @param[in] devctx device context
  * @param[in] message carrying q_id, and field to retrieve (msg_id,...)
  * @param[in] wait for incoming message carrying specific field  (msg_id,...)
  * @return (-ETIMEDOUT) or (-ENOMSG) on flushing completion
@@ -421,9 +437,12 @@ fail:
 
 /**
  * read a message from the device
- * if it is the only node in the list, the list will be deleted
- * @param[in] handle to the device
- * @param[in] where to write the read message
+ *
+ * the function will first look if the message has been transferred from the
+ * driver to the a SW linked list, if not, then it will flush the driver queue
+ * into the vkil backend linkd list; then poll the SW linked list again
+ * @param[in] devctx device context
+ * @param[in|out] returned message
  * @return 0 or read size if success, error code otherwise
  */
 ssize_t vkil_read(vkil_devctx *devctx, vk2host_msg *message, int32_t wait)
@@ -472,7 +491,7 @@ out:
 /**
  * Denit the device
  * If the caller is the only user, the device is closed
- * @param[in,out] handle to the device
+ * @param[in,out] handle handle to the device
  * @return device id if success, error code otherwise
  */
 int32_t vkil_deinit_dev(void **handle)
@@ -499,8 +518,8 @@ int32_t vkil_deinit_dev(void **handle)
  * Init the device
  * open a device if not yet done, otherwise add a reference to
  * existing device
- * @param[in,out] handle to the device
- * @return device id if success, error code otherwise
+ * @param[in,out] handle handle to the device
+ * @return device id if positive, error code otherwise
  */
 int32_t vkil_init_dev(void **handle)
 {

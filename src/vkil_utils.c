@@ -3,6 +3,11 @@
  * Copyright(c) 2018 Broadcom
  */
 
+/**
+ * @file
+ * @brief vkil utilities functions
+ */
+
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -128,7 +133,7 @@ int32_t vkil_ll_delete(vkil_node **head, vkil_node *nd)
 /**
  * Search for a node in a linked list
  * @param[in] head of the linked list
- * @param[in] search function to apply
+ * @param[in] cmp_f search citeria function
  * @param[in] data_ref pointer to search against
  * @return node containing the data, otherwise NULL
  */
