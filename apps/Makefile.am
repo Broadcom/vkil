@@ -1,2 +1,3 @@
 SUBDIRS = \
-    flash_util
+    flash_util \
+    pcie_util

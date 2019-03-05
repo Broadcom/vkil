@@ -540,8 +540,10 @@ typedef enum _vkil_parameter_t {
 	VK_PARAM_AVAILABLE_LOAD         = 3, /**< available load */
 	VK_PARAM_AVAILABLE_LOAD_HI      = 4,
 
-	/* INFO sub-component (flash image) parameters */
-	VK_PARAM_FLASH_IMAGE_CONFIG      = 5,
+	/* INFO sub-component parameters */
+	VK_PARAM_FLASH_IMAGE_CONFIG     = 5,
+	VK_PARAM_PCIE_EYE_DIAGRAM       = 6,
+	VK_PARAM_PCIE_EYE_SIZE          = 7,
 
 	/* component configuration parameters */
 	VK_PARAM_VIDEO_CODEC            = 16, /**< 0 means undefined */

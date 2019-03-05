@@ -27,5 +27,7 @@ AC_SUBST([AM_CFLAGS])
 # Initialize Libtool
 LT_INIT([shared])
 
-AC_CONFIG_FILES([Makefile apps/Makefile apps/flash_util/Makefile src/Makefile unittest/Makefile drv_model/Makefile])
+AC_CONFIG_FILES([Makefile apps/Makefile \
+                 apps/flash_util/Makefile apps/pcie_util/Makefile \
+                 src/Makefile unittest/Makefile drv_model/Makefile])
 AC_OUTPUT
