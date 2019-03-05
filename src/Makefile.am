@@ -5,7 +5,6 @@ include_HEADERS = \
 
 libvkil_la_SOURCES = \
     vkil_api.c \
-    vkil_api.h \
     vkil_backend.c \
     vkil_error.h \
     vkil_internal.h \
