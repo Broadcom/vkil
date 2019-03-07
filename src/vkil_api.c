@@ -434,7 +434,7 @@ fail_malloc:
 }
 
 /**
- * @brief De-nitialize the device context
+ * @brief De-initialize the device context
  *
  * This function will unload the device driver if not used anymore
  *
@@ -749,6 +749,8 @@ fail:
  * (they can be different or the same).
  * @param[out] surface    handle to the backend structure
  * @param[in]  il_surface handle to a front hand packet structure
+ * @pre _vkil_buffer_surface::stride are required to be a multiple of 4
+ * both in luma and chroma component
  * @return          zero on succes, error code otherwise
  */
 static int32_t convert_vkil2vk_buffer_surface(vk_buffer_surface *surface,
@@ -762,6 +764,13 @@ static int32_t convert_vkil2vk_buffer_surface(vk_buffer_surface *surface,
 	 * tested
 	 */
 	VK_ASSERT(sizeof(void *) == sizeof(uint64_t));
+
+	/*
+	 * PAX DMA transfer sizes are required to be 4 byte aligned
+	 * we guarantee this by enforcing the image stride to be 4 byte aligned
+	 */
+	VK_ASSERT(!(ilsurface->stride[0] & 0x3));
+	VK_ASSERT(!(ilsurface->stride[1] & 0x3));
 
 	convert_vkil2vk_buffer_prefix(&surface->prefix, &ilsurface->prefix);
 	surface->prefix.type  = VK_BUF_SURFACE;
@@ -828,6 +837,7 @@ fail:
  * (they can be different or the same).
  * @param[out] packet    handle to the backend structure
  * @param[in]  il_packet handle to a front hand packet structure
+ * @pre _vkil_buffer_packet::size is required to be a multiple of 4
  * @return          zero on succes, error code otherwise
  */
 static int32_t convert_vkil2vk_buffer_packet(vk_buffer_packet *packet,
@@ -840,8 +850,12 @@ static int32_t convert_vkil2vk_buffer_packet(vk_buffer_packet *packet,
 	 */
 	VK_ASSERT(sizeof(void *) == sizeof(uint64_t));
 
+	/* PAX DMA transfer sizes are required to be 4 byte aligned */
+	VK_ASSERT(!(il_packet->size & 0x3));
+
 	convert_vkil2vk_buffer_prefix(&packet->prefix, &il_packet->prefix);
 	packet->prefix.type   = VK_BUF_PACKET;
+	packet->used_size     = il_packet->used_size;
 	packet->size          = il_packet->size;
 	packet->data          = (uint64_t)il_packet->data;
 	return 0;
@@ -851,7 +865,8 @@ static int32_t convert_vkil2vk_buffer_packet(vk_buffer_packet *packet,
  * convert a front end metadata structure into a backend one
  * (they can be different or the same).
  * @param[out] packet    handle to the backend structure
- * @param[in]  il_packet handle to a front hand packet structure
+ * @param[in]  il_packet handle to a front hand metdata structure
+ * @pre vkil_buffer_metadata::size is required to be a multiple of 4
  * @return          zero on succes, error code otherwise
  */
 static int32_t convert_vkil2vk_buffer_metadata(vk_buffer_metadata *mdata,
@@ -864,8 +879,12 @@ static int32_t convert_vkil2vk_buffer_metadata(vk_buffer_metadata *mdata,
 	 */
 	VK_ASSERT(sizeof(void *) == sizeof(uint64_t));
 
+	/* PAX DMA transfer sizes are required to be 4 byte aligned */
+	VK_ASSERT(!(il_mdata->size & 0x3));
+
 	convert_vkil2vk_buffer_prefix(&mdata->prefix, &il_mdata->prefix);
 	mdata->prefix.type     = VK_BUF_METADATA;
+	mdata->used_size       = il_mdata->used_size;
 	mdata->size            = il_mdata->size;
 	mdata->data            = (uint64_t)il_mdata->data;
 	return 0;

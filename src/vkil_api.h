@@ -58,15 +58,19 @@ typedef struct _vkil_buffer {
  */
 typedef struct _vkil_buffer_metadata {
 	vkil_buffer prefix;
-	uint32_t    size;    /**< meta data size in bytes */
-	void        *data;   /**< Pointer to metadata     */
+	uint32_t used_size; /**< size of the payload */
+	/** size of the buffer, required to be a 32 bits multiple */
+	uint32_t size;
+	void     *data;   /**< Pointer to buffer     */
 } vkil_buffer_metadata;
 
 /** @brief buffer used to store a bitstream packet */
 typedef struct _vkil_buffer_packet {
 	vkil_buffer prefix;
-	uint32_t size;  /**< size of the packet in byte */
-	void     *data; /**< Pointer to the packet start */
+	uint32_t used_size; /**< size of the payload */
+	/** size of the buffer, required to be a 32 bits multiple */
+	uint32_t size;
+	void     *data; /**< Pointer to buffer */
 } vkil_buffer_packet;
 
 /**
