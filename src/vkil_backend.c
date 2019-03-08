@@ -195,7 +195,7 @@ static int32_t vkil_init_msglist(vkil_devctx *devctx)
 	int32_t ret;
 
 	ret = vkil_mallocz((void **)&devctx->msgid_ctx.msg_list,
-			 sizeof(vkil_msg_id) * MSG_LIST_SIZE);
+			   sizeof(vkil_msg_id) * MSG_LIST_SIZE);
 	if (ret)
 		goto fail;
 
@@ -224,7 +224,7 @@ static ssize_t vkil_wait_probe_msg(int fd,
 	VK_ASSERT(msg);
 	VK_ASSERT(msg->size < UCHAR_MAX);
 
-	nbytes = sizeof(vk2host_msg) * (msg->size + 1);
+	nbytes = sizeof(*msg) * (msg->size + 1);
 
 	do {
 		ret = read(fd, msg, nbytes);
@@ -254,10 +254,9 @@ static ssize_t vkil_wait_probe_msg(int fd,
  * @param message to write
  * @return 0 or written size if success, error code otherwise
  */
-ssize_t vkil_write(vkil_devctx *devctx, host2vk_msg *message)
+ssize_t vkil_write(vkil_devctx *devctx, host2vk_msg *msg)
 {
-	return write(devctx->fd, message,
-			sizeof(host2vk_msg)*(message->size + 1));
+	return write(devctx->fd, msg, sizeof(*msg) * (msg->size + 1));
 }
 
 /**
@@ -314,6 +313,7 @@ static int32_t cmp_function(const void *data, const void *data_ref)
  */
 static int32_t retrieve_message(vkil_node **pvk2host_ll, vk2host_msg *message)
 {
+	int msglen;
 	int32_t ret = 0;
 	vk2host_msg *msg;
 	vkil_node *node = NULL;
@@ -344,8 +344,9 @@ static int32_t retrieve_message(vkil_node **pvk2host_ll, vk2host_msg *message)
 
 	msg = node->data;
 	if (message->size >= msg->size) {
-		memcpy(message, msg, sizeof(vk2host_msg) * (msg->size + 1));
-		ret = sizeof(vk2host_msg) * (msg->size + 1);
+		msglen = sizeof(*msg) * (msg->size + 1);
+		memcpy(message, msg, msglen);
+		ret = msglen;
 		vkil_ll_delete(pvk2host_ll, node);
 		vkil_free((void **)&msg);
 	} else {
@@ -396,8 +397,9 @@ static int32_t vkil_flush_read(vkil_devctx *devctx,
 		do {
 			if (msg)
 				vkil_free((void **)&msg);
+
 			ret = vkil_mallocz((void **)&msg,
-					sizeof(vk2host_msg)*(size + 1));
+					   sizeof(*msg) * (size + 1));
 			if (ret)
 				goto fail;
 			msg->size = size;
@@ -457,12 +459,12 @@ fail:
  * @param[in|out] returned message
  * @return 0 or read size if success, error code otherwise
  */
-ssize_t vkil_read(vkil_devctx *devctx, vk2host_msg *message, int32_t wait)
+ssize_t vkil_read(vkil_devctx *devctx, vk2host_msg *msg, int32_t wait)
 {
 	int32_t ret;
 
 	/* sanity check */
-	VK_ASSERT(message);
+	VK_ASSERT(msg);
 	VK_ASSERT(devctx);
 
 	/*
@@ -472,26 +474,26 @@ ssize_t vkil_read(vkil_devctx *devctx, vk2host_msg *message, int32_t wait)
 	 */
 	pthread_mutex_lock(&devctx->mwx);
 
-	ret = retrieve_message(&devctx->vk2host[message->queue_id], message);
+	ret = retrieve_message(&devctx->vk2host[msg->queue_id], msg);
 
 	if (ret != -EAGAIN) {
 		/*
 		 * either message has been retrieved, or some other problem
 		 * has occcured, such has message size bigger than expected
 		 */
-		VKIL_LOG_VK2HOST_MSG(VK_LOG_DEBUG, message);
+		VKIL_LOG_VK2HOST_MSG(VK_LOG_DEBUG, msg);
 		pthread_mutex_unlock(&(devctx->mwx));
 		return ret;
 	}
 
-	ret = vkil_flush_read(devctx, message, wait);
+	ret = vkil_flush_read(devctx, msg, wait);
 	if (ret)
 		goto out;
 
-	ret = retrieve_message(&devctx->vk2host[message->queue_id], message);
+	ret = retrieve_message(&devctx->vk2host[msg->queue_id], msg);
 
 	if (ret != -EAGAIN)
-		VKIL_LOG_VK2HOST_MSG(VK_LOG_DEBUG, message);
+		VKIL_LOG_VK2HOST_MSG(VK_LOG_DEBUG, msg);
 	else
 		VKIL_LOG(VK_LOG_DEBUG, "message not retrieved yet");
 
@@ -543,7 +545,7 @@ int32_t vkil_init_dev(void **handle)
 	if (!(*handle)) {
 		VKIL_LOG(VK_LOG_DEBUG, "init a new device");
 
-		ret = vkil_mallocz(handle, sizeof(vkil_devctx));
+		ret = vkil_mallocz(handle, sizeof(*devctx));
 		if (ret)
 			goto fail_malloc;
 		devctx = *handle;
