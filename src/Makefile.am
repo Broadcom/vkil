@@ -1,9 +1,13 @@
 lib_LTLIBRARIES = libvkil.la
 
+AUTOMAKE_OPTIONS = subdir-objects
+
 include_HEADERS = \
     vkil_api.h
 
 libvkil_la_SOURCES = \
+    vkdrv/vkdrv_access.c \
+    vkdrv/vkdrv_access.h \
     vkil_api.c \
     vkil_backend.c \
     vkil_error.h \
@@ -11,4 +15,4 @@ libvkil_la_SOURCES = \
     vkil_utils.c \
     vkil_utils.h
 
-libvkil_la_LDFLAGS = -lvkdrv -lvksim
+libvkil_la_LDFLAGS = -lvksim

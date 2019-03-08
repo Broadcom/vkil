@@ -22,11 +22,23 @@
 #include <limits.h>
 #include <stdio.h>
 #include <unistd.h>
-#include "vkdrv_access.h"
 #include "vkil_api.h"
 #include "vkil_backend.h"
 #include "vkil_internal.h"
 #include "vkil_utils.h"
+
+#ifdef VKDRV_USERMODEL
+/*
+ * if we use a user space model of the driver
+ * we need to overload kernel call functions
+ * to simulare open,close,read,write.
+ */
+#define open(x, y) _Generic(x, default : vkdrv_open)(x, y)
+#define read(x, y, z) _Generic(x, default : vkdrv_read)(x, y, z)
+#define write(x, y, z) _Generic(x, default : vkdrv_write)(x, y, z)
+#define close(x) _Generic(x, default : vkdrv_close)(x)
+#include "vkdrv/vkdrv_access.h"
+#endif
 
 #define BIG_MSG_SIZE_INC   2
 /**
@@ -215,15 +227,15 @@ static ssize_t vkil_wait_probe_msg(int fd,
 	nbytes = sizeof(vk2host_msg) * (msg->size + 1);
 
 	do {
-		ret = vkdrv_read(fd, msg, nbytes);
+		ret = read(fd, msg, nbytes);
 		if (ret > 0)
 			return ret;
 
-#if VKDRV_KERNEL
-		if ((ret < 0) && (errno == EMSGSIZE))
-#else
+#ifdef VKDRV_USERMODEL
 		/* in sw simulation only we don't use system errno */
 		if (ret == -EMSGSIZE)
+#else
+		if ((ret < 0) && (errno == EMSGSIZE))
 #endif
 			return -EMSGSIZE;
 		if (!wait_x)
@@ -244,7 +256,7 @@ static ssize_t vkil_wait_probe_msg(int fd,
  */
 ssize_t vkil_write(vkil_devctx *devctx, host2vk_msg *message)
 {
-	return vkdrv_write(devctx->fd, message,
+	return write(devctx->fd, message,
 			sizeof(host2vk_msg)*(message->size + 1));
 }
 
@@ -506,7 +518,7 @@ int32_t vkil_deinit_dev(void **handle)
 		devctx->ref--;
 		if (!devctx->ref) {
 			vkil_deinit_msglist(devctx);
-			vkdrv_close(devctx->fd);
+			close(devctx->fd);
 			pthread_mutex_destroy(&devctx->mwx);
 			vkil_free(handle);
 		}
@@ -547,7 +559,7 @@ int32_t vkil_init_dev(void **handle)
 			      VKIL_DEV_DRV_NAME ".%d", devctx->id))
 			goto fail;
 
-		devctx->fd = vkdrv_open(dev_name, O_RDWR);
+		devctx->fd = open(dev_name, O_RDWR);
 		if (devctx->fd < 0)
 			goto fail;
 
