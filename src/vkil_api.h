@@ -15,7 +15,7 @@
 #define VKIL_API_H__
 
 #include <stdint.h>
-#include "vkil_backend.h"
+#include "vk_parameters.h"
 
 #define VKIL_MAX_AGGREGATED_BUFFERS 17
 
@@ -91,7 +91,7 @@ typedef union vkil_size_ {
  * @image html SurfaceDescriptor.svg
  * @image latex SurfaceDescriptor.eps
  *
- * the surface can be stored in up to 4 planes, (that is chroma component
+ * the surface can be stored in up to 4 planes, (that is chroma components
  * are always expected to be interleaved, e.g. NV12, NV21 or P010 format
  * are supported as well as Hardware format)
  */
@@ -209,8 +209,8 @@ typedef struct _vkil_api {
 	 * addresses
 	 */
 	int32_t (*transfer_buffer)(void *ctx_handle,
-			       void *buffer_handle,
-			       const vkil_command_t cmd);
+				   void *buffer_handle,
+				   const vkil_command_t cmd);
 	/**
 	 * the process buffer typically "consumes" the buffer provided in
 	 * input; that is free the input buffer which will not be available
@@ -220,8 +220,8 @@ typedef struct _vkil_api {
 	 * function
 	 */
 	int32_t (*process_buffer)(void *ctx_handle,
-			       void *buffer_handle,
-			       const vkil_command_t cmd);
+				  void *buffer_handle,
+				  const vkil_command_t cmd);
 } vkil_api;
 
 extern void *vkil_create_api(void);

@@ -19,8 +19,6 @@
 
 #include <errno.h>
 #include <fcntl.h>
-#include <limits.h>
-#include <stdio.h>
 #include <unistd.h>
 #include "vkil_api.h"
 #include "vkil_backend.h"
@@ -66,7 +64,7 @@
 #define MSG_LIST_SIZE 256
 
 /**
- * set user data for the msg_id
+ * @brief set user data for the msg_id
  * (including the HW, with the assigned msg_id)
  *
  * @param[in]  handle to a vkil_devctx
@@ -88,7 +86,7 @@ int32_t vkil_set_msg_user_data(vkil_devctx *devctx,
 }
 
 /**
- * get user data froma message id
+ * @brief get user data froma message id
  * (including the HW, with the assigned msg_id
  *
  * @param[in]  devctx handle to a device context
@@ -111,8 +109,8 @@ int32_t vkil_get_msg_user_data(vkil_devctx *devctx,
 }
 
 /**
- * Recycle a message id, indicate there is no more message in the system;
- * including the HW; with the assigned msg_id
+ * @brief Recycle a message id, indicate there is no more message in the
+ * system; including the HW; with the assigned msg_id
  *
  * @param  devctx device context
  * @param  msg_id id to recycle
@@ -131,7 +129,7 @@ int32_t vkil_return_msg_id(vkil_devctx *devctx, const int32_t msg_id)
 }
 
 /**
- * Get a unique message id
+ * @brief Get a unique message id
  *
  * @param  devctx device context
  * @return an unique msg_id if positive, error code otherwise
@@ -162,7 +160,7 @@ fail:
 }
 
 /**
- * De-initialize a message list
+ * @brief De-initialize a message list
  *
  * @param  devctx device context
  * @return zero on succes, error code otherwise
@@ -185,7 +183,7 @@ fail:
 }
 
 /**
- * Initializes a message list
+ * @brief initializes a message list
  *
  * @param  devctx device context
  * @return zero on succes, error code otherwise
@@ -208,7 +206,7 @@ fail:
 }
 
 /**
- * probe a driver for message up to VKIL_TIMEOUT_MS * wait_x
+ * @brief probe a driver for message up to VKIL_TIMEOUT_MS * wait_x
  * @param[in] driver to poll
  * @param[in|out] message returned on success
  * @param[in] max wait factor (=default_wait*wait_x, zero means no wait)
@@ -222,7 +220,7 @@ static ssize_t vkil_wait_probe_msg(int fd,
 	int32_t infinite_wait = (wait_x && (!VKIL_TIMEOUT_MS)) ? 1 : 0;
 
 	VK_ASSERT(msg);
-	VK_ASSERT(msg->size < UCHAR_MAX);
+	VK_ASSERT(msg->size < UINT8_MAX);
 
 	nbytes = sizeof(*msg) * (msg->size + 1);
 
@@ -248,7 +246,7 @@ static ssize_t vkil_wait_probe_msg(int fd,
 }
 
 /**
- * Write a message to the device
+ * @brief write a message to the device
 
  * @param devctx device context
  * @param message to write
@@ -260,7 +258,7 @@ ssize_t vkil_write(vkil_devctx *devctx, host2vk_msg *msg)
 }
 
 /**
- * Compare vk2host_msg::msg_id
+ * @brief compare vk2host_msg::msg_id
  * @param first message to compare
  * @param second message to compare
  * @return 0 if matching, error code otherwise
@@ -277,7 +275,7 @@ static int32_t cmp_msg_id(const void *data, const void *data_ref)
 }
 
 /**
- * Compare vk2host_msg::function_id
+ * @brief compare vk2host_msg::function_id
  * @param first message to compare
  * @param second message to compare
  * @return 0 if matching, error code otherwise
@@ -367,7 +365,7 @@ out:
 }
 
 /**
- * flush the driver reading queue into a SW linked list
+ * @brief flush the driver reading queue into a SW linked list
  * @param[in] devctx device context
  * @param[in] message carrying q_id, and field to retrieve (msg_id,...)
  * @param[in] wait for incoming message carrying specific field  (msg_id,...)
@@ -450,7 +448,7 @@ fail:
 }
 
 /**
- * read a message from the device
+ * @brief read a message from the device
  *
  * the function will first look if the message has been transferred from the
  * driver to the a SW linked list, if not, then it will flush the driver queue
@@ -503,7 +501,8 @@ out:
 }
 
 /**
- * Denit the device
+ * @brief denit the device
+ *
  * If the caller is the only user, the device is closed
  * @param[in,out] handle handle to the device
  * @return device id if success, error code otherwise
@@ -529,7 +528,8 @@ int32_t vkil_deinit_dev(void **handle)
 }
 
 /**
- * Init the device
+ * @brief init the device
+ *
  * open a device if not yet done, otherwise add a reference to
  * existing device
  * @param[in,out] handle handle to the device
@@ -547,7 +547,7 @@ int32_t vkil_init_dev(void **handle)
 
 		ret = vkil_mallocz(handle, sizeof(*devctx));
 		if (ret)
-			goto fail_malloc;
+			goto fail;
 		devctx = *handle;
 
 		ret = -ENODEV; /* value to be used for below fails */
@@ -580,7 +580,6 @@ int32_t vkil_init_dev(void **handle)
 
 fail:
 	vkil_free(handle);
-fail_malloc:
-	VKIL_LOG(VK_LOG_DEBUG, "device context creation failure %d", ret);
+	VKIL_LOG(VK_LOG_ERROR, "device initialization failure %d", ret);
 	return ret;
 }

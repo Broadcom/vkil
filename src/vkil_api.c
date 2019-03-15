@@ -12,10 +12,8 @@
  * read, resp. write messages to the VKIL backend part (vkil_backend.c)
  */
 
-#include <stdio.h>
-#include <string.h>
+#include <errno.h>
 #include <unistd.h>
-#include "vk_error.h"
 #include "vkil_api.h"
 #include "vkil_backend.h"
 #include "vkil_internal.h"
@@ -48,40 +46,8 @@ static struct _vkil_cfg {
 /** max msg size that can be sent to card */
 #define VKIL_SEND_MSG_MAX_SIZE 8
 
-#define VKILERROR(type) VKERROR_MAKE(VKIL, 0, vkil_error(__func__), type)
-
 /**
- * Generate an index number from a function name
- * To be used to build an error code
- *
- * @param functionname function name
- * @return             function index
- */
-static int32_t vkil_error(const char *functionname)
-{
-	static const char * const vkil_fun_list[] = {
-		"undefined",
-		"vkil_init",
-		"vkil_deinit",
-		"vkil_set_parameter",
-		"vkil_get_parameter",
-		"vkil_send_buffer",
-		"vkil_receive_buffer",
-		"vkil_upload_buffer",
-		"vkil_download_buffer",
-		"vkil_uploaded_buffer",
-		"vkil_downloaded_buffer"};
-	int32_t i;
-
-	for (i = 1; i < VK_ARRAY_SIZE(vkil_fun_list); i++) {
-		if (!strcmp(vkil_fun_list[i], functionname))
-			return i;
-	}
-	return 0;
-};
-
-/**
- * Extract handles from the input buffer
+ * @brief extract handles from the input buffer
  * that have to be processed
  * @param[in] handle input buffer to be processed
  * @param[out] nbuf number of buffers present in handle
@@ -126,7 +92,7 @@ static void get_buffer(void *handle, uint32_t *nbuf,
 #define VKDRV_RD_ERR(_ret, _size)     ((_ret < 0) || (_ret != _size))
 
 /**
- * Populate a buffer descriptor from a message
+ * @brief populate a buffer descriptor from a message
  * @param[in,out] handle buffer descriptor to be populated
  * @param[in] vk2host message to read
  * @param[in] user_data user data to be used
@@ -188,9 +154,8 @@ fail:
 
 
 /**
- * prepopulate the command message with control field
- * argument, need to be prpeopulated in addition of it
- * and size changed accordingly
+ * @brief prepopulate the command message with control field
+ * arguments
  *
  * @param[in,out] msg2vk message to prepolulate
  * @param[in] handle handle to context
@@ -387,7 +352,7 @@ fail_read:
 }
 
 /**
- * @brief Initialize the context
+ * @brief initialize a context
  *
  * @li this function create the private data container
  * @li This function will load a device driver if required. If a device is
@@ -397,7 +362,7 @@ fail_read:
  * @return          zero on succes, error code otherwise
  *
  * @pre @p handle must already be a _vkil_context but it's private data
- * no yet created.
+ * no yet created (pointing to NULL).
  */
 static int32_t vkil_init_ctx(void *handle)
 {
@@ -413,7 +378,7 @@ static int32_t vkil_init_ctx(void *handle)
 	/* the priv_data structure size could be component specific */
 	ret = vkil_mallocz(&ilctx->priv_data, sizeof(vkil_context_internal));
 	if (ret)
-		goto fail_malloc;
+		goto fail;
 
 	/*
 	 * we pair the device initialization with the private data one to
@@ -427,17 +392,15 @@ static int32_t vkil_init_ctx(void *handle)
 
 fail:
 	vkil_free(&ilctx->priv_data);
-
-fail_malloc:
-	VKIL_LOG(VK_LOG_ERROR, "failed malloc");
-	return VKILERROR(ret);
+	VKIL_LOG(VK_LOG_ERROR, "initialization failure %d for ilctx %p",
+		 ret, ilctx);
+	return ret;
 }
 
 /**
- * @brief De-initialize the device context
+ * @brief de-initialize the device context
  *
  * This function will unload the device driver if not used anymore
- *
  * @param handle    handle to a vkil_context
  * @return          zero on succes, error code otherwise
  */
@@ -467,7 +430,7 @@ int32_t vkil_deinit(void **handle)
 };
 
 /**
- * @brief Initialize a vkil_context
+ * @brief initialize a vkil_context
  *
  * This function should be called twice:
  * @li The first call creates a software only vkil_context. It is then the
@@ -517,7 +480,8 @@ fail:
 };
 
 /**
- * return the size in bytes of the structure associated to a vkil_parameter_t
+ * @brief return the size in bytes of the structure associated to a
+ * vkil_parameter_t
  *
  * @param  field the field to evaluate
  * @return size of the structure aasociated to field
@@ -537,7 +501,7 @@ static int32_t vkil_get_struct_size(const vkil_parameter_t field)
 }
 
 /**
- * Set a parameter of a vkil_context
+ * @brief set a vkil_context parameter
  *
  * @param handle    handle to a vkil_context
  * @param field     field to set
@@ -614,7 +578,7 @@ fail_read:
 };
 
 /**
- * Get a parameter of a vkil_context
+ * @brief get a parameter from a vkil_context
  *
  * @param handle handle to a vkil_context
  * @param field  field to get
@@ -694,7 +658,7 @@ fail_read:
 };
 
 /**
- * convert a front end buffer prefix structure into a backend one
+ * @brief convert a front end buffer prefix structure into a backend one
  * (they can be different or the same).
  * @param[out] surface    handle to the backend structure
  * @param[in]  il_surface handle to a front hand buffer structure
@@ -718,7 +682,7 @@ static int32_t convert_vkil2vk_buffer_prefix(vk_buffer *dst,
 }
 
 /**
- * get the number of planes to transfer
+ * @brief get the number of planes to transfer
  * @param[in]  il_packet    handle to a front hand packet structure
  * @return                  number of pointer to convey to the card
  */
@@ -747,7 +711,7 @@ fail:
 }
 
 /**
- * convert a front end surface structure into a backend one
+ * @brief convert a front end surface structure into a backend one
  * (they can be different or the same).
  * @param[out] surface    handle to the backend structure
  * @param[in]  il_surface handle to a front hand packet structure
@@ -835,7 +799,7 @@ fail:
 }
 
 /**
- * convert a front end packet structure into a backend one
+ * @brief convert a front end packet structure into a backend one
  * (they can be different or the same).
  * @param[out] packet    handle to the backend structure
  * @param[in]  il_packet handle to a front hand packet structure
@@ -864,7 +828,7 @@ static int32_t convert_vkil2vk_buffer_packet(vk_buffer_packet *packet,
 }
 
 /**
- * convert a front end metadata structure into a backend one
+ * @brief convert a front end metadata structure into a backend one
  * (they can be different or the same).
  * @param[out] packet    handle to the backend structure
  * @param[in]  il_packet handle to a front hand metdata structure
@@ -893,7 +857,7 @@ static int32_t convert_vkil2vk_buffer_metadata(vk_buffer_metadata *mdata,
 }
 
 /**
- * convert a front end buffer structure into a backend one
+ * @brief convert a front end buffer structure into a backend one
  * (they can be different or the same).
  * @param[in]  il_packet handle to a front hand packet structure
  * @param[out] packet    handle to the backend structure
@@ -916,7 +880,7 @@ static int32_t convert_vkil2vk_buffer(void *buffer, const void *il_buffer)
 }
 
 /**
- * get the size of the vk backend paired structure
+ * @brief get the size of the vk backend paired structure
  * (they can be different or the same).
  * @param[in]  il_packet handle to a front hand packet structure
  * @param[out] packet    handle to the backend structure
@@ -936,6 +900,26 @@ static int32_t get_vkil2vk_buffer_size(const void *il_buffer)
 }
 
 /**
+ * @brief buffer sanity check
+ *
+ * perform a sanity check, to ensure we provide a valid buffer to the HW
+ * the sainity check consist to verify that the buffer type is a avlid one
+ * @param  buffer
+ * @return zero on success, error code otherwise
+ */
+static int32_t vkil_sanity_check_buffer(vkil_buffer *buffer)
+{
+	switch (buffer->type) {
+	case VKIL_BUF_META_DATA:
+	case VKIL_BUF_PACKET:
+	case VKIL_BUF_SURFACE:
+	case VKIL_BUF_AG_BUFFERS:
+		return 0;
+	}
+	return -EINVAL;
+}
+
+/**
  * @brief transfer buffers
  *
  * This function need to be called for all buffer to transfer to/from the the
@@ -951,6 +935,7 @@ static int32_t get_vkil2vk_buffer_size(const void *il_buffer)
  * @param[in] cmd		transfer direction (upload/download) and mode
  *				(blocking or not)
  * @return			zero on success, error code otherwise
+ * @pre the  _vkil_buffer to transfer must have a valid _vkil_buffer_type
  */
 static int32_t vkil_transfer_buffer(void *component_handle,
 				    void *buffer_handle,
@@ -972,6 +957,10 @@ static int32_t vkil_transfer_buffer(void *component_handle,
 		 vkil_cmd_opts_str(cmd));
 	VK_ASSERT(component_handle);
 	VK_ASSERT(cmd);
+
+	ret = vkil_sanity_check_buffer(buffer);
+	if (ret)
+		goto fail;
 
 	if (!(cmd & VK_CMD_OPT_CB)) {
 		/* We need to write the dma command */
@@ -1034,7 +1023,7 @@ fail_write:
 	 * the input queue could be full (ENOBUFS),
 	 * so not necessarily always an real error
 	 */
-	VKIL_LOG(VK_LOG_ERROR,
+	VKIL_LOG(VK_LOG_WARNING,
 		 "failure %d on writing message in ilctx %p ",
 		 ret,
 		 ilctx);
@@ -1054,6 +1043,9 @@ fail_read:
 		 ilctx);
 	return ret;
 
+fail:
+	VKIL_LOG(VK_LOG_ERROR, "failure %d in ilctx %p", ret, ilctx);
+	return ret;
 };
 
 /**
@@ -1069,6 +1061,7 @@ fail_read:
  * @param buffer_handle       handle to the buffer to process
  * @param cmd                 options (blocking, call back call,...)
  * @return                    zero on success, error code otherwise
+ * @pre the  _vkil_buffer to process must have a valid _vkil_buffer_type
  */
 int32_t vkil_process_buffer(void *component_handle,
 			    void *buffer_handle,
@@ -1094,6 +1087,10 @@ int32_t vkil_process_buffer(void *component_handle,
 
 	ilpriv = ilctx->priv_data;
 	buffer = buffer_handle;
+
+	ret = vkil_sanity_check_buffer(buffer);
+	if (ret)
+		goto fail;
 
 	VK_ASSERT(ilpriv);
 
@@ -1166,7 +1163,7 @@ fail_write:
 		 */
 		return ret; /* request the host to drain the queue first */
 
-	VKIL_LOG(VK_LOG_ERROR,
+	VKIL_LOG(VK_LOG_WARNING,
 		 "failure %d on writing message in ilctx %p",
 		 ret,
 		 ilctx);
@@ -1185,10 +1182,14 @@ fail_read:
 		 ret,
 		 ilctx);
 	return ret;
+
+fail:
+	VKIL_LOG(VK_LOG_ERROR, "failure %d in ilctx %p", ret, ilctx);
+	return ret;
 };
 
 /**
- * @brief Creates and initialize a vkil_api
+ * @brief create and initialize a vkil_api
  *
  * The vkil_api provide the intercae to the Valkyrie card.
  * @return an inited vkil_api on success, NULL otherwise
@@ -1216,10 +1217,10 @@ void *vkil_create_api(void)
 }
 
 /**
- * Destroys a vkil_api
+ * @brief destroy a vkil_api
  *
  * @param ilapi    handle to a vkil_api
- * @return         zero on success, error codes otherwise
+ * @return         zero on success, error code otherwise
  */
 int vkil_destroy_api(void **ilapi)
 {
@@ -1232,7 +1233,7 @@ int vkil_destroy_api(void **ilapi)
 }
 
 /**
- * Set the device to be used, configured by user CLI
+ * @brief set the device to be used, configured by user CLI
  * @param device id in ASCII format
  */
 int vkil_set_affinity(const char *device)
@@ -1258,7 +1259,7 @@ int vkil_set_affinity(const char *device)
 }
 
 /**
- * Get the device configured and used by user CLI
+ * @brief get the device configured and used by user CLI
  * @param device id in ASCII format
  */
 const char *vkil_get_affinity(void)
