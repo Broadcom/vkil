@@ -26,16 +26,7 @@
 #include "vkil_utils.h"
 
 #ifdef VKDRV_USERMODEL
-/*
- * if we use a user space model of the driver
- * we need to overload kernel call functions
- * to simulare open,close,read,write.
- */
-#define open(x, y) _Generic(x, default : vkdrv_open)(x, y)
-#define read(x, y, z) _Generic(x, default : vkdrv_read)(x, y, z)
-#define write(x, y, z) _Generic(x, default : vkdrv_write)(x, y, z)
-#define close(x) _Generic(x, default : vkdrv_close)(x)
-#include "vkdrv/vkdrv_access.h"
+#include "model/vkdrv_access.h"
 #endif
 
 #define BIG_MSG_SIZE_INC   2
