@@ -13,6 +13,7 @@
  */
 
 #include <errno.h>
+#include <stdio.h>
 #include <unistd.h>
 #include "vkil_api.h"
 #include "vkil_backend.h"
