@@ -13,10 +13,13 @@
 
 #include "vk_utils.h"
 
-#define VKIL_LOG_HOST2VK_MSG(loglevel, msg)				 \
+#define VKIL_LOG(...) vk_log(__func__, VK_LOG_MOD_SYS, LOG_TYPE_INT,	\
+			     __VA_ARGS__)
+
+#define VKIL_LOG_HOST2VK_MSG(loglevel, msg)				\
 		VK_H2VK_LOG(VKIL_LOG, loglevel, msg)
 
-#define VKIL_LOG_VK2HOST_MSG(loglevel, msg)				 \
+#define VKIL_LOG_VK2HOST_MSG(loglevel, msg)				\
 		VK_VK2H_LOG(VKIL_LOG, loglevel, msg)
 
 int vkil_malloc(void **ptr, size_t size);
