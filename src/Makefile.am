@@ -15,7 +15,4 @@ libvkil_la_SOURCES = \
     vkutil/host/vk_logger.c \
     vkil_api.c \
     vkil_backend.c \
-    vkil_error.h \
-    vkil_internal.h \
-    vkil_utils.c \
-    vkil_utils.h
+    vkil_utils.c
