@@ -15,6 +15,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <unistd.h>
+#include "vk_buffers.h"
 #include "vkil_api.h"
 #include "vkil_backend.h"
 #include "vkil_internal.h"
