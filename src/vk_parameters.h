@@ -94,12 +94,14 @@ typedef enum  _vk_command_t vkil_command_t;
 
 /* shift to get to first option bit, ie VK_CMD_OPT_CB */
 #define VK_CMD_OPTS_SHIFT    14
-#define VK_CMD_OPTS_TOT       2
+#define VK_CMD_OPTS_TOT       3
 
 /** means callback command */
 #define VK_CMD_OPT_CB       (0x1 << VK_CMD_OPTS_SHIFT)
 /** means a blocking command */
 #define VK_CMD_OPT_BLOCKING (0x2 << VK_CMD_OPTS_SHIFT)
+/** means to collect operation time */
+#define VK_CMD_OPT_GET_TIME (0x4 << VK_CMD_OPTS_SHIFT)
 #define VK_CMD_OPTS_MASK    (((1 << VK_CMD_OPTS_TOT) - 1) << VK_CMD_OPTS_SHIFT)
 
 /** number of planes to up/download */
