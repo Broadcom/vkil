@@ -4,6 +4,7 @@
  */
 
 #include <errno.h>
+#include <shell/shell.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -12,10 +13,7 @@
 #include "logger_api.h"
 #include "vk_logger.h"
 #include "vk_utils.h"
-#include "vksim_internal.h"
-#include "vksim_utils.h"
 
-#include <shell/shell.h>
 #define VK_LOG_DEF_LEVEL VK_LOG_INFO
 
 static logger_ctrl vk_log_ctrl[VK_LOG_MOD_MAX] = {
@@ -29,6 +27,10 @@ static logger_ctrl vk_log_ctrl[VK_LOG_MOD_MAX] = {
 	[VK_LOG_MOD_SYS] = { VK_LOG_DEF_LEVEL, "sys" },
 	[VK_LOG_MOD_MVE] = { VK_LOG_DEF_LEVEL, "mve" },
 };
+
+/* specific allocation for the logger buffer in BAR2 */
+#define VK_LOGGER_HEAP_SIZE    (256 * 1024)
+uint8_t __vk_log_buff_section vk_pcie_log_buf[VK_LOGGER_HEAP_SIZE];
 
 /**
  * log message
@@ -143,25 +145,7 @@ void vk_vcon_cmd_handler(const char *cmd)
  */
 int32_t vk_logger_init(void)
 {
-	int ret;
-
-	static logger_buf *logger;
-
-	/*
-	 * For now, allocate the memory on heap.
-	 * Once the memory map for BAR2 is created, will initialize the
-	 * pointer directly.
-	 */
-#define VK_LOGGER_HEAP_SIZE    (256 * 1024)
-	ret = vksim_mallocz_high(&logger, VK_LOGGER_HEAP_SIZE);
-	if (ret)
-		return ret;
-	/*
-	 * TO FIX: the following is experimental code, and will replace
-	 * the above allocation when the MAP is available.
-	 *
-	 * logger = (logger_buf *)0x60040000;
-	 */
+	static logger_buf *logger = (logger_buf *)vk_pcie_log_buf;
 
 	return logger_init(vk_log_ctrl, VK_LOG_MOD_MAX,
 			   VK_LOG_MOD_GEN, logger,  VK_LOGGER_HEAP_SIZE,
