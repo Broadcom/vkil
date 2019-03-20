@@ -27,7 +27,7 @@
 #include "vkil_utils.h"
 
 #ifdef VKDRV_USERMODEL
-#include "model/vkdrv_access.h"
+#include "../drv_model/vkdrv_access.h"
 #endif
 
 #define BIG_MSG_SIZE_INC   2

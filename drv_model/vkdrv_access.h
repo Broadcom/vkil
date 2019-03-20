@@ -16,8 +16,8 @@
 #define write(x, y, z) _Generic(x, default : vkdrv_write)(x, y, z)
 #define close(x) _Generic(x, default : vkdrv_close)(x)
 
-extern int vkdrv_open(const char *dev_name, int flags);
-extern int vkdrv_close(int fd);
-extern ssize_t vkdrv_write(int fd, const void *buf, size_t nbytes);
-extern ssize_t vkdrv_read(int fd, void *buf, size_t nbytes);
+int vkdrv_open(const char *dev_name, int flags);
+int vkdrv_close(int fd);
+ssize_t vkdrv_write(int fd, const void *buf, size_t nbytes);
+ssize_t vkdrv_read(int fd, void *buf, size_t nbytes);
 #endif
