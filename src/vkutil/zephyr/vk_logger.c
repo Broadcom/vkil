@@ -10,7 +10,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include "logger_api.h"
 #include "vk_logger.h"
 
 #define VK_LOG_DEF_LEVEL VK_LOG_INFO

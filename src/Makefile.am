@@ -3,6 +3,7 @@ lib_LTLIBRARIES = libvkil.la
 AUTOMAKE_OPTIONS = subdir-objects
 
 include_HEADERS = \
+    vkutil/host/logger_api.h \
     vk_buffers.h \
     vk_logger.h \
     vk_parameters.h \
@@ -21,6 +22,6 @@ if VKDRV_USERMODEL
     VKIL_ADD   = $(top_builddir)/drv_model/libvkdrv.la
 endif
 
-libvkil_la_CPPFLAGS = $(VKIL_FLAGS)
+libvkil_la_CPPFLAGS = $(VKIL_FLAGS) -I$(top_srcdir)/src/vkutil/host
 libvkil_la_LIBADD = $(VKIL_ADD)
 
