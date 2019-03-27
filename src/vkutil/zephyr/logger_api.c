@@ -56,7 +56,8 @@
 #define LOG_EBUF_LEN             256
 #define LOG_BUF_MARKER_VAL       0xbeefcafe
 #define LOG_BUF_FULL(_p)         \
-	(((_p->wr_idx + 1) & LOG_IDX_MASK(_p)) == _p->rd_idx)\
+	(((_p->wr_idx + 1) & LOG_IDX_MASK(_p)) == _p->rd_idx)
+#define LOG_OUTPUTS_ON_PANIC     32
 
 /**
  * a single log entry, to facilate handling
@@ -307,6 +308,35 @@ void vlogger_enq(const char *prefix, uint32_t log_mod,
 	p_log_buf->wr_idx = (p_log_buf->wr_idx + 1)
 			     & LOG_IDX_MASK(p_log_buf);
 	p_log_buf->wr_tot++;
+
+	/*
+	 * if it is a panic, will print out a number of messages
+	 * to UART immediately and inline for debug purpose
+	 * regardlessly.
+	 */
+	if (level == LOG_PANIC) {
+
+		uint32_t i;
+		uint32_t idx;
+		char _loc_buf[LOGGER_EBUF_LEN];
+
+		/* start from oldest index */
+		idx = (p_log_buf->wr_idx +
+		       (p_log_buf->log_nentries - LOG_OUTPUTS_ON_PANIC))
+			& LOG_IDX_MASK(p_log_buf);
+		for (i = 0; i < LOG_OUTPUTS_ON_PANIC; i++) {
+
+			p_entry = &entry_buf[idx];
+
+			/* use the time stamp != 0 as a valid entry indicator */
+			if ((p_entry->tm.tv_sec != 0)
+			    || (p_entry->tm.tv_nsec != 0)) {
+				log_entry_to_buf(NULL, p_entry, _loc_buf);
+				log_line("PANIC", _loc_buf);
+			}
+			idx = (idx + 1) & LOG_IDX_MASK(p_log_buf);
+		}
+	}
 
 	_UNLOCK_ACCESS();
 }
