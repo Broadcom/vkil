@@ -46,6 +46,9 @@ void vk_log(const char *prefix, vk_log_mod log_mod,
 {
 	va_list vl;
 
+	if (level > vk_log_ctrl[log_mod].log_level)
+		return;
+
 	va_start(vl, fmt);
 	vlogger_enq(prefix, log_mod, ltype, level, fmt, vl);
 	va_end(vl);
