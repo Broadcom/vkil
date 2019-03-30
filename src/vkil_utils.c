@@ -9,13 +9,12 @@
  */
 
 #include <errno.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <unistd.h>
 #include "vkil_backend.h"
 #include "vkil_internal.h"
 #include "vkil_utils.h"
+
+#define VKSIM_ALIGN 16 /**< memory  is allocated on 16 bytes boundary */
 
 /**
  * alloc memory
@@ -30,7 +29,7 @@ int vkil_malloc(void **ptr, size_t size)
 	 * allocate memory
 	 * see http://man7.org/linux/man-pages/man3/posix_memalign.3.html
 	 */
-	return posix_memalign(ptr, VK_ALIGN, size);
+	return posix_memalign(ptr, VKSIM_ALIGN, size);
 }
 
 /**

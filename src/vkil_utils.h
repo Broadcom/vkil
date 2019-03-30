@@ -11,7 +11,32 @@
 #ifndef VKIL_UTILS_H
 #define VKIL_UTILS_H
 
-#include "vk_utils.h"
+#include <assert.h>
+#include <stdlib.h>
+#include "vk_logger.h"
+
+#define VK_ASSERT(cond) do {                                               \
+	if (!(cond)) {                                                     \
+		vk_log(__func__, VK_LOG_MOD_SYS, LOG_TYPE_INT,             \
+		       VK_LOG_PANIC,                                       \
+		       " %s:%d, assert %s failed",                         \
+			__FILE__, __LINE__, #cond);                        \
+		abort();                                                   \
+	}                                                                  \
+} while (0)
+
+#ifndef MIN
+#define MIN(a, b) (((a) < (b))?(a):(b))
+#endif
+
+#ifndef MAX
+#define MAX(a, b) (((a) > (b))?(a):(b))
+#endif
+
+#ifndef ARRAY_SIZE
+/* this is defined in kernel, but is not expected to be defined here */
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof(*(a)))
+#endif
 
 #define VKIL_LOG(...) vk_log(__func__, VK_LOG_MOD_SYS, LOG_TYPE_INT,	\
 			     __VA_ARGS__)
@@ -25,6 +50,11 @@
 int vkil_malloc(void **ptr, size_t size);
 int vkil_mallocz(void **ptr, size_t size);
 void vkil_free(void **ptr);
+
+typedef struct _vkil_node {
+	void *data;
+	struct _vkil_node *next;
+} vkil_node;
 
 vkil_node *vkil_ll_append(vkil_node **head, void *data);
 int32_t vkil_ll_delete(vkil_node **head, vkil_node *nd);

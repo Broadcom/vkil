@@ -6,7 +6,6 @@ include_HEADERS = \
     vk_buffers.h \
     vk_logger.h \
     vk_parameters.h \
-    vk_utils.h \
     vkil_api.h \
     vkil_backend.h
 

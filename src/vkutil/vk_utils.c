@@ -5,8 +5,12 @@
 
 #include <stdint.h>
 #include "vk_parameters.h"
-#include "vk_utils.h"
 #include "vkil_backend.h"
+
+#ifndef ARRAY_SIZE
+/* this is defined in kernel, but is not expected to be defined here */
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof(*(a)))
+#endif
 
 /**
  * return the str representation of a function id

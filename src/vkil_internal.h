@@ -15,6 +15,7 @@
 
 #include <stdint.h>
 #include <pthread.h>
+#include "vkil_utils.h"
 
 /** max number of message queues used shall not be gretaer than VK_MSG_Q_NR */
 #define VKIL_MSG_Q_MAX 3
@@ -22,10 +23,6 @@
 /* name of driver dev node */
 #define VKIL_DEV_DRV_NAME           "/dev/bcm-vk"
 
-typedef struct _vkil_node {
-	void *data;
-	struct _vkil_node *next;
-} vkil_node;
 
 /**
  * Each emitted message is associated to an unique message id, which can as
@@ -83,4 +80,5 @@ int32_t vkil_get_msg_user_data(vkil_devctx *devctx, const int32_t msg_id,
 const char *vkil_function_id_str(uint32_t function_id);
 const char *vkil_cmd_str(uint32_t cmd);
 const char *vkil_cmd_opts_str(uint32_t cmd);
+
 #endif

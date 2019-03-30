@@ -11,7 +11,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "vk_logger.h"
-#include "vk_utils.h"
+#include "vkil_utils.h"
 
 #define VK_LOG_DEF_LEVEL VK_LOG_DEBUG
 

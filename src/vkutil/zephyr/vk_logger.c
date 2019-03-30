@@ -12,7 +12,6 @@
 #include <unistd.h>
 #include "logger_api.h"
 #include "vk_logger.h"
-#include "vk_utils.h"
 
 #define VK_LOG_DEF_LEVEL VK_LOG_INFO
 
