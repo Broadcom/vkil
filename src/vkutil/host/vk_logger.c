@@ -54,6 +54,9 @@ void vk_log(const char *prefix, vk_log_mod log_mod,
 	struct timespec tm;
 	int length, max_length;
 
+	if (level > vk_log_ctrl[log_mod].log_level)
+		return;
+
 	pthread_mutex_lock(&log_mutex);
 
 	clock_gettime(CLOCK_MONOTONIC, &tm);
