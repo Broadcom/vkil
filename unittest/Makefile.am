@@ -5,5 +5,5 @@ test_vkil_CPPFLAGS = -I$(top_srcdir)/src
 test_vkil_LDADD    = $(top_builddir)/src/libvkil.la
 
 test_vkdrv_SOURCES  = test_vkdrv.c
-test_vkdrv_CPPFLAGS = -I$(top_srcdir)/src
+test_vkdrv_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/vkutil/host
 test_vkdrv_LDADD    = $(top_builddir)/src/libvkil.la
