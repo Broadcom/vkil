@@ -26,8 +26,12 @@ static logger_ctrl vk_log_ctrl[VK_LOG_MOD_MAX] = {
 	[VK_LOG_MOD_MVE] = { VK_LOG_DEF_LEVEL, "mve" },
 };
 
-/* specific allocation for the logger buffer in BAR2 */
-#define VK_LOGGER_HEAP_SIZE    (256 * 1024)
+/*
+ * Specific allocation for the logger buffer in BAR2 & its size
+ * 1.5M is used which would allow 4k number of entries.  The rest
+ * is reserved for later use.
+ */
+#define VK_LOGGER_HEAP_SIZE    (3 * 512 * 1024)
 uint8_t __vk_log_buff_section vk_pcie_log_buf[VK_LOGGER_HEAP_SIZE];
 
 /**
