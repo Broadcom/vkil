@@ -145,7 +145,7 @@ static int32_t flash_write_block(vk_flash_util_info_t *vk_flash_util_info,
 static void print_usage(void)
 {
 	printf("\n Usage:\n");
-	printf("%s bin filename [optional args]\n", FLASH_UTIL_APP_NAME);
+	printf("%s bin_filename [optional args]\n", FLASH_UTIL_APP_NAME);
 	printf("[Optional args]\n");
 	printf("-o <flash write offset> default is 0\n");
 	printf("-t <flash type string> qspi/nand, default is qspi\n");
@@ -281,7 +281,7 @@ int main(int argc, char *argv[])
 		num_of_blocks++;
 
 	for (loop = 0; loop < num_of_blocks; loop++) {
-		uint8_t *buffer = (ctx->buffer + (loop * num_of_blocks));
+		uint8_t *buffer = (ctx->buffer + (loop * FLASH_MAX_BLOCK_SIZE));
 		uint32_t block_size = FLASH_MAX_BLOCK_SIZE;
 		uint32_t write_offset = ctx->start_offset + (loop * block_size);
 
