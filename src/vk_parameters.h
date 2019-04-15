@@ -94,7 +94,7 @@ typedef enum  _vk_command_t vkil_command_t;
 
 /* shift to get to first option bit, ie VK_CMD_OPT_CB */
 #define VK_CMD_OPTS_SHIFT    14
-#define VK_CMD_OPTS_TOT       3
+#define VK_CMD_OPTS_TOT       4
 
 /** means callback command */
 #define VK_CMD_OPT_CB       (0x1 << VK_CMD_OPTS_SHIFT)
@@ -102,12 +102,16 @@ typedef enum  _vk_command_t vkil_command_t;
 #define VK_CMD_OPT_BLOCKING (0x2 << VK_CMD_OPTS_SHIFT)
 /** means to collect operation time */
 #define VK_CMD_OPT_GET_TIME (0x4 << VK_CMD_OPTS_SHIFT)
+/** means host performing a DMA loopback */
+#define VK_CMD_OPT_DMA_LB   (0x8 << VK_CMD_OPTS_SHIFT)
 #define VK_CMD_OPTS_MASK    (((1 << VK_CMD_OPTS_TOT) - 1) << VK_CMD_OPTS_SHIFT)
 
 /** number of planes to up/download */
 #define VK_CMD_PLANES_MASK   0x000F
 /** command mask */
 #define VK_CMD_MASK          (0xF << VK_CMD_BASE_SHIFT)
+/** command mask for load: command + options that are allowed to pass down */
+#define VK_CMD_LOAD_MASK     (VK_CMD_MASK | VK_CMD_OPT_DMA_LB)
 
 enum _vk_status_t {
 	VK_STATE_OK = 0,

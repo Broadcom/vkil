@@ -946,7 +946,7 @@ static int32_t vkil_transfer_buffer(void *component_handle,
 	int32_t ret, msg_id = 0;
 	vkil_buffer *buffer = buffer_handle;
 	const vkil_context *ilctx = component_handle;
-	const vkil_command_t load_mode = cmd & VK_CMD_MASK;
+	const vkil_command_t load_mode = cmd & VK_CMD_LOAD_MASK;
 	int32_t size = get_vkil2vk_buffer_size(buffer);
 	int32_t msg_size = MSG_SIZE(size);
 	host2vk_msg message[msg_size + 1];

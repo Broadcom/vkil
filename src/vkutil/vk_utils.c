@@ -106,14 +106,10 @@ const char *vkil_cmd_opts_str(uint32_t cmd)
 	 * to be modified to have new options.
 	 */
 	static const char * const opt_str[] = {
-		"",                   /* !BLOCKING, !CB */
-		"|cb",                /* !BLOCKING,  CB */
-		"|blk",               /*  BLOCKING, !CB */
-		"|blk,cb",            /*  BLOCKING,  CB */
-		"|gt",                /*  gettime                 */
-		"|gt,cb",             /*  gettime, !BLOCKING, CB  */
-		"|gt,blk",            /*  gettime, BLOCKING, !CB  */
-		"|gt,blk,cb",         /*  gettime, BLOCKING,  CB  */
+		"",        "|cb",       "|blk",       "|blk,cb",
+		"|gt",     "|gt,cb",    "|gt,blk",    "|gt,blk,cb",
+		"|lb",     "|lb,cb",    "|lb,blk",    "|lb,blk,cb",
+		"|lb,gt",  "|lb,gt,cb", "|lb,gt,blk", "|lb,gt,blk,cb",
 	};
 
 	idx = (cmd & VK_CMD_OPTS_MASK) >> VK_CMD_OPTS_SHIFT;
