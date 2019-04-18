@@ -38,6 +38,7 @@ typedef struct _vk_flash_util_ctx {
 	uint8_t *buffer;
 	uint32_t file_size;
 	uint32_t start_offset;
+	char *dev_id;
 } vk_flash_util_ctx;
 
 typedef struct _vk_flash_util_info {
@@ -147,9 +148,10 @@ static void print_usage(void)
 	printf("\n Usage:\n");
 	printf("%s bin_filename [optional args]\n", FLASH_UTIL_APP_NAME);
 	printf("[Optional args]\n");
+	printf("-d <device id associated with M.2 card> default is 0\n");
 	printf("-o <flash write offset> default is 0\n");
 	printf("-t <flash type string> qspi/nand, default is qspi\n");
-	printf("-h --> help/usage\n");
+	printf("-h help/usage\n");
 }
 
 /**
@@ -184,13 +186,19 @@ int main(int argc, char *argv[])
 	/* default values for image type and write offset */
 	cfg->image_type = VK_INFO_FLASH_TYPE_QSPI;
 	ctx->start_offset = 0;
+	ctx->dev_id = "0";
 
-	while ((c = getopt(argc, argv, "o:h:t:")) != -1) {
+	while ((c = getopt(argc, argv, "d:o:h:t:")) != -1) {
 		switch (c) {
 
 		case 'o':
 			sscanf(optarg, "%x", &ctx->start_offset);
 			printf("flash write offset:%x\n", ctx->start_offset);
+			break;
+
+		case 'd':
+			/* specify the affinity */
+			ctx->dev_id = optarg;
 			break;
 
 		case 't':
@@ -260,6 +268,12 @@ int main(int argc, char *argv[])
 	printf("Starting the flasher test...\n");
 	printf("flash type:%d, write_offset:%d, image_size:%d\n",
 	       cfg->image_type, ctx->start_offset, ctx->file_size);
+
+	ret = vkil_set_affinity(ctx->dev_id);
+	if (ret != 0) {
+		printf("Error in setting the affinity\n");
+		goto end;
+	}
 
 	flash_util_vkil_create_api(ctx);
 
