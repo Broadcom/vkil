@@ -129,8 +129,11 @@ int32_t vkil_return_msg_id(vkil_devctx *devctx, const int32_t msg_id)
 int32_t vkil_get_msg_id(vkil_devctx *devctx)
 {
 	int32_t i;
-	vkil_msg_id *msg_list = devctx->msgid_ctx.msg_list;
+	vkil_msg_id *msg_list;
 
+	VK_ASSERT(devctx && devctx->msgid_ctx.msg_list);
+
+	msg_list = devctx->msgid_ctx.msg_list;
 	pthread_mutex_lock(&(devctx->msgid_ctx.mwx));
 	/* msg_id zero is reserved */
 	for (i = 1; i < MSG_LIST_SIZE; i++) {
@@ -510,6 +513,7 @@ int32_t vkil_deinit_dev(void **handle)
 
 		devctx->ref--;
 		if (!devctx->ref) {
+			VKIL_LOG(VK_LOG_DEBUG, "close driver");
 			vkil_deinit_msglist(devctx);
 			close(devctx->fd);
 			pthread_mutex_destroy(&devctx->mwx);

@@ -49,6 +49,51 @@ static struct _vkil_cfg {
 #define VKIL_SEND_MSG_MAX_SIZE 8
 
 /**
+ * @brief instrument the write failure
+
+ * @param[in] error error code to be processed
+ * @param[out] ilctx il context emitting the write command
+ * @return error
+ */
+static int fail_write(const int error, const void *ilctx)
+{
+	if (error == -ENOBUFS)
+		/*
+		 * This is probably caused by a backlog on the return queue.
+		 * The host should then drain this queue first before
+		 * retrying to write on the input queue
+		 */
+		return error; /* request the host to drain the queue first */
+	else if (error)
+		VKIL_LOG(VK_LOG_ERROR,
+			 "failure %d on writing message in ilctx %p",
+			 error, ilctx);
+	return error;
+}
+
+/**
+ * @brief instrument the read failure
+
+ * @param[in] error error code to be processed
+ * @param[out] ilctx il context emitting the read command
+ * @return error
+ */
+static int fail_read(const int error, const void *ilctx)
+{
+	if ((error == -ENOMSG) || (error == -EAGAIN))
+		/*
+		 * the response could take more time to return (ETIMEOUT),
+		 * so not necessarily always a real error
+		 */
+		return -EAGAIN; /* request the host to try again */
+	else if (error)
+		VKIL_LOG(VK_LOG_ERROR,
+			 "failure %d on reading message in ilctx %p",
+			 error, ilctx);
+	return error;
+}
+
+/**
  * @brief extract handles from the input buffer
  * that have to be processed
  * @param[in] handle input buffer to be processed
@@ -221,6 +266,7 @@ static int32_t vkil_deinit_com(void *handle)
 
 	ilpriv = ilctx->priv_data;
 	VK_ASSERT(ilpriv);
+	VK_ASSERT(ilctx->devctx);
 
 	if (ilctx->context_essential.handle < VK_START_VALID_HANDLE) {
 		/* the call is allowed, but not necessarily expected */
@@ -261,19 +307,10 @@ static int32_t vkil_deinit_com(void *handle)
 	return 0;
 
 fail_write:
-	/* the queue could be full (ENOFUS), so not a real error */
-	VKIL_LOG(VK_LOG_ERROR, "failure %d on writing message in ilctx %p",
-		 ret, ilctx);
-	return ret;
+	return fail_write(ret, ilctx);
 
 fail_read:
-	/*
-	 * the response could take more time to return (ETIMEOUT),
-	 * so not a real error
-	 */
-	VKIL_LOG(VK_LOG_ERROR, "failure %d on reading message in ilctx %p",
-		 ret, ilctx);
-	return ret;
+	return fail_read(ret, ilctx);
 }
 
 /**
@@ -338,19 +375,10 @@ static int32_t vkil_init_com(void *handle)
 	return 0;
 
 fail_write:
-	/* the queue could be full (ENOFUS), so not a real error */
-	VKIL_LOG(VK_LOG_ERROR, "failure %d on writing message in ilctx %p",
-		 ret, ilctx);
-	return ret;
+	return fail_write(ret, ilctx);
 
 fail_read:
-	/*
-	 * the response could take more time to return (ETIMEOUT),
-	 * so not a real error
-	 */
-	VKIL_LOG(VK_LOG_ERROR, "failure %d on reading message in ilctx %p",
-		 ret, ilctx);
-	return ret;
+	return fail_read(ret, ilctx);
 }
 
 /**
@@ -564,19 +592,10 @@ int32_t vkil_set_parameter(void *handle,
 	return 0;
 
 fail_write:
-	/* the queue could be full (ENOFUS), so not a real error */
-	VKIL_LOG(VK_LOG_ERROR, "failure %d on writing message in ilctx %p",
-		 ret, ilctx);
-	return ret;
+	return fail_write(ret, ilctx);
 
 fail_read:
-	/*
-	 * the response could take more time to return (ETIMEOUT),
-	 * so not a real error
-	 */
-	VKIL_LOG(VK_LOG_WARNING, "failure %d on reading message in ilctx %p",
-		 ret, ilctx);
-	return ret;
+	return fail_read(ret, ilctx);
 };
 
 /**
@@ -642,21 +661,10 @@ int32_t vkil_get_parameter(void *handle,
 	return 0;
 
 fail_write:
-	/* the queue could be full (ENOBUFS), so not a real error */
-	VKIL_LOG(VK_LOG_WARNING,
-		 "can't write message to driver due to reason %d in ilctx %p",
-		 ret, ilctx);
-	return ret;
+	return fail_write(ret, ilctx);
 
 fail_read:
-	/*
-	 * the response could take more time to return (ETIMEOUT),
-	 * so not necessarily a real error
-	 */
-	VKIL_LOG(VK_LOG_WARNING,
-		 "can't read message from driver due to reason %d in ilctx %p",
-		 ret, ilctx);
-	return ret;
+	return fail_read(ret, ilctx);
 };
 
 /**
@@ -1021,29 +1029,10 @@ static int32_t vkil_transfer_buffer(void *component_handle,
 	return 0;
 
 fail_write:
-	/*
-	 * the input queue could be full (ENOBUFS),
-	 * so not necessarily always an real error
-	 */
-	VKIL_LOG(VK_LOG_WARNING,
-		 "failure %d on writing message in ilctx %p ",
-		 ret,
-		 ilctx);
-	return ret;
+	return fail_write(ret, ilctx);
 
 fail_read:
-	/*
-	 * the response could take more time to return (ETIMEOUT),
-	 * so not necessarily always a real error
-	 */
-	if ((ret == -ENOMSG) || (ret == -EAGAIN))
-		return -EAGAIN; /* request the host to try again */
-
-	VKIL_LOG(VK_LOG_WARNING,
-		 "failure %d on reading message in ilctx %p",
-		 ret,
-		 ilctx);
-	return ret;
+	return fail_read(ret, ilctx);
 
 fail:
 	VKIL_LOG(VK_LOG_ERROR, "failure %d in ilctx %p", ret, ilctx);
@@ -1153,37 +1142,10 @@ int32_t vkil_process_buffer(void *component_handle,
 	return ret;
 
 fail_write:
-	/*
-	 * the input queue could be full (ENOBUFS),
-	 * so not necessarily always a real error
-	 */
-	if (ret == -ENOBUFS)
-		/*
-		 * This is probably caused by a backlog on the return queue.
-		 * The host should thain drain this queue first before
-		 * retrying to write on the input queue
-		 */
-		return ret; /* request the host to drain the queue first */
-
-	VKIL_LOG(VK_LOG_WARNING,
-		 "failure %d on writing message in ilctx %p",
-		 ret,
-		 ilctx);
-	return ret;
+	return fail_write(ret, ilctx);
 
 fail_read:
-	/*
-	 * the response could take more time to return (ETIMEOUT),
-	 * so not necessarily always a real error
-	 */
-	if ((ret == -ENOMSG) || (ret == -EAGAIN))
-		return -EAGAIN; /* request the host to try again */
-
-	VKIL_LOG(VK_LOG_WARNING,
-		 "failure %d on reading message in ilctx %p",
-		 ret,
-		 ilctx);
-	return ret;
+	return fail_read(ret, ilctx);
 
 fail:
 	VKIL_LOG(VK_LOG_ERROR, "failure %d in ilctx %p", ret, ilctx);
