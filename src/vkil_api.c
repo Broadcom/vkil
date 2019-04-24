@@ -1153,6 +1153,102 @@ fail:
 };
 
 /**
+ * @brief a ref/unref buffer
+ *
+ * This function add or remove reference to the buffer
+ *
+ * @param[in] ctx_handle    handle to a vkil_context
+ * @param[in] buffer_handle buffer to referecne/dereference
+ * @param[in] ref_delta	    number of reference to add, if positive,
+ *			    or to remove if negative
+ * @param[in] options	    (blocking, call back call,...)
+ * @return		    zero on success, error code otherwise
+ * @pre the  _vkil_buffer to transfer must have a valid _vkil_buffer_type
+ */
+int32_t vkil_xref_buffer(void *ctx_handle,
+			 void *buffer_handle,
+			 const int32_t ref_delta,
+			 const vkil_command_t cmd)
+{
+	int32_t ret, msg_id = 0;
+	vkil_buffer *buffer = buffer_handle;
+	host2vk_msg message[1];
+
+	const vkil_context *ilctx = ctx_handle;
+
+	VKIL_LOG(VK_LOG_DEBUG, "ilctx=%p, buffer=%p, cmd=0x%x (%s%s)",
+		 ilctx,
+		 buffer_handle,
+		 cmd,
+		 vkil_cmd_str(cmd),
+		 vkil_cmd_opts_str(cmd));
+	VK_ASSERT(ctx_handle);
+	VK_ASSERT(cmd);
+
+	ret = vkil_sanity_check_buffer(buffer);
+	if (ret)
+		goto fail;
+
+	if (!(cmd & VK_CMD_OPT_CB)) {
+		/* We need to write the dma command */
+		ret = preset_host2vk_msg(message,
+					 ctx_handle,
+					 VK_FID_XREF_BUF,
+					 buffer->user_data);
+		if (ret)
+			goto fail_write;
+
+		/* complete setting */
+		message->size = 0;
+		message->args[0] = ref_delta;
+		message->args[1] = buffer->handle;
+
+
+		/* then we write the command to the queue */
+		ret = vkil_write((void *)ilctx->devctx, message);
+		if (VKDRV_WR_ERR(ret, sizeof(host2vk_msg))) {
+			vkil_return_msg_id(ilctx->devctx, message->msg_id);
+			goto fail_write;
+		}
+		msg_id = message->msg_id;
+	}
+
+	if ((cmd & VK_CMD_OPT_BLOCKING) || (cmd & VK_CMD_OPT_CB)) {
+		/* we check for the the card response */
+		vk2host_msg response;
+		int32_t wait = (cmd & VK_CMD_OPT_BLOCKING) ? WAIT : 0;
+
+		response.function_id = VK_FID_TRANS_BUF_DONE;
+		response.msg_id = msg_id;
+		response.queue_id = ilctx->context_essential.queue_id;
+		response.context_id = ilctx->context_essential.handle;
+		response.size = 0;
+		ret = vkil_read((void *)ilctx->devctx, &response, wait);
+		if (VKDRV_RD_ERR(ret, sizeof(response)))
+			goto fail_read;
+
+		buffer->handle = response.arg;
+		ret = vkil_get_msg_user_data(ilctx->devctx, response.msg_id,
+					     &buffer->user_data);
+		/* we return the message no matter the error status above */
+		vkil_return_msg_id(ilctx->devctx, response.msg_id);
+		if (ret)
+			goto fail_read;
+	}
+	return 0;
+
+fail_write:
+	return fail_write(ret, ilctx);
+
+fail_read:
+	return fail_read(ret, ilctx);
+
+fail:
+	VKIL_LOG(VK_LOG_ERROR, "failure %d in ilctx %p", ret, ilctx);
+	return ret;
+};
+
+/**
  * @brief create and initialize a vkil_api
  *
  * The vkil_api provide the intercae to the Valkyrie card.
@@ -1175,6 +1271,7 @@ void *vkil_create_api(void)
 		.get_parameter         = vkil_get_parameter,
 		.transfer_buffer       = vkil_transfer_buffer,
 		.process_buffer        = vkil_process_buffer,
+		.xref_buffer           = vkil_xref_buffer,
 	};
 
 	return ilapi;

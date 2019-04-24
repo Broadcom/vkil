@@ -70,11 +70,12 @@ typedef enum _vk_function_id_t {
 	 */
 	VK_FID_INIT,
 	VK_FID_DEINIT,
-	VK_FID_SET_PARAM, /**< args[0]=field, args[1]=value */
-	VK_FID_GET_PARAM, /**< args[0]=field, args[1]=na */
-	VK_FID_TRANS_BUF, /**< args[0]= cmd, args[2]=host buffer desc */
-	VK_FID_PROC_BUF,  /**< args[0]= cmd, args[1]=buffer handle    */
-	VK_FID_PRIVATE,   /**< used for internal purpose              */
+	VK_FID_SET_PARAM, /**< args[0]=field, args[1]=value              */
+	VK_FID_GET_PARAM, /**< args[0]=field, args[1]=na                 */
+	VK_FID_TRANS_BUF, /**< args[0]= cmd, args[2]=host buffer desc    */
+	VK_FID_PROC_BUF,  /**< args[0]= cmd, args[1]=buffer handle       */
+	VK_FID_XREF_BUF,  /**< args[0]= ref delta, args[1]=buffer handle */
+	VK_FID_PRIVATE,   /**< used for internal purpose                 */
 	VK_FID_SHUTDOWN,  /**< shut down command */
 
 	/* function carried by vk2host_msg */
@@ -84,6 +85,7 @@ typedef enum _vk_function_id_t {
 	VK_FID_GET_PARAM_DONE, /**< args[0]=value */
 	VK_FID_TRANS_BUF_DONE, /**< if upload: args[0]=buffer handle*/
 	VK_FID_PROC_BUF_DONE,  /**< args[0]=result buffer handle*/
+	VK_FID_XREF_BUF_DONE,
 	VK_FID_PRIVATE_DONE,   /**< used for internal purpose          */
 	VK_FID_MAX
 } vk_function_id_t;

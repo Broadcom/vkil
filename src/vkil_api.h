@@ -204,24 +204,36 @@ typedef struct _vkil_api {
 	 * @li all buffer transfers are done via DMA
 	 * @li the card memory management is under the card control. Typically
 	 * an upload infers a memory allocation on the card, and a download a
-	 * memory freeing. the vkil sees only opaque handles to a card buffer
-	 * descriptor, in no case the host can see the on card used memory
-	 * addresses
+	 * buffer dereferncing (leading to a memory freeing, if no more
+	 * reference exists on the buffer) the vkil sees only opaque handles to
+	 * a card buffer descriptor. In no case the host can see the on card
+	 * used memory addresses
 	 */
 	int32_t (*transfer_buffer)(void *ctx_handle,
 				   void *buffer_handle,
 				   const vkil_command_t cmd);
 	/**
 	 * the process buffer typically "consumes" the buffer provided in
-	 * input; that is free the input buffer which will not be available
-	 * anymore; and produces a buffer; malloc a buffer; which can be either
-	 * conveyed to another processing; that is calling the same function
-	 * again; or retrieved by the host, via the _vkil_api::transfer_buffer
-	 * function
+	 * input; that is dereference  the input buffer which will not be
+	 * available anymore (if no more reference exists on it); and produces
+	 * a buffer; malloc a buffer; which can be either conveyed to another
+	 * processing; that is calling the same function again; or retrieved
+	 * by the host, via the _vkil_api::transfer_buffer function
 	 */
 	int32_t (*process_buffer)(void *ctx_handle,
 				  void *buffer_handle,
 				  const vkil_command_t cmd);
+	/**
+	 * the xref buffer allows to add or remove references to the buffer
+	 * @li adding a reference, prevent the buffer to be deleted on a
+	 * download
+	 * @li removing a reference, allow to delete a buffer without
+	 * downloading it
+	 */
+	int32_t (*xref_buffer)(void *ctx_handle,
+			       void *buffer_handle,
+			       const int32_t ref_delta,
+			       const vkil_command_t cmd);
 } vkil_api;
 
 extern void *vkil_create_api(void);
