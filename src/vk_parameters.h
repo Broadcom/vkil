@@ -551,6 +551,7 @@ typedef enum _vkil_parameter_t {
 	VK_PARAM_VIDEO_SIZE             = 32, /**< 0 means undefined */
 	VK_PARAM_VIDEO_FORMAT           = 33, /**< 0 means undefined */
 	VK_PARAM_VIDEO_ENC_CONFIG       = 48,
+	VK_PARAM_VIDEO_ENC_GOP_TYPE     = 49,
 
 	VK_PARAM_PORT                    = 64, /**< set input/output cmpt pad */
 	/* get the size of a pool associated to vk_port_id passed in arg[1] */
