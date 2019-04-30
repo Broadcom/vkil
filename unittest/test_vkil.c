@@ -1,6 +1,17 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
 /*
- * Copyright(c) 2018-2019 Broadcom
+ * Copyright 2018 Broadcom
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License, version 2, as
+ * published by the Free Software Foundation (the "GPL").
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License version 2 (GPLv2) for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * version 2 (GPLv2) along with this source code.
  */
 
 #include <assert.h>
@@ -60,27 +71,16 @@ void test_vkil_destroy_api(void)
 	assert(!ilapi);
 }
 
-void test_vkil_get_temperature(void)
-{
-	int32_t ret;
-	int32_t temperature;
-
-	ret = ilapi->get_parameter(ilctx, VK_PARAM_TEMPERATURE,
-				   &temperature,
-				   VK_CMD_RUN | VK_CMD_OPT_BLOCKING);
-	assert(!ret);
-	printf("temperature: %d!\n", temperature);
-}
-
 int main(void)
 {
 	ilapi = NULL;
 	ilctx = NULL;
-
 	test_vkil_create_api();
 	test_vkil_init();
 	test_vkil_init2();
-	test_vkil_get_temperature();
+	test_vkil_get_parameter();
+	test_vkil_set_parameter();
+	test_vkil_transfer_buffer();
 	test_vkil_deinit();
 	test_vkil_destroy_api();
 	printf("Passed!\n");
