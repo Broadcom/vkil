@@ -5,6 +5,7 @@
  */
 
 #include <dlfcn.h>
+#include <errno.h>
 #include <stdio.h>
 #include "vkdrv_access.h"
 
@@ -21,12 +22,29 @@ static vkdrv_ctx vkdrv;
 int vkdrv_open(const char *dev_name, int flags)
 {
 	vkdrv.lib_handle = dlopen("libvksim.so", RTLD_LAZY);
+	if (!vkdrv.lib_handle)
+		goto fail;
+
 	vkdrv.vkdrv_open  = dlsym(vkdrv.lib_handle, "vkdrv_open");
+	if (!vkdrv.vkdrv_open)
+		goto fail;
+
 	vkdrv.vkdrv_close = dlsym(vkdrv.lib_handle, "vkdrv_close");
+	if (!vkdrv.vkdrv_close)
+		goto fail;
+
 	vkdrv.vkdrv_read  = dlsym(vkdrv.lib_handle, "vkdrv_read");
+	if (!vkdrv.vkdrv_read)
+		goto fail;
+
 	vkdrv.vkdrv_write = dlsym(vkdrv.lib_handle, "vkdrv_write");
+	if (!vkdrv.vkdrv_write)
+		goto fail;
 
 	return vkdrv.vkdrv_open(dev_name, flags);
+
+fail:
+	return -EINVAL;
 };
 
 int vkdrv_close(int fd)
