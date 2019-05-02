@@ -31,6 +31,7 @@ typedef struct vk_info_pcie_eye_ctx {
 	vkil_api *ilapi;
 	vkil_context *ilctx;
 	uint8_t *buffer;
+	char *dev_id;
 } vk_pcie_eye_ctx;
 
 struct vk_pcie_eye_info {
@@ -65,7 +66,7 @@ static void pcie_eye_vkil_destroy_api(vk_pcie_eye_ctx *ctx)
 
 static void print_usage(void)
 {
-	printf("Usage: pcie_eye -p phy_no -l lane_no\n");
+	printf("Usage: pcie_eye -d device_no -p phy_no -l lane_no\n");
 }
 
 static void display_pcie_eye_header(void)
@@ -168,13 +169,14 @@ int main(int argc, char *argv[])
 	int c, ret;
 	void *ptr;
 
-	if (argc != 5) {
+	if (argc != 7) {
 		printf("Invalid number of args\n");
 		print_usage();
 		return 0;
 	}
 
-	while ((c = getopt(argc, argv, "p:l:h")) != -1) {
+	ctx->dev_id = "0";
+	while ((c = getopt(argc, argv, "p:l:d:")) != -1) {
 		switch (c) {
 
 		case 'p':
@@ -186,12 +188,24 @@ int main(int argc, char *argv[])
 		case 'l':
 			sscanf(optarg, "%d", &ret);
 			cfg->lane |= 0xffff & ret;
-			printf("PCIe eye diagram lane_%d\n", ret);
+			printf("PCIe eye diagram: lane_%d\n", ret);
 			break;
+
+		case 'd':
+			ctx->dev_id = optarg;
+			printf("PCIe eye diagram: device_%s\n", optarg);
+			break;
+
 		default:
 			print_usage();
 			return 0;
 		}
+	}
+
+	ret = vkil_set_affinity(ctx->dev_id);
+	if (ret != 0) {
+		printf("Error in setting the affinity\n");
+		goto end;
 	}
 
 	pcie_eye_vkil_create_api(ctx);
