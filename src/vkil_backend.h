@@ -55,14 +55,20 @@ typedef enum _vk_function_id_t {
 	/* context_id specify on which context the function apply */
 	VK_FID_UNDEF,
 
-	/*
-	 * WARNING: Note that there are 2 FIDs exposed and used in the driver
-	 * which makes them non-mutable.
-	 * VK_FID_TRANS_BUF must be 5,
-	 * VK_FID_SHUTDOWN must be 8
-	 */
-
 	/* function carried by host2vk_msg */
+
+	/*
+	 * un-mutable session...
+	 * Currently, there are 2 FIDs exposed and used in the driver
+	 * which makes them non-mutable.
+	 *     VK_FID_TRANS_BUF must be 5,
+	 *     VK_FID_SHUTDOWN must be 8
+	 * These are put at the beginning here.  The unused (1-4,
+	 * 6-7) will be reserved for future unmutables.
+	 */
+	VK_FID_TRANS_BUF = 5, /**< args[0]= cmd, args[2]=host buffer desc*/
+	VK_FID_SHUTDOWN  = 8, /**< shut down command                     */
+	/* end of un-mutables */
 
 	/**
 	 * If the context is set to VK_NEW_CTX,
@@ -72,11 +78,9 @@ typedef enum _vk_function_id_t {
 	VK_FID_DEINIT,
 	VK_FID_SET_PARAM, /**< args[0]=field, args[1]=value              */
 	VK_FID_GET_PARAM, /**< args[0]=field, args[1]=na                 */
-	VK_FID_TRANS_BUF, /**< args[0]= cmd, args[2]=host buffer desc    */
 	VK_FID_PROC_BUF,  /**< args[0]= cmd, args[1]=buffer handle       */
 	VK_FID_XREF_BUF,  /**< args[0]= ref delta, args[1]=buffer handle */
 	VK_FID_PRIVATE,   /**< used for internal purpose                 */
-	VK_FID_SHUTDOWN,  /**< shut down command */
 
 	/* function carried by vk2host_msg */
 	VK_FID_INIT_DONE,
