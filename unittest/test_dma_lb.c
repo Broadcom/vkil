@@ -222,11 +222,34 @@ static int32_t test_dma_lb_one_packet(uint32_t loop,
 		if (param->upload_buf[i] != param->download_buf[i]) {
 
 			int j, idx;
+			uint8_t orig_upload, orig_download;
+
+			orig_upload = param->upload_buf[i];
+			orig_download = param->download_buf[i];
+
+			/* print out some info */
+			LOCAL_LOG(
+			   VK_LOG_WARNING,
+			   "Pattern mismatch at location %x, src 0x%x dst 0x%x",
+			   i, orig_upload, orig_download);
+
+			/* delay a bit and see if it recovered */
+			usleep(10);
+			if (param->upload_buf[i] == param->download_buf[i]) {
+				/* recovered */
+				LOCAL_LOG(VK_LOG_WARNING,
+					  "Pattern recovered at location %x, "
+					  "[0x%x 0x%x] -> [0x%x 0x%x] with delay",
+					  i, orig_upload, orig_download,
+					  param->upload_buf[i],
+					  param->download_buf[i]);
+				continue;
+			}
 
 			/* print out some info */
 			LOCAL_LOG(
 			   VK_LOG_ERROR,
-			   "Pattern mismatch at location %d, src 0x%x dst 0x%x",
+			   "Pattern mismatch at location %x, src 0x%x dst 0x%x",
 			   i, param->upload_buf[i], param->download_buf[i]);
 
 			/* use raw printf to dump out */
