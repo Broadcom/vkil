@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
- * Copyright(c) 201 Broadcom
+ * Copyright(c) 2019 Broadcom
  */
 
 /**
@@ -26,6 +26,7 @@
  */
 static struct _vkil_cfg {
 	const char *vkapi_device; /* device/affinity, which card to be used */
+	uint32_t    vkapi_processing_pri; /* processing priority */
 } vkil_cfg;
 
 /*
@@ -1295,7 +1296,9 @@ int vkil_destroy_api(void **ilapi)
 
 /**
  * @brief set the device to be used, configured by user CLI
- * @param device id in ASCII format
+ *
+ * @param[in] device    id in ASCII format
+ * @return              zero on success, error code otherwise
  */
 int vkil_set_affinity(const char *device)
 {
@@ -1320,12 +1323,51 @@ int vkil_set_affinity(const char *device)
 }
 
 /**
+ * @brief set the processing priority, configured by user CLI
+ *
+ * @param[in] pri    priority in ASCII format
+ * @return           zero on success, error code otherwise
+ */
+int vkil_set_processing_pri(const char *pri)
+{
+	static const char * const pri_tab[] = {"high", "med", "low"};
+	uint32_t val;
+
+	VKIL_LOG(VK_LOG_DEBUG, "Priority %s specified by user.",
+		 pri ? pri : "NULL");
+
+	if (pri) {
+		for (val = 0; val < ARRAY_SIZE(pri_tab); val++)
+			if (strcmp(pri, pri_tab[val]) == 0)
+				break;
+		if (val == ARRAY_SIZE(pri_tab))
+			return -EINVAL;
+
+		vkil_cfg.vkapi_processing_pri = val;
+	}
+	return 0;
+}
+
+/**
  * @brief get the device configured and used by user CLI
- * @param device id in ASCII format
+ *
+ * @return    device id in ASCII format
  */
 const char *vkil_get_affinity(void)
 {
 	VKIL_LOG(VK_LOG_DEBUG, "Return %s chosen by user.",
 		 vkil_cfg.vkapi_device ? vkil_cfg.vkapi_device : "NULL");
 	return vkil_cfg.vkapi_device;
+}
+
+/**
+ * @brief get the processing priority configured and used by user CLI
+ *
+ * @return  processing priority in numeric format
+ */
+uint32_t vkil_get_processing_pri(void)
+{
+	VKIL_LOG(VK_LOG_DEBUG, "Return %d chosen by user.",
+		 vkil_cfg.vkapi_processing_pri);
+	return vkil_cfg.vkapi_processing_pri;
 }

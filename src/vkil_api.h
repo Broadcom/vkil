@@ -240,6 +240,8 @@ extern void *vkil_create_api(void);
 extern int vkil_destroy_api(void **ilapi);
 
 extern int vkil_set_affinity(const char *device);
+extern int vkil_set_processing_pri(const char *pri);
 extern const char *vkil_get_affinity(void);
+extern uint32_t vkil_get_processing_pri(void);
 
 #endif
