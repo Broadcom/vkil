@@ -27,7 +27,7 @@
 static struct _vkil_cfg {
 	const char *vkapi_device; /* device/affinity, which card to be used */
 	uint32_t    vkapi_processing_pri; /* processing priority */
-} vkil_cfg;
+} vkil_cfg = { NULL, VKIL_DEF_PROCESSING_PRI };
 
 /*
  * usually we wait for response message up to TIMEOUT us

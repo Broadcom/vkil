@@ -29,6 +29,9 @@ typedef enum _vkil_buffer_type {
 	VKIL_BUF_MAX         = 0xFF
 } vkil_buffer_type;
 
+/** default processing priority */
+#define VKIL_DEF_PROCESSING_PRI            1
+
 /** flags used by vkil_buffer_packet */
 #define VKIL_BUFFER_PACKET_FLAG_EOS 0x1
 /** flags used by vkil_buffer_surface */
