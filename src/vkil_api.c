@@ -289,6 +289,7 @@ static int32_t vkil_deinit_com(void *handle)
 
 	memset(&msg2host, 0, sizeof(msg2host));
 	msg2host.msg_id = msg2vk.msg_id;
+	msg2host.queue_id = msg2vk.queue_id;
 	msg2host.context_id = msg2vk.context_id;
 
 	/*
@@ -358,6 +359,8 @@ static int32_t vkil_init_com(void *handle)
 
 	memset(&msg2host, 0, sizeof(msg2host));
 	msg2host.msg_id = msg2vk.msg_id;
+	msg2host.queue_id = msg2vk.queue_id;
+
 	/*
 	 * in the init phase the card will instantiate some stuff we don't have
 	 * visibility at vkil, but it is expected this take longer time than

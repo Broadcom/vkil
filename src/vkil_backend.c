@@ -411,7 +411,8 @@ static int32_t vkil_flush_read(vkil_devctx *devctx,
 		} while (ret == -EMSGSIZE);
 
 		if (ret >= 0) {
-			node = vkil_ll_append(&(devctx->vk2host[q_id]), msg);
+			node = vkil_ll_append(&devctx->vk2host[msg->queue_id],
+					      msg);
 			if (!node) {
 				vkil_free((void **)&msg);
 				ret = -ENOMEM;
