@@ -1352,6 +1352,28 @@ int vkil_set_processing_pri(const char *pri)
 }
 
 /**
+ * @brief set the log level, configured by user CLI
+ *
+ * @param[in] level  level in ASCII format
+ * @return           zero on success, error code otherwise
+ */
+int vkil_set_log_level(const char *level)
+{
+	int ret;
+
+	/* simply call backend to set all to same level */
+	ret = vk_log_set_level_all(level);
+
+	/*
+	 * log only after setting the level, as user wants to see the
+	 * below log if he/she set it to dbg
+	 */
+	VKIL_LOG(VK_LOG_DEBUG, "Log level %s specified by user.", level);
+
+	return ret;
+}
+
+/**
  * @brief get the device configured and used by user CLI
  *
  * @return    device id in ASCII format

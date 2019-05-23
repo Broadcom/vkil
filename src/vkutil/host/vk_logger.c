@@ -3,6 +3,16 @@
  * Copyright(c) 2019 Broadcom
  */
 
+/**
+ * @file
+ * @brief valkyrie host logger functions
+ *
+ * This is an inline logger that is used under the host
+ * environment, FFMPEG using vkil or pure simulation mode.
+ * Since all these modes are x86, it bears to have lots of
+ * time for printing and it is OK to do it inline.
+ */
+
 #include <errno.h>
 #include <pthread.h>
 #include <stdarg.h>
@@ -13,7 +23,7 @@
 #include "vk_logger.h"
 #include "vkil_utils.h"
 
-#define VK_LOG_DEF_LEVEL VK_LOG_DEBUG
+#define VK_LOG_DEF_LEVEL VK_LOG_INFO
 
 static logger_ctrl vk_log_ctrl[VK_LOG_MOD_MAX] = {
 	[VK_LOG_MOD_GEN] = { VK_LOG_DEBUG,     ""    },
@@ -27,16 +37,44 @@ static logger_ctrl vk_log_ctrl[VK_LOG_MOD_MAX] = {
 	[VK_LOG_MOD_MVE] = { VK_LOG_DEF_LEVEL, "mve" },
 };
 
-/*
- * This is an inline logger that is not used in the real FW, ie
- * not on QEMU, simulation or VKIL.  Since all these modes are x86 and
- * simulation, it bears to have lots of time for printing and
- * it is OK to do it inline.
- */
 static pthread_mutex_t log_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /**
- * log message
+ * @brief set all log modules to a specific log level
+ *
+ * @param level set level in ascii format
+ * @return 0 on success, negative on error
+ */
+int32_t vk_log_set_level_all(const char *level)
+{
+	uint32_t i, j;
+	/* levels supported */
+	static const struct _log_lev_tab {
+		char  *tag;
+		vk_log_level lev;
+	} _tab[] = {
+		{"panic", VK_LOG_PANIC   },
+		{"err",   VK_LOG_ERROR   },
+		{"warn",  VK_LOG_WARNING },
+		{"info",  VK_LOG_INFO    },
+		{"dbg",   VK_LOG_DEBUG   }
+	};
+
+	for (i = 0; i < ARRAY_SIZE(_tab); i++) {
+		if (strcmp(_tab[i].tag, level) == 0) {
+
+			for (j = 0; j < ARRAY_SIZE(vk_log_ctrl); j++)
+				vk_log_ctrl[j].log_level = _tab[i].lev;
+			return 0;
+		}
+	}
+
+	return -EINVAL;
+}
+
+/**
+ * @brief log message
+ *
  * @param message prefix
  * @param log mod
  * @param logging level
@@ -131,7 +169,8 @@ void vk_log(const char *prefix, vk_log_mod log_mod,
 }
 
 /**
- * logger init
+ * @brief logger init
+ *
  * @return always 0 for non zephyr
  */
 int32_t vk_logger_init(void)
@@ -140,7 +179,8 @@ int32_t vk_logger_init(void)
 }
 
 /**
- * logger deinit
+ * @brief logger deinit
+ *
  * @return always 0 for non zephyr
  */
 int32_t vk_logger_deinit(void)

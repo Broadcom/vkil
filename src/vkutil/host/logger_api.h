@@ -54,4 +54,15 @@ typedef enum _log_type {
 	LOG_TYPE_UL       = 2,
 } log_type;
 
+/**
+ * @brief set all log modules to a specific log level
+ *
+ * This function is tailored to vkil where only one sub-module is used
+ * and so we could set them all to same level.  There is no plan to
+ * distinguish individual sub-module.
+ * @param level set level in ascii format
+ * @return 0 on success, negative on error
+ */
+int32_t vk_log_set_level_all(const char *level);
+
 #endif
