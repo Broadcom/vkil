@@ -469,6 +469,7 @@ typedef struct _vk_enc_cfg {
 	vk_ssim_cfg   ssim_cfg;
 	vk_stats_cfg  stats_cfg;
 	vk_qpmap_cfg  qpmap_cfg;
+	vk_vars_cfg   varmap_cfg;
 } vk_enc_cfg;
 
 /** filter type */
