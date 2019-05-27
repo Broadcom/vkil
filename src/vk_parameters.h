@@ -572,6 +572,8 @@ typedef enum _vkil_parameter_t {
 	VK_PARAM_QPMAP_SIZE             = 121,
 	VK_PARAM_SSIMMAP_SIZE           = 122,
 
+	VK_PARAM_NEED_MORE_INPUT        = 160,
+
 	VK_PARAM_MAX = 0x0FFF,
 } vkil_parameter_t;
 
