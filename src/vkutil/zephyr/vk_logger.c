@@ -24,6 +24,7 @@ static logger_ctrl vk_log_ctrl[VK_LOG_MOD_MAX] = {
 	[VK_LOG_MOD_DRV] = { VK_LOG_DEF_LEVEL, "drv" },
 	[VK_LOG_MOD_SYS] = { VK_LOG_DEF_LEVEL, "sys" },
 	[VK_LOG_MOD_MVE] = { VK_LOG_DEF_LEVEL, "mve" },
+	[VK_LOG_MOD_FWE] = { VK_LOG_DEF_LEVEL, "fwe" },
 };
 
 /*

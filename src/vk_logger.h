@@ -19,6 +19,7 @@ typedef enum _vk_log_mod {
 	VK_LOG_MOD_DRV,      /** driver */
 	VK_LOG_MOD_SYS,      /** infra structures, mem, queue etc */
 	VK_LOG_MOD_MVE,      /** mali firmware */
+	VK_LOG_MOD_FWE,      /** firmware exclusive use, always last one */
 	VK_LOG_MOD_MAX,
 } vk_log_mod;
 
