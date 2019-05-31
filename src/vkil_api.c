@@ -116,11 +116,13 @@ static void get_buffer(void *handle, uint32_t *nbuf,
 
 	/* We have aggregated buffers */
 	ag_buf = handle;
-	for (i = 0; i < VKIL_MAX_AGGREGATED_BUFFERS; i++) {
-		if (!ag_buf->buffer[i])
-			break;
-		buffer = ag_buf->buffer[i];
-		handles[i] = buffer->handle;
+	for (i = 0; i < ag_buf->nbuffers; i++) {
+		if (!ag_buf->buffer[i]) {
+			handles[i] = 0;
+		} else {
+			buffer = ag_buf->buffer[i];
+			handles[i] = buffer->handle;
+		}
 	}
 
 	VK_ASSERT(i > 0);
