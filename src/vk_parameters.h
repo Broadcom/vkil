@@ -388,6 +388,18 @@ typedef struct _vk_qpmap_bpr {
 	uint8_t reserved;
 } vk_qpmap_bpr;
 
+/**
+ * parameterization of the qp delta map generator
+ * the algorithm take in input a varainec map, and genertae a qpmap.
+ */
+typedef struct _vk_adaptqp_cfg {
+	int32_t flags;
+	int32_t a; /**< Value used in qpdelta =  (a * log2(variance)) + b */
+	int32_t b; /**< Value used in qpdelta =  (a * log2(variance)) + b */
+	int32_t bpr_force;
+	int32_t last_qpd_mode;
+} vk_adaptqp_cfg;
+
 typedef struct _vk_qpmap_cfg {
 	int32_t flags;
 	int32_t size; /**< bytes required to store a frame qpmap */
@@ -466,10 +478,11 @@ typedef struct _vk_enc_cfg {
 	uint8_t  min_qp;    /**< min qp used by rate control */
 	uint8_t  max_qp;    /**< max qp used by rate control */
 	uint8_t  no_repeatheaders; /**< header data for all/first sync frame */
-	vk_ssim_cfg   ssim_cfg;
-	vk_stats_cfg  stats_cfg;
-	vk_qpmap_cfg  qpmap_cfg;
-	vk_vars_cfg   varmap_cfg;
+	vk_ssim_cfg ssim_cfg;
+	vk_stats_cfg stats_cfg;
+	vk_qpmap_cfg qpmap_cfg;
+	vk_vars_cfg varmap_cfg;
+	vk_adaptqp_cfg adaptqp_cfg;
 } vk_enc_cfg;
 
 /** filter type */
