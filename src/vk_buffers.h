@@ -68,8 +68,8 @@ typedef struct _vk_buffer_surface {
 	vk_size visible_size;
 	uint16_t xoffset; /**< Luma x crop */
 	uint16_t yoffset; /**< Luma y crop */
-	uint16_t format;  /** pixel fromat */
-	uint16_t reserved0;
+	uint16_t format;  /**< pixel fromat */
+	uint16_t quality; /**< quality index */
 	uint16_t stride[2]; /**< Stride between rows, in bytes */
 	uint32_t reserved1;
 	uint64_t reserved2;
