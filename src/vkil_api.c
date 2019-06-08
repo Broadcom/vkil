@@ -806,6 +806,7 @@ static int32_t convert_vkil2vk_buffer_surface(vk_buffer_surface *surface,
 		surface->planes[3].address = 0;
 		surface->planes[3].size = 0;
 	}
+	surface->quality = ilsurface->quality;
 	return 0;
 
 fail:

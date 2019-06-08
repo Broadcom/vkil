@@ -105,7 +105,7 @@ typedef struct _vkil_buffer_surface {
 	uint16_t xoffset; /**< Luma x offset */
 	uint16_t yoffset; /**< Luma y offset */
 	uint16_t format; /** color format and pixel depth */
-	uint16_t reserved0; /**< for 32 and 64 bits alignment */
+	uint16_t quality; /**< quality index */
 	uint32_t stride[2]; /**< Stride between rows, in bytes */
 	void *plane_top[2]; /**< Y, UV top field */
 	void *plane_bot[2]; /**< bottom field (interlace only) */
