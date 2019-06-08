@@ -396,8 +396,13 @@ typedef struct _vk_adaptqp_cfg {
 	int32_t flags;
 	int32_t a; /**< Value used in qpdelta =  (a * log2(variance)) + b */
 	int32_t b; /**< Value used in qpdelta =  (a * log2(variance)) + b */
-	int32_t bpr_force;
-	int32_t last_qpd_mode;
+	int8_t bpr_force;
+	int8_t last_qpd_mode;
+	int8_t sig_cost_threshold_qp;
+	int8_t qpd_sum_disable_threshold_qp;
+	uint32_t sig_cost_threshold_bpp; /**< (8.24) fixed point format */
+	uint32_t qpd_sum_disable_threshold_bpp; /**< (8.24) fixed point */
+	int32_t qpd_sum_threshold;
 } vk_adaptqp_cfg;
 
 typedef struct _vk_qpmap_cfg {
