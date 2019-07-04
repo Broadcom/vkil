@@ -301,17 +301,20 @@ int main(int argc, char *argv[])
 
 		if ((loop + 1) == num_of_blocks)
 			block_size = last_block_size;
-		ret = flash_write_block(&vk_flash_util_info, write_offset,
-					buffer, block_size);
-		if (ret < 0) {
-			printf("Transfer/set buffer failed:%d\n", ret);
-			goto end;
+		if (block_size > 0) {
+			ret = flash_write_block(&vk_flash_util_info,
+						write_offset, buffer,
+						block_size);
+			if (ret < 0) {
+				printf("Transfer/set buffer failed:%d\n", ret);
+				goto end;
+			}
 		}
 	}
 
 	flash_util_vkil_deinit(ctx);
 	flash_util_vkil_destroy_api(ctx);
-	printf("Passed!\n");
+	printf("Flash Update complete\n");
 end:
 	if (ctx->buffer)
 		free(ctx->buffer);
