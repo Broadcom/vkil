@@ -108,13 +108,20 @@ void vk_vcon_cmd_handler(const char *cmd)
 		return;
 
 	if (strcmp(argv[0], "help") == 0) {
+		char *sub_str = (argc == 2) ? argv[1] : NULL;
+
 		for (i = 0; i < ARRAY_SIZE(cmd_tab_list); i++) {
 
 			p_cmd = cmd_tab_list[i];
 			j = 0;
 			while (p_cmd[j].cmd_name != NULL) {
-				vk_log("VCON:", VK_LOG_MOD_GEN, LOG_TYPE_INT,
-				       VK_LOG_INFO, "%s", p_cmd[j].help);
+				if ((sub_str == NULL) ||
+				    (strstr(p_cmd[j].cmd_name, sub_str))) {
+					vk_log("VCON:",
+					       VK_LOG_MOD_GEN, LOG_TYPE_INT,
+					       VK_LOG_INFO, "%s",
+					       p_cmd[j].help);
+				}
 				j++;
 			}
 		}
