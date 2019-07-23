@@ -152,8 +152,8 @@ enum vk_video_profile {
 	VK_V_PROFILE_H264_BASELINE             = 1,
 	VK_V_PROFILE_H264_CONSTRAINED_BASELINE = 1,
 	VK_V_PROFILE_H264_MAIN                 = 2,
-	VK_V_PROFILE_H264_EXTENDED             = 3,
-	VK_V_PROFILE_H264_HIGH                 = 4,
+	VK_V_PROFILE_H264_HIGH                 = 3,
+	VK_V_PROFILE_H264_EXTENDED             = 4,
 	/* hevc profile */
 	VK_V_PROFILE_HEVC_MAIN                 = 1,
 	VK_V_PROFILE_HEVC_MAIN_STILL           = 2,
