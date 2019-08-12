@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include "vk_buffers.h"
 #include "vk_logger.h"
@@ -798,6 +799,11 @@ int main(int argc, char **argv)
 				long_options, &option_index)) != -1) {
 		switch (c) {
 		case 'd':
+			if (strlen(optarg) >= sizeof(dev_name)) {
+				LOCAL_LOG(VK_LOG_ERROR,
+					  "optarg too long for dev_name");
+				return -EINVAL;
+			}
 			strncpy(dev_name, optarg, sizeof(dev_name));
 			break;
 		case 's':
