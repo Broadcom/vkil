@@ -12,7 +12,7 @@
 #include <unistd.h>
 #include "vk_logger.h"
 
-#define VK_LOG_DEF_LEVEL VK_LOG_INFO
+#define VK_LOG_DEF_LEVEL VK_LOG_ERROR
 
 static logger_ctrl vk_log_ctrl[VK_LOG_MOD_MAX] = {
 	[VK_LOG_MOD_GEN] = { VK_LOG_DEBUG,     ""    },
