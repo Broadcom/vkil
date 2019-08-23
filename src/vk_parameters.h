@@ -580,6 +580,8 @@ typedef enum _vkil_parameter_t {
 	VK_PARAM_PORT                    = 64, /**< set input/output cmpt pad */
 	/* get the size of a pool associated to vk_port_id passed in arg[1] */
 	VK_PARAM_POOL_SIZE               = 65,
+	/* get the max lag for the module */
+	VK_PARAM_MAX_LAG                 = 66,
 
 	/* scaler configuration parameters */
 	VK_PARAM_SCALER_FILTER          = 80, /**< 0 means undefined */
