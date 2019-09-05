@@ -583,6 +583,8 @@ typedef enum _vkil_parameter_t {
 	VK_PARAM_POOL_SIZE               = 65,
 	/* get the max lag for the module */
 	VK_PARAM_MAX_LAG                 = 66,
+	/* get the minimum required lag ensuring the generation of an output */
+	VK_PARAM_MIN_LAG                 = 67,
 
 	/* scaler configuration parameters */
 	VK_PARAM_SCALER_FILTER          = 80, /**< 0 means undefined */
