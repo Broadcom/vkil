@@ -21,8 +21,8 @@
 #define VKIL_MSG_Q_MAX 3
 
 /* name of driver dev node */
-#define VKIL_DEV_DRV_NAME           "/dev/bcm-vk"
-
+#define VKIL_DEV_DRV_NAME		"/dev/bcm_vk"
+#define VKIL_DEV_LEGACY_DRV_NAME	"/dev/bcm-vk"
 
 /**
  * Each emitted message is associated to an unique message id, which can as

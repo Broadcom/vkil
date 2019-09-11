@@ -555,12 +555,19 @@ int32_t vkil_init_dev(void **handle)
 			goto fail;
 
 		if (!snprintf(dev_name, sizeof(dev_name),
-			      VKIL_DEV_DRV_NAME ".%d", devctx->id))
+			      VKIL_DEV_DRV_NAME ".%d/engine", devctx->id))
 			goto fail;
 
 		devctx->fd = open(dev_name, O_RDWR);
-		if (devctx->fd < 0)
-			goto fail;
+		if (devctx->fd < 0) {
+			/* Try legacy name */
+			snprintf(dev_name, sizeof(dev_name),
+				 VKIL_DEV_LEGACY_DRV_NAME ".%d", devctx->id);
+
+			devctx->fd = open(dev_name, O_RDWR);
+			if (devctx->fd < 0)
+				goto fail;
+		}
 
 		ret = vkil_init_msglist(devctx);
 		if (ret)

@@ -1316,11 +1316,17 @@ int vkil_set_affinity(const char *device)
 	/* check if device exists or not */
 	if (device) {
 		if (!snprintf(dev_name, sizeof(dev_name),
-			      VKIL_DEV_DRV_NAME ".%s", device))
+			      VKIL_DEV_DRV_NAME ".%s/engine", device))
 			return -EINVAL;
 
-		if (access(dev_name, F_OK) != 0)
-			return -ENODEV;
+		if (access(dev_name, F_OK) != 0) {
+			/* Try legacy name */
+			snprintf(dev_name, sizeof(dev_name),
+				 VKIL_DEV_LEGACY_DRV_NAME ".%s", device);
+
+			if (access(dev_name, F_OK) != 0)
+				return -ENODEV;
+		}
 	}
 
 	vkil_cfg.vkapi_device = device;
