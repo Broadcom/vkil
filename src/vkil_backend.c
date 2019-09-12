@@ -555,7 +555,7 @@ int32_t vkil_init_dev(void **handle)
 			goto fail;
 
 		if (!snprintf(dev_name, sizeof(dev_name),
-			      VKIL_DEV_DRV_NAME ".%d/engine", devctx->id))
+			      VKIL_DEV_DRV_NAME ".%d", devctx->id))
 			goto fail;
 
 		devctx->fd = open(dev_name, O_RDWR);

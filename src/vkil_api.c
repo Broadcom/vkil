@@ -1316,7 +1316,7 @@ int vkil_set_affinity(const char *device)
 	/* check if device exists or not */
 	if (device) {
 		if (!snprintf(dev_name, sizeof(dev_name),
-			      VKIL_DEV_DRV_NAME ".%s/engine", device))
+			      VKIL_DEV_DRV_NAME ".%s", device))
 			return -EINVAL;
 
 		if (access(dev_name, F_OK) != 0) {
