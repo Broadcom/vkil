@@ -447,13 +447,14 @@ typedef enum _vk_gop_type {
 
 /** rate control mode.  Note: 0->4 is a direct 1-to-1 mapping to MVE FW */
 typedef enum _vk_rc_mode {
-	VK_RC_OFF  = 0, /**< off */
-	VK_RC_STD  = 1, /**< standard rate control */
-	VK_RC_VBR  = 2, /**< variable bit rate     */
-	VK_RC_CBR  = 3, /**< constant bit rate     */
-	VK_RC_QTY  = 4, /**< quality */
-	VK_RC_MAX  = 5,
-	VK_RC_DEF  = VK_RC_QTY,
+	VK_RC_OFF   = 0, /**< off */
+	VK_RC_STD   = 1, /**< standard rate control */
+	VK_RC_VBR   = 2, /**< variable bit rate     */
+	VK_RC_CBR   = 3, /**< constant bit rate     */
+	VK_RC_QTY   = 4, /**< quality */
+	VK_RC_FRAME = 5, /**< per frame qp */
+	VK_RC_MAX   = 6,
+	VK_RC_DEF   = VK_RC_QTY,
 } vk_rc_mode;
 
 typedef struct _vk_enc_cfg {
