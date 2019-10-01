@@ -32,7 +32,11 @@ static logger_ctrl vk_log_ctrl[VK_LOG_MOD_MAX] = {
  * 1.5M is used which would allow 4k number of entries.  The rest
  * is reserved for later use.
  */
+#if defined(CONFIG_VK_SH_USE_PRINTK)
+#define VK_LOGGER_HEAP_SIZE    512
+#else
 #define VK_LOGGER_HEAP_SIZE    (3 * 512 * 1024)
+#endif
 uint8_t __vk_log_buff_section vk_pcie_log_buf[VK_LOGGER_HEAP_SIZE];
 
 /**
