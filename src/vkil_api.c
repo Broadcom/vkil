@@ -152,7 +152,7 @@ static int32_t set_buffer(void *handle, const vk2host_msg *vk2host,
 {
 	vkil_buffer *buffer = handle;
 
-	if (!vk2host->size) {
+	if (!vk2host->size && (buffer->type != VKIL_BUF_AG_BUFFERS)) {
 		/* a singe handle is returned */
 		buffer->handle = vk2host->arg;
 		buffer->user_data = user_data;
