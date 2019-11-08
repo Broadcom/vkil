@@ -38,10 +38,14 @@ static struct _vkil_cfg {
  * status of the card rather than to rely on an arbitrary time out value
  */
 
-/** this wait factor tells vkil_read to wait "normal time" for message */
-#define WAIT 1
+/** this VKIL_READ_TIMEOUT factor tells vkil_read to wait "normal time"
+ * for message
+ */
+#ifndef VKIL_READ_TIMEOUT
+#define VKIL_READ_TIMEOUT 1
+#endif
 /** this wait factor tells vkil_read to wait "extra time" for message */
-#define WAIT_INIT (WAIT * 10)
+#define WAIT_INIT (VKIL_READ_TIMEOUT * 10)
 
 /** max expected return message size, can be locally overidden */
 #define VKIL_RET_MSG_MAX_SIZE 8
@@ -589,7 +593,8 @@ int32_t vkil_set_parameter(void *handle,
 		response.queue_id    = ilctx->context_essential.queue_id;
 		response.context_id  = ilctx->context_essential.handle;
 		response.size        = 0;
-		ret = vkil_read((void *)ilctx->devctx, &response, WAIT);
+		ret = vkil_read((void *)ilctx->devctx, &response,
+				VKIL_READ_TIMEOUT);
 		if (VKDRV_RD_ERR(ret, sizeof(response)))
 			goto fail_read;
 
@@ -656,7 +661,8 @@ int32_t vkil_get_parameter(void *handle,
 		response->queue_id    = ilctx->context_essential.queue_id;
 		response->context_id  = ilctx->context_essential.handle;
 		response->size        = msg_size;
-		ret = vkil_read((void *)ilctx->devctx, response, WAIT);
+		ret = vkil_read((void *)ilctx->devctx, response,
+				VKIL_READ_TIMEOUT);
 		if (VKDRV_RD_ERR(ret, sizeof(response)))
 			goto fail_read;
 
@@ -1014,7 +1020,8 @@ static int32_t vkil_transfer_buffer(void *component_handle,
 	if ((cmd & VK_CMD_OPT_BLOCKING) || (cmd & VK_CMD_OPT_CB)) {
 		/* we check for the the card response */
 		vk2host_msg response;
-		int32_t wait = (cmd & VK_CMD_OPT_BLOCKING) ? WAIT : 0;
+		int32_t wait = (cmd & VK_CMD_OPT_BLOCKING) ?
+				VKIL_READ_TIMEOUT : 0;
 
 		response.function_id  = VK_FID_TRANS_BUF_DONE;
 		response.msg_id      = msg_id;
@@ -1123,7 +1130,8 @@ int32_t vkil_process_buffer(void *component_handle,
 	if ((cmd & VK_CMD_OPT_BLOCKING) || (cmd & VK_CMD_OPT_CB)) {
 		/* we check for the the card response */
 		vk2host_msg response[VKIL_RET_MSG_MAX_SIZE];
-		int32_t wait = (cmd & VK_CMD_OPT_BLOCKING) ? WAIT : 0;
+		int32_t wait = (cmd & VK_CMD_OPT_BLOCKING) ?
+				VKIL_READ_TIMEOUT : 0;
 		uint64_t user_data;
 
 		response->function_id = VK_FID_PROC_BUF_DONE;
@@ -1223,7 +1231,8 @@ int32_t vkil_xref_buffer(void *ctx_handle,
 	if ((cmd & VK_CMD_OPT_BLOCKING) || (cmd & VK_CMD_OPT_CB)) {
 		/* we check for the the card response */
 		vk2host_msg response;
-		int32_t wait = (cmd & VK_CMD_OPT_BLOCKING) ? WAIT : 0;
+		int32_t wait = (cmd & VK_CMD_OPT_BLOCKING) ?
+				VKIL_READ_TIMEOUT : 0;
 
 		response.function_id = VK_FID_TRANS_BUF_DONE;
 		response.msg_id = msg_id;
