@@ -180,13 +180,13 @@ int main(int argc, char *argv[])
 		switch (c) {
 
 		case 'p':
-			sscanf(optarg, "%d", &ret);
+			ret = strtoul(optarg, NULL, 0);
 			cfg->lane |= (ret << 16);
 			printf("PCIe eye diagram: phy_%d\n", ret);
 			break;
 
 		case 'l':
-			sscanf(optarg, "%d", &ret);
+			ret = strtoul(optarg, NULL, 0);
 			cfg->lane |= 0xffff & ret;
 			printf("PCIe eye diagram: lane_%d\n", ret);
 			break;
