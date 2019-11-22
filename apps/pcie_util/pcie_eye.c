@@ -164,7 +164,7 @@ int main(int argc, char *argv[])
 	vk_pcie_eye_config *cfg = &eye_info.cfg;
 	vkil_buffer_metadata buffer_metadata;
 	vkil_api *vkilapi;
-	vkil_context *vkilctx;
+	vkil_context *vkilctx = NULL;
 	uint32_t data;
 	int c, ret;
 	void *ptr;
@@ -264,9 +264,11 @@ int main(int argc, char *argv[])
 	display_pcie_eye(ptr, buffer_metadata.size, cfg->lane, data);
 
 end:
-	ctx->ilctx = vkilctx;
-	pcie_eye_vkil_deinit(ctx);
-	pcie_eye_vkil_destroy_api(ctx);
+	if (vkilctx) {
+		ctx->ilctx = vkilctx;
+		pcie_eye_vkil_deinit(ctx);
+		pcie_eye_vkil_destroy_api(ctx);
+	}
 	if (ctx->buffer)
 		free(ctx->buffer);
 	return 0;
