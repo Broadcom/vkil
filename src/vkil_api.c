@@ -1273,8 +1273,12 @@ fail:
 void *vkil_create_api(void)
 {
 	vkil_api *ilapi;
+	int32_t ret;
 
-	vk_logger_init();
+	ret = vk_logger_init();
+	if (ret)
+		return NULL;
+
 	VKIL_LOG(VK_LOG_DEBUG, "");
 
 	if (vkil_mallocz((void **)&ilapi, sizeof(vkil_api)))
