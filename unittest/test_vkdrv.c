@@ -805,6 +805,7 @@ int main(int argc, char **argv)
 				return -EINVAL;
 			}
 			strncpy(dev_name, optarg, sizeof(dev_name));
+			dev_name[sizeof(dev_name) - 1] = '\0';
 			break;
 		case 's':
 			test_param.test_size = strtoul(optarg, NULL,
