@@ -493,6 +493,14 @@ typedef struct _vk_enc_cfg {
 	vk_adaptqp_cfg adaptqp_cfg;
 } vk_enc_cfg;
 
+/** extra arguments passed to process_buffer */
+typedef struct _vk_enc_surface_attrs {
+	uint32_t qpmap;    /**< handle on qpmap if non zero */
+	uint32_t varmap;   /**< handle on varmap if non zero */
+	uint32_t quality;  /**< quality index if non zero */
+	uint32_t reserved; /**< to keep the structure 16 bytes */
+} vk_enc_surface_attrs;
+
 /** filter type */
 typedef enum _vk_scl_filter_type {
 	VK_SCL_FLTR_UNKNOWN = 0,  /**< Unknown filter */
