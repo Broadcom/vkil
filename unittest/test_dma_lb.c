@@ -376,7 +376,7 @@ int main(int argc, char **argv)
 		if (ret) {
 			LOCAL_LOG(VK_LOG_INFO,
 				  "Test fails at loop %d, error %d(%s)",
-				  i, ret, strerror(ret));
+				  i, ret, strerror(-ret));
 			break;
 		}
 
