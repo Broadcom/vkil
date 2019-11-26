@@ -601,6 +601,8 @@ typedef enum _vkil_parameter_t {
 	VK_PARAM_SCALER_CUST_FILTER_HANDLE = 82,
 	VK_PARAM_VIDEO_SCL_CONFIG       = 83,
 
+	VK_PARAM_PACKET_SIZE            = 96, /**< get the size of a packet */
+
 	/* meta configuration parameters */
 	VK_PARAM_VARMAP_SIZE            = 120,
 	VK_PARAM_QPMAP_SIZE             = 121,
