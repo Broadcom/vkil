@@ -148,11 +148,36 @@ static void get_buffer(void *handle, uint32_t *nbuf,
 /**
  * @brief populate a buffer descriptor from a message
  * @param[in,out] handle buffer descriptor to be populated
+ * @param[in] ref_data reference increment decrement
+ */
+static int32_t buffer_ref(vkil_buffer *buffer, const int ref_delta)
+{
+	int i;
+
+	if (buffer->type != VKIL_BUF_AG_BUFFERS) {
+		/* a singe handle is returned */
+		if (buffer->handle)
+			buffer->ref += ref_delta;
+	} else if (buffer->type == VKIL_BUF_AG_BUFFERS) {
+		vkil_aggregated_buffers *ag_buf =
+			(vkil_aggregated_buffers *)buffer;
+
+		for (i = 0; i < ag_buf->nbuffers; i++) {
+			if (ag_buf->buffer[i] && ag_buf->buffer[i]->handle)
+				ag_buf->buffer[i]->ref += ref_delta;
+		}
+	}
+	return 0;
+}
+
+/**
+ * @brief populate a buffer descriptor from a message
+ * @param[in,out] handle buffer descriptor to be populated
  * @param[in] vk2host message to read
  * @param[in] user_data user data to be used
  */
 static int32_t set_buffer(void *handle, const vk2host_msg *vk2host,
-			  const uint64_t user_data)
+			  const uint64_t user_data, const int ref_delta)
 {
 	vkil_buffer *buffer = handle;
 
@@ -160,6 +185,7 @@ static int32_t set_buffer(void *handle, const vk2host_msg *vk2host,
 		/* a singe handle is returned */
 		buffer->handle = vk2host->arg;
 		buffer->user_data = user_data;
+		buffer->ref += ref_delta;
 	} else if (buffer->type == VKIL_BUF_AG_BUFFERS) {
 		uint32_t nhandles, i;
 		vkil_aggregated_buffers *ag_buf = handle;
@@ -194,6 +220,7 @@ static int32_t set_buffer(void *handle, const vk2host_msg *vk2host,
 				ag_buf->buffer[i]->handle =
 					((uint32_t *)&(vk2host->arg))[i];
 				ag_buf->buffer[i]->user_data = user_data;
+				ag_buf->buffer[i]->ref += ref_delta;
 			}
 			/* else no aggregatwd buffer but handle is null */
 		}
@@ -205,7 +232,6 @@ static int32_t set_buffer(void *handle, const vk2host_msg *vk2host,
 fail:
 	return -EOVERFLOW;
 }
-
 
 /**
  * @brief prepopulate the command message with control field
@@ -1015,6 +1041,12 @@ static int32_t vkil_transfer_buffer(void *component_handle,
 			goto fail_write;
 		}
 		msg_id = message->msg_id;
+
+		if ((cmd & VK_CMD_MASK) == VK_CMD_UPLOAD) {
+			ret = buffer_ref(buffer, 1);
+			if (ret)
+				goto fail_write;
+		}
 	}
 
 	if ((cmd & VK_CMD_OPT_BLOCKING) || (cmd & VK_CMD_OPT_CB)) {
@@ -1039,6 +1071,13 @@ static int32_t vkil_transfer_buffer(void *component_handle,
 		vkil_return_msg_id(ilctx->devctx, response.msg_id);
 		if (ret)
 			goto fail_read;
+
+
+		if ((cmd & VK_CMD_MASK) == VK_CMD_DOWNLOAD) {
+			ret = buffer_ref(buffer, -1);
+			if (ret)
+				goto fail_write;
+		}
 	}
 	return 0;
 
@@ -1125,6 +1164,10 @@ int32_t vkil_process_buffer(void *component_handle,
 		}
 
 		msg_id = message->msg_id;
+
+		ret = buffer_ref(buffer, -1);
+		if (ret)
+			goto fail_write;
 	}
 
 	if ((cmd & VK_CMD_OPT_BLOCKING) || (cmd & VK_CMD_OPT_CB)) {
@@ -1150,7 +1193,7 @@ int32_t vkil_process_buffer(void *component_handle,
 		vkil_return_msg_id(ilctx->devctx, response->msg_id);
 		if (ret)
 			goto fail_read;
-		ret = set_buffer(buffer, response, user_data);
+		ret = set_buffer(buffer, response, user_data, 1);
 		if (ret)
 			goto fail_read;
 	}
@@ -1226,6 +1269,12 @@ int32_t vkil_xref_buffer(void *ctx_handle,
 			goto fail_write;
 		}
 		msg_id = message->msg_id;
+
+		if (ref_delta < 0) {
+			ret =  buffer_ref(buffer, ref_delta);
+			if (ret)
+				goto fail_write;
+		}
 	}
 
 	if ((cmd & VK_CMD_OPT_BLOCKING) || (cmd & VK_CMD_OPT_CB)) {
@@ -1250,6 +1299,12 @@ int32_t vkil_xref_buffer(void *ctx_handle,
 		vkil_return_msg_id(ilctx->devctx, response.msg_id);
 		if (ret)
 			goto fail_read;
+
+		if (ref_delta > 0) {
+			ret =  buffer_ref(buffer, ref_delta);
+			if (ret)
+				goto fail_read;
+		}
 	}
 	return 0;
 

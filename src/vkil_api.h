@@ -21,12 +21,12 @@
 
 /** Buffer type descriptor */
 typedef enum _vkil_buffer_type {
-	VKIL_BUF_UNDEF       =    0,
-	VKIL_BUF_META_DATA   =  0x4,
-	VKIL_BUF_PACKET      =  0x8,
-	VKIL_BUF_SURFACE     = 0x10,
-	VKIL_BUF_AG_BUFFERS  = 0x20,
-	VKIL_BUF_MAX         = 0xFF
+	VKIL_BUF_UNDEF       = 0,
+	VKIL_BUF_META_DATA   = 1,
+	VKIL_BUF_PACKET      = 2,
+	VKIL_BUF_SURFACE     = 3,
+	VKIL_BUF_AG_BUFFERS  = 4,
+	VKIL_BUF_MAX         = 0xF
 } vkil_buffer_type;
 
 /** default processing priority */
@@ -49,8 +49,9 @@ typedef enum _vkil_buffer_type {
 typedef struct _vkil_buffer {
 	uint32_t handle; /**< handle provided by the valkyrie card */
 	uint16_t flags:16;
-	uint16_t port_id:8; /**< port_id for the buffer */
-	uint16_t type:8;    /**< a _vkil_buffer_type */
+	uint16_t type:4;    /**< a _vkil_buffer_type */
+	uint16_t port_id:4; /**< port_id for the buffer */
+	uint16_t ref:8;
 	uint64_t user_data; /**< user defined data */
 } vkil_buffer;
 
