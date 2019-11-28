@@ -27,11 +27,11 @@
 
 typedef enum _vk_buffer_type {
 	VK_BUF_UNDEF       =    0,
-	VK_BUF_METADATA    =  0x4,
-	VK_BUF_PACKET      =  0x8,
-	VK_BUF_SURFACE     = 0x10,
-	VK_BUF_AG_BUFFERS  = 0x20,
-	VK_BUF_MAX         = 0xFF
+	VK_BUF_METADATA    =  0x1,
+	VK_BUF_PACKET      =  0x2,
+	VK_BUF_SURFACE     = 0x4,
+	VK_BUF_AG_BUFFERS  = 0x8,
+	VK_BUF_MAX         = 0xF
 } vk_buffer_type;
 
 /**
@@ -39,11 +39,12 @@ typedef enum _vk_buffer_type {
  * prefix size is 16 bytes
  */
 typedef struct _vk_buffer {
-	uint32_t handle;  /* handle to the buffer on Vallkyrie SOC */
-	uint32_t flags:16;
-	uint32_t port_id:8;
-	uint32_t type:8;  /**< buffer type */
-	uint64_t user_data_tag;
+	uint32_t handle;    /**< handle to the buffer on the SOC */
+	uint32_t flags:16;  /**< flags */
+	uint32_t type:4;    /**< buffer type */
+	uint32_t port_id:4; /**< port associated to the buffer */
+	uint32_t reserved:8;    /**< for alignment purpose */
+	uint64_t user_data_tag; /**< associated user data */
 } vk_buffer;
 
 /**
