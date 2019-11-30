@@ -561,6 +561,15 @@ typedef struct _vk_flash_image_config {
 	uint32_t buffer_handle;
 } vk_flash_image_cfg;
 
+/**
+ * Pool size configuration
+ * The pool size configuration is used to change a particular pool size
+ */
+typedef struct _vk_pool_size_config {
+	vk_port_id port_id;
+	uint32_t size;
+} vk_pool_size_cfg;
+
 typedef enum _vkil_parameter_t {
 	VK_PARAM_NONE                   = 0,
 
@@ -595,6 +604,8 @@ typedef enum _vkil_parameter_t {
 	VK_PARAM_MAX_LAG                 = 66,
 	/* get the minimum required lag ensuring the generation of an output */
 	VK_PARAM_MIN_LAG                 = 67,
+	/* set a particular port's size */
+	VK_PARAM_POOL_SIZE_CONFIG        = 68,
 
 	/* scaler configuration parameters */
 	VK_PARAM_SCALER_FILTER          = 80, /**< 0 means undefined */

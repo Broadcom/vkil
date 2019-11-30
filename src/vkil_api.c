@@ -568,6 +568,8 @@ static int32_t vkil_get_struct_size(const vkil_parameter_t field)
 		return sizeof(vk_scl_cfg);
 	else if (field == VK_PARAM_FLASH_IMAGE_CONFIG)
 		return sizeof(vk_flash_image_cfg);
+	else if (field == VK_PARAM_POOL_SIZE_CONFIG)
+		return sizeof(vk_pool_size_cfg);
 	/* this is the default value when not structure is defined */
 	return sizeof(int32_t);
 }
