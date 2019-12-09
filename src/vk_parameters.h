@@ -574,6 +574,8 @@ typedef enum _vkil_parameter_t {
 	VK_PARAM_FLASH_IMAGE_CONFIG     = 5,
 	VK_PARAM_PCIE_EYE_DIAGRAM       = 6,
 	VK_PARAM_PCIE_EYE_SIZE          = 7,
+	VK_PARAM_PCIE_BER               = 8,
+	VK_PARAM_PCIE_BER_SIZE          = 9,
 
 	/* component configuration parameters */
 	VK_PARAM_VIDEO_CODEC            = 16, /**< 0 means undefined */

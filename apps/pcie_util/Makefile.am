@@ -1,4 +1,5 @@
 bin_PROGRAMS = vkpcie_util
+AM_LDFLAGS = -lm
 
 vkpcie_util_SOURCES  = pcie_eye.c
 vkpcie_util_CPPFLAGS = -I$(top_srcdir)/src
