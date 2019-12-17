@@ -34,9 +34,19 @@ typedef enum _vkil_buffer_type {
 
 /** flags used by vkil_buffer_packet */
 #define VKIL_BUFFER_PACKET_FLAG_EOS 0x1
+/** offline flags */
+#define VKIL_BUFFER_PACKET_FLAG_NO_DATA 0x2
+#define VKIL_BUFFER_PACKET_FLAG_OFFLINE_RETURNS 0x4
 /** flags used by vkil_buffer_surface */
 #define VKIL_BUFFER_SURFACE_FLAG_INTERLACE 0x000001
 #define VKIL_BUFFER_SURFACE_FLAG_EOS       0x010000
+
+#define VKIL_OFFLINE_SHOTCHANGE_POS 0
+#define VKIL_OFFLINE_FRAMEQP_POS 8
+#define VKIL_OFFLINE_DELTAQP_POS 16
+#define VKIL_OFFLINE_SHOTCHANGE_MASK 1
+#define VKIL_OFFLINE_FRAMEQP_MASK 0x3f
+#define VKIL_OFFLINE_DELTAQP_MASK 0x3f
 
 /**
  * @brief generic descriptor

@@ -220,6 +220,12 @@ static int32_t set_buffer(void *handle, const vk2host_msg *vk2host,
 			 * A NULL handle is however accepted to not have a
 			 * corrsponding buffer
 			 */
+
+			VKIL_LOG(VK_LOG_DEBUG, "i=%d buffer=%p handle=%p", i,
+				 ag_buf->buffer[i],
+				 ((uint32_t *)&(vk2host->arg))[i]);
+
+			fflush(stdout);
 			if (!ag_buf->buffer[i] &&
 					((uint32_t *)&(vk2host->arg))[i])
 				goto fail;

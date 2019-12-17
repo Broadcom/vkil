@@ -25,6 +25,9 @@ enum _vk_role_t {
 	VK_ENCODER  = 3,
 	VK_SCALER   = 4,
 	VK_MULTIPASS_ENCODER = 5,
+	VK_OFFLINE_PASS_0_ENCODER = 6,
+	VK_OFFLINE_PASS_1_ENCODER = 7,
+	VK_OFFLINE_PASS_2_ENCODER = 8,
 	VK_ROLE_MAX = 0xF /**< the role is encoded on 4 bits */
 };
 
@@ -476,6 +479,11 @@ typedef enum _vk_rc_mode {
 	VK_RC_DEF   = VK_RC_QTY,
 } vk_rc_mode;
 
+/** flags for multipass information (needs to be in one byte) */
+#define VK_MULTIPASS_PASS_MASK 0x3
+#define VK_MULTIPASS_USE_LOOKAHEAD 0x4
+#define VK_MULTIPASS_USE_OFFLINE 0x8
+
 typedef struct _vk_enc_cfg {
 	uint32_t standard;  /**< video standard */
 	vk_size  size;
@@ -504,6 +512,7 @@ typedef struct _vk_enc_cfg {
 	uint8_t  rc_mode;   /**< rate control mode, if zero fixed qp */
 	uint8_t  min_qp;    /**< min qp used by rate control */
 	uint8_t  max_qp;    /**< max qp used by rate control */
+
 	uint8_t  no_repeatheaders;  /**< header data for all/first sync frame */
 	vk_ssim_cfg ssim_cfg;       /**< ssim granularity parameters */
 	vk_stats_cfg stats_cfg;     /**< statistics collection parameters */
