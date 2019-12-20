@@ -242,14 +242,20 @@ static ssize_t vkil_wait_probe_msg(int fd,
 
 /**
  * @brief write a message to the device
-
  * @param devctx device context
  * @param message to write
  * @return 0 or written size if success, error code otherwise
  */
 ssize_t vkil_write(vkil_devctx *devctx, host2vk_msg *msg)
 {
-	return write(devctx->fd, msg, sizeof(*msg) * (msg->size + 1));
+	ssize_t ret;
+
+	ret = write(devctx->fd, msg, sizeof(*msg) * (msg->size + 1));
+	/* driver always return -1 and the error is stored in errno */
+	if (ret < 0)
+		ret = -errno;
+
+	return ret;
 }
 
 /**

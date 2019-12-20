@@ -13,6 +13,7 @@
  */
 
 #include <errno.h>
+#include <signal.h>
 #include <stdio.h>
 #include <unistd.h>
 #include "vk_buffers.h"
@@ -62,17 +63,21 @@ static struct _vkil_cfg {
  */
 static int fail_write(const int error, const void *ilctx)
 {
-	if (error == -ENOBUFS)
-		/*
-		 * This is probably caused by a backlog on the return queue.
-		 * The host should then drain this queue first before
-		 * retrying to write on the input queue
-		 */
-		return error; /* request the host to drain the queue first */
-	else if (error)
-		VKIL_LOG(VK_LOG_ERROR,
-			 "failure %d on writing message in ilctx %p",
-			 error, ilctx);
+	/*
+	 * some cases are intercepted here and handled. Right now, only
+	 * -EAGAIN and -EPERM, where the formal is when the h2vk queue is
+	 * full, and the second case is when the drive access is off - ie,
+	 * no communication.  In both cases, we could not continue.
+	 * FFMPEG with VK is working in a pipelined fashion, and when one
+	 * component exits, it is observed that other threads do not seem
+	 * to know, so we need to do some special handling here.
+	 */
+	VKIL_LOG(VK_LOG_ERROR,
+		 "Failure on writing mssage in ilctx %p - %s(%d)\n",
+		 ilctx, strerror(-error), error);
+	if ((error == -EAGAIN) || (error == -EPERM))
+		kill(getpid(), SIGINT);
+
 	return error;
 }
 
