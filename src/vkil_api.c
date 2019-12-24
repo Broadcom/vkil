@@ -155,7 +155,7 @@ static int32_t buffer_ref(vkil_buffer *buffer, const int ref_delta)
 	int i;
 
 	if (buffer->type != VKIL_BUF_AG_BUFFERS) {
-		/* a singe handle is returned */
+		/* a single handle is returned */
 		if (buffer->handle)
 			buffer->ref += ref_delta;
 	} else if (buffer->type == VKIL_BUF_AG_BUFFERS) {
@@ -167,6 +167,7 @@ static int32_t buffer_ref(vkil_buffer *buffer, const int ref_delta)
 				ag_buf->buffer[i]->ref += ref_delta;
 		}
 	}
+
 	return 0;
 }
 
@@ -1042,8 +1043,8 @@ static int32_t vkil_transfer_buffer(void *component_handle,
 		}
 		msg_id = message->msg_id;
 
-		if ((cmd & VK_CMD_MASK) == VK_CMD_UPLOAD) {
-			ret = buffer_ref(buffer, 1);
+		if ((cmd & VK_CMD_MASK) == VK_CMD_DOWNLOAD) {
+			ret = buffer_ref(buffer, -1);
 			if (ret)
 				goto fail_write;
 		}
@@ -1073,8 +1074,8 @@ static int32_t vkil_transfer_buffer(void *component_handle,
 			goto fail_read;
 
 
-		if ((cmd & VK_CMD_MASK) == VK_CMD_DOWNLOAD) {
-			ret = buffer_ref(buffer, -1);
+		if ((cmd & VK_CMD_MASK) == VK_CMD_UPLOAD) {
+			ret = buffer_ref(buffer, 1);
 			if (ret)
 				goto fail_write;
 		}
