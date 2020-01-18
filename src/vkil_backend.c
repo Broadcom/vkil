@@ -237,6 +237,8 @@ static ssize_t vkil_wait_probe_msg(int fd,
 		i++;
 	} while (i < ((wait_x * VKIL_TIMEOUT_MS) / VKIL_PROBE_INTERVAL_MS) ||
 		 infinite_wait);
+
+	VKIL_LOG(VK_LOG_WARNING, "Hit timeout %d ms", wait_x * VKIL_TIMEOUT_MS);
 	return -ETIMEDOUT; /* if we are here we have timed out */
 }
 
