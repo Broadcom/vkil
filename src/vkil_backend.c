@@ -470,6 +470,7 @@ ssize_t vkil_read(vkil_devctx *devctx, vk2host_msg *msg, int32_t wait)
 	/* sanity check */
 	VK_ASSERT(msg);
 	VK_ASSERT(devctx);
+	VK_ASSERT(msg->queue_id < VKIL_MSG_Q_MAX);
 
 	/*
 	 * Thought it is expected concurrent driver access are handled
