@@ -128,13 +128,19 @@ int32_t vkil_return_msg_id(vkil_devctx *devctx, const int32_t msg_id)
  */
 int32_t vkil_get_msg_id(vkil_devctx *devctx)
 {
-	int32_t i;
+	int32_t i, ret;
 	vkil_msg_id *msg_list;
 
 	VK_ASSERT(devctx && devctx->msgid_ctx.msg_list);
 
 	msg_list = devctx->msgid_ctx.msg_list;
-	pthread_mutex_lock(&(devctx->msgid_ctx.mwx));
+	ret = pthread_mutex_lock(&(devctx->msgid_ctx.mwx));
+	if (ret) {
+		VKIL_LOG(VK_LOG_ERROR, "mutex lock error %s(%d) in devctx %p",
+			 strerror(ret), ret, devctx);
+		return -ret;
+	}
+
 	/* msg_id zero is reserved */
 	for (i = 1; i < MSG_LIST_SIZE; i++) {
 		if (!msg_list[i].used) {
@@ -142,16 +148,24 @@ int32_t vkil_get_msg_id(vkil_devctx *devctx)
 			break;
 		}
 	}
-	pthread_mutex_unlock(&(devctx->msgid_ctx.mwx));
+	ret = pthread_mutex_unlock(&(devctx->msgid_ctx.mwx));
+	if (ret) {
+		VKIL_LOG(VK_LOG_ERROR,
+			"mutex unlock error %s(%d) in devctx %p",
+			strerror(ret), ret, devctx);
+		ret = -ret;
+	}
 
-	if (i >= MSG_LIST_SIZE)
+	if (i >= MSG_LIST_SIZE) {
+		ret = -ENOBUFS;
 		goto fail;
+	}
 
 	return i;
 fail:
 	VKIL_LOG(VK_LOG_ERROR, "unable to get an msg id in devctx %p",
 		 devctx);
-	return -ENOBUFS;
+	return ret;
 }
 
 /**
@@ -163,9 +177,8 @@ fail:
 static int32_t vkil_deinit_msglist(vkil_devctx *devctx)
 {
 	int32_t ret;
-	vkil_msg_id *msg_list = devctx->msgid_ctx.msg_list;
 
-	vkil_free((void **)&msg_list);
+	vkil_free((void **)&devctx->msgid_ctx.msg_list);
 	ret = pthread_mutex_destroy(&(devctx->msgid_ctx.mwx));
 	if (ret)
 		goto fail;
@@ -173,7 +186,7 @@ static int32_t vkil_deinit_msglist(vkil_devctx *devctx)
 	return 0;
 
 fail:
-	VKIL_LOG(VK_LOG_ERROR, "failure");
+	VKIL_LOG(VK_LOG_ERROR, "failure %s(%d)", strerror(ret), ret);
 	return -EPERM;
 }
 
@@ -192,12 +205,16 @@ static int32_t vkil_init_msglist(vkil_devctx *devctx)
 	if (ret)
 		goto fail;
 
-	pthread_mutex_init(&(devctx->msgid_ctx.mwx), NULL);
+	ret = pthread_mutex_init(&(devctx->msgid_ctx.mwx), NULL);
+	if (ret)
+		goto fail;
+
 	return 0;
 
 fail:
-	VKIL_LOG(VK_LOG_ERROR, "failure on %d", ret);
-	return ret;
+	vkil_deinit_msglist(devctx);
+	VKIL_LOG(VK_LOG_ERROR, "failure %s(%d)", strerror(abs(ret)), ret);
+	return -abs(ret);
 }
 
 /**
@@ -465,7 +482,7 @@ fail:
  */
 ssize_t vkil_read(vkil_devctx *devctx, vk2host_msg *msg, int32_t wait)
 {
-	int32_t ret;
+	int32_t ret, retm;
 
 	/* sanity check */
 	VK_ASSERT(msg);
@@ -477,7 +494,12 @@ ssize_t vkil_read(vkil_devctx *devctx, vk2host_msg *msg, int32_t wait)
 	 * by the driver itself, we still need to prevent concurrent access
 	 * to the linked list manipulation
 	 */
-	pthread_mutex_lock(&devctx->mwx);
+	retm = pthread_mutex_lock(&devctx->mwx);
+	if (retm) {
+		VKIL_LOG(VK_LOG_ERROR, "mutex lock error %s(%d) in devctx %p",
+			 strerror(retm), retm, devctx);
+		return -retm; /* force negative error */
+	}
 
 	ret = retrieve_message(&devctx->vk2host[msg->queue_id], msg);
 
@@ -487,7 +509,14 @@ ssize_t vkil_read(vkil_devctx *devctx, vk2host_msg *msg, int32_t wait)
 		 * has occcured, such has message size bigger than expected
 		 */
 		VKIL_LOG_VK2HOST_MSG(VK_LOG_DEBUG, msg);
-		pthread_mutex_unlock(&(devctx->mwx));
+		retm = pthread_mutex_unlock(&(devctx->mwx));
+		if (retm) {
+			/* mutex error takes precedence on other error */
+			VKIL_LOG(VK_LOG_ERROR,
+				 "mutex unlock error %s(%d) in devctx %p",
+				 strerror(retm), retm, devctx);
+			ret = -retm;
+		}
 		return ret;
 	}
 
@@ -503,7 +532,13 @@ ssize_t vkil_read(vkil_devctx *devctx, vk2host_msg *msg, int32_t wait)
 		VKIL_LOG(VK_LOG_DEBUG, "message not retrieved yet");
 
 out:
-	pthread_mutex_unlock(&devctx->mwx);
+	retm = pthread_mutex_unlock(&devctx->mwx);
+	if (retm) {
+		/* mutex error takes precedence on other error */
+		VKIL_LOG(VK_LOG_ERROR, "mutex unlock error %s(%d) in devctx %p",
+			 strerror(retm), retm, devctx);
+		ret = -retm;
+	}
 	return ret;
 }
 
@@ -556,8 +591,9 @@ int32_t vkil_init_dev(void **handle)
 		ret = vkil_mallocz(handle, sizeof(*devctx));
 		if (ret)
 			goto fail;
-		devctx = *handle;
 
+		devctx = *handle;
+		devctx->ref++;
 		ret = -ENODEV; /* value to be used for below fails */
 
 		p_aff_dev = vkil_get_affinity();
@@ -584,17 +620,23 @@ int32_t vkil_init_dev(void **handle)
 		if (ret)
 			goto fail;
 
-		pthread_mutex_init(&devctx->mwx, NULL);
+		ret = pthread_mutex_init(&devctx->mwx, NULL);
+		if (ret) {
+			ret = -ret; /* error are forced to be negative */
+			goto fail;
+		}
+	} else {
+		devctx = *handle;
+		devctx->ref++;
 	}
-	devctx = *handle;
-	devctx->ref++;
 
 	VKIL_LOG(VK_LOG_DEBUG, "devctx->fd: %i\n devctx->ref = %i",
 				devctx->fd, devctx->ref);
 	return devctx->id;
 
 fail:
-	vkil_free(handle);
-	VKIL_LOG(VK_LOG_ERROR, "device initialization failure %d", ret);
+	vkil_deinit_dev(handle);
+	VKIL_LOG(VK_LOG_ERROR, "device initialization failure %s(%d)",
+		 strerror(-ret), ret);
 	return ret;
 }
