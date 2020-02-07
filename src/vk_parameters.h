@@ -219,7 +219,7 @@ enum vk_video_level {
 	VK_V_LEVEL_VP9_31 =  6,
 	VK_V_LEVEL_VP9_4  =  7,
 	VK_V_LEVEL_VP9_41 =  8,
-	VK_V_LEVEL_VP9_5  =  8,
+	VK_V_LEVEL_VP9_5  =  9,
 	VK_V_LEVEL_VP9_51 = 10,
 
 	VK_V_LEVEL_MAX = 0xFFFF
