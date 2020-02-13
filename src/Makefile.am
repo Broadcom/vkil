@@ -22,6 +22,6 @@ if VKDRV_USERMODEL
     VKIL_ADD   = $(top_builddir)/drv_model/libvkdrv.la
 endif
 
-libvkil_la_CPPFLAGS = $(VKIL_FLAGS) -I$(top_srcdir)/src/vkutil/host
+libvkil_la_CFLAGS = $(VKIL_FLAGS) -I$(top_srcdir)/src/vkutil/host
 libvkil_la_LIBADD = $(VKIL_ADD)
 
