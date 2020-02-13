@@ -192,7 +192,11 @@ int main(int argc, char *argv[])
 		switch (c) {
 
 		case 'o':
-			sscanf(optarg, "%x", &ctx->start_offset);
+			ret = sscanf(optarg, "%x", &ctx->start_offset);
+			if (ret == EOF) {
+				ret = -INVARGS;
+				goto end;
+			}
 			printf("flash write offset:%x\n", ctx->start_offset);
 			break;
 
@@ -224,25 +228,41 @@ int main(int argc, char *argv[])
 		case 'h':
 			print_usage();
 			break;
+		default:
+			ret = -INVARGS;
+			goto end;
 		}
 	}
 
 	bin_filefd = fopen(bin_filename, "rb");
 	if (bin_filefd == 0) {
-		printf("Error in opening the bin file:%s,%p\n", bin_filename,
-		       bin_filefd);
+		printf("Error in opening the bin file:%s,%p,%d\n", bin_filename,
+		       bin_filefd,
+		       ferror(bin_filefd));
 		ret = -INVFILEOPS;
 		goto end;
 	}
 
-	fseek(bin_filefd, 0, SEEK_END);
+	if (fseek(bin_filefd, 0, SEEK_END) != 0) {
+		printf("Error in fseek on bin file:%s,%p,%d\n", bin_filename,
+		       bin_filefd,
+		       ferror(bin_filefd));
+		ret = -INVFILEOPS;
+		goto end;
+	}
+
 	ctx->file_size = ftell(bin_filefd);
 
-	fseek(bin_filefd, 0, SEEK_SET);
+	if (fseek(bin_filefd, 0, SEEK_SET) != 0) {
+		printf("Error in fseek on bin file:%s,%p,%d\n", bin_filename,
+		       bin_filefd,
+		       ferror(bin_filefd));
+		ret = -INVFILEOPS;
+		goto end;
+	}
 
 	if (ctx->file_size == 0) {
 		printf("Invalid bin file size for file:%s\n", bin_filename);
-		fclose(bin_filefd);
 		ret = -INVFILEOPS;
 		goto end;
 	}
@@ -271,7 +291,7 @@ int main(int argc, char *argv[])
 
 	ret = vkil_set_affinity(ctx->dev_id);
 	if (ret != 0) {
-		printf("Error in setting the affinity\n");
+		printf("Error in setting the affinity %d\n", ret);
 		goto end;
 	}
 
@@ -315,8 +335,13 @@ int main(int argc, char *argv[])
 	flash_util_vkil_deinit(ctx);
 	flash_util_vkil_destroy_api(ctx);
 	printf("Flash Update complete\n");
-end:
+
+	if (bin_filefd)
+		fclose(bin_filefd);
 	if (ctx->buffer)
 		free(ctx->buffer);
+
+	return 0;
+end:
 	return ret;
 }

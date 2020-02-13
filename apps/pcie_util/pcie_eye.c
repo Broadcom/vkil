@@ -608,14 +608,15 @@ int main(int argc, char *argv[])
 	vkil_api *vkilapi;
 	vkil_context *vkilctx = NULL;
 	uint32_t data;
-	int c, ret;
+	int c;
+	int ret = -1;
 	void *ptr;
 	int ber = 0, count = MAX_BER_WAIT_MS;
 
 	if (argc != 7 && argc != 9) {
 		printf("Invalid number of args\n");
 		print_usage();
-		return 0;
+		return ret;
 	}
 
 	ctx->dev_id = "0";
@@ -770,10 +771,13 @@ int main(int argc, char *argv[])
 	}
 
 	ptr = buffer_metadata.data;
-	ber_read_data((uint32_t *)ptr, buffer_metadata.size);
+	ret = ber_read_data((uint32_t *)ptr, buffer_metadata.size);
+	if (ret != 0) {
+		printf("Invalid return value from ber_read_data %d:", ret);
+		goto end;
+	}
 	display_pcie_ber();
 
-end:
 	if (vkilctx) {
 		ctx->ilctx = vkilctx;
 		pcie_eye_vkil_deinit(ctx);
@@ -781,5 +785,8 @@ end:
 	}
 	if (ctx->buffer)
 		free(ctx->buffer);
+
 	return 0;
+end:
+	return ret;
 }
