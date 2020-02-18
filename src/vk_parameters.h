@@ -24,6 +24,7 @@ enum _vk_role_t {
 	VK_DECODER  = 2,
 	VK_ENCODER  = 3,
 	VK_SCALER   = 4,
+	VK_MULTIPASS_ENCODER = 5,
 	VK_ROLE_MAX = 0xF /**< the role is encoded on 4 bits */
 };
 
@@ -491,6 +492,16 @@ typedef struct _vk_enc_cfg {
 	vk_qpmap_cfg qpmap_cfg;
 	vk_vars_cfg varmap_cfg;
 	vk_adaptqp_cfg adaptqp_cfg;
+
+	/** lookahead information */
+	uint8_t use_lookahead;
+	uint8_t lookahead_frames; /** number of frames of lookahead **/
+	uint8_t seg_gops;
+	uint8_t smqp;
+	float taq_strength;
+	float saq_strength;
+	float saq_a;
+	float saq_b;
 } vk_enc_cfg;
 
 /** extra arguments passed to process_buffer */
@@ -570,6 +581,18 @@ typedef struct _vk_pool_size_config {
 	uint32_t size;
 } vk_pool_size_cfg;
 
+/**
+ * Pool alloc configuration
+ * The pool alloc configuration is used to alloc a buffer in a pool
+ */
+typedef struct _vk_pool_alloc_buffer {
+	vk_port_id port_id;
+	union {
+		uint32_t size; // requested
+		uint32_t handle; // returned
+	};
+} vk_pool_alloc_buffer;
+
 typedef enum _vkil_parameter_t {
 	VK_PARAM_NONE                   = 0,
 
@@ -606,6 +629,8 @@ typedef enum _vkil_parameter_t {
 	VK_PARAM_MIN_LAG                 = 67,
 	/* set a particular port's size */
 	VK_PARAM_POOL_SIZE_CONFIG        = 68,
+	/* Alloc a buffer in a given pool  */
+	VK_PARAM_POOL_ALLOC_BUFFER       = 69,
 
 	/* scaler configuration parameters */
 	VK_PARAM_SCALER_FILTER          = 80, /**< 0 means undefined */
