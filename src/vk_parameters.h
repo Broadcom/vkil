@@ -408,6 +408,20 @@ typedef struct _vk_adaptqp_cfg {
 	int32_t qpd_sum_threshold;
 } vk_adaptqp_cfg;
 
+/**
+ * parameterization of the lookahead alg
+ * the algorithm will do run-time lookahead to improve pic quality
+ */
+typedef struct _vk_lookahead_cfg {
+	uint8_t frames; /** number of frames of lookahead **/
+	uint8_t seg_gops;
+	uint8_t smqp;
+	float taq_strength;
+	float saq_strength;
+	float saq_a;
+	float saq_b;
+} vk_lookahead_cfg;
+
 typedef struct _vk_qpmap_cfg {
 	int32_t flags;
 	int32_t size; /**< bytes required to store a frame qpmap */
@@ -494,14 +508,8 @@ typedef struct _vk_enc_cfg {
 	vk_adaptqp_cfg adaptqp_cfg;
 
 	/** lookahead information */
-	uint8_t use_lookahead;
-	uint8_t lookahead_frames; /** number of frames of lookahead **/
-	uint8_t seg_gops;
-	uint8_t smqp;
-	float taq_strength;
-	float saq_strength;
-	float saq_a;
-	float saq_b;
+	uint8_t use_lookahead; /**< indicator is lookahead is used */
+	vk_lookahead_cfg lookahead_cfg;
 } vk_enc_cfg;
 
 /** extra arguments passed to process_buffer */

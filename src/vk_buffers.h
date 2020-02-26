@@ -42,8 +42,8 @@ typedef struct _vk_buffer {
 	uint32_t handle;    /**< handle to the buffer on the SOC */
 	uint32_t flags:16;  /**< flags */
 	uint32_t type:4;    /**< buffer type */
-	uint32_t port_id:4; /**< port associated to the buffer */
-	uint32_t reserved:8;    /**< for alignment purpose */
+	uint32_t reserved:4;    /**< for alignment purpose */
+	uint32_t port_id:8; /**< port associated to the buffer */
 	uint64_t user_data_tag; /**< associated user data */
 } vk_buffer;
 
