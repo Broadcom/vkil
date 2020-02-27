@@ -50,10 +50,10 @@ static struct _vkil_cfg {
 #define WAIT_INIT (VKIL_READ_TIMEOUT * 10)
 
 /** max expected return message size, can be locally overidden */
-#define VKIL_RET_MSG_MAX_SIZE 8
+#define VKIL_RET_MSG_MAX_SIZE 16
 
 /** max msg size that can be sent to card */
-#define VKIL_SEND_MSG_MAX_SIZE 8
+#define VKIL_SEND_MSG_MAX_SIZE 16
 
 /**
  * @brief instrument the write failure
