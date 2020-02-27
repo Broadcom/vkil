@@ -135,11 +135,8 @@ int32_t vkil_get_msg_id(vkil_devctx *devctx)
 
 	msg_list = devctx->msgid_ctx.msg_list;
 	ret = pthread_mutex_lock(&(devctx->msgid_ctx.mwx));
-	if (ret) {
-		VKIL_LOG(VK_LOG_ERROR, "mutex lock error %s(%d) in devctx %p",
-			 strerror(ret), ret, devctx);
-		return -ret;
-	}
+	if (ret)
+		goto fail;
 
 	/* msg_id zero is reserved */
 	for (i = 1; i < MSG_LIST_SIZE; i++) {
@@ -149,23 +146,20 @@ int32_t vkil_get_msg_id(vkil_devctx *devctx)
 		}
 	}
 	ret = pthread_mutex_unlock(&(devctx->msgid_ctx.mwx));
-	if (ret) {
-		VKIL_LOG(VK_LOG_ERROR,
-			"mutex unlock error %s(%d) in devctx %p",
-			strerror(ret), ret, devctx);
-		ret = -ret;
-	}
+	if (ret)
+		goto fail;
 
 	if (i >= MSG_LIST_SIZE) {
-		ret = -ENOBUFS;
+		ret = ENOBUFS;
 		goto fail;
 	}
 
 	return i;
+
 fail:
-	VKIL_LOG(VK_LOG_ERROR, "unable to get an msg id in devctx %p",
-		 devctx);
-	return ret;
+	VKIL_LOG(VK_LOG_ERROR, "error %s(%d) in devctx %p",
+		 strerror(ret), ret, devctx);
+	return -ret; /* we always return negative error code if error */
 }
 
 /**
