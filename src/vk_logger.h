@@ -41,7 +41,7 @@ void vk_log(const char *prefix, vk_log_mod log_mod, log_type ltype,
 	    const char *fmt, ...);
 
 #define VK_H2VK_LOG(logger, loglevel, msg) logger(loglevel,                \
-	"host2vk_msg=%x: function_id=%d(%s), size=%d, queue_id=%d, "       \
+	"host2vk_msg=%p: function_id=%d(%s), size=%d, queue_id=%d, "       \
 	"msg_id=%x, context_id=%x args[0]=%x, args[1]=%x",                 \
 	msg,                                                               \
 	((host2vk_msg *)msg)->function_id,                                 \
@@ -54,7 +54,7 @@ void vk_log(const char *prefix, vk_log_mod log_mod, log_type ltype,
 	((host2vk_msg *)msg)->args[1])
 
 #define VK_VK2H_LOG(logger, loglevel, msg) logger(loglevel,                \
-	"vk2host_msg=%x: function_id=%d(%s), size=%d, queue_id=%d, "       \
+	"vk2host_msg=%p: function_id=%d(%s), size=%d, queue_id=%d, "       \
 	"msg_id=%x, context_id=%x hw_status=%d, arg=%x",                   \
 	msg,                                                               \
 	((vk2host_msg *)msg)->function_id,                                 \
