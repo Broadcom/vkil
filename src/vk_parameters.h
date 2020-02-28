@@ -409,13 +409,17 @@ typedef struct _vk_adaptqp_cfg {
 } vk_adaptqp_cfg;
 
 /**
- * parameterization of the lookahead alg
- * the algorithm will do run-time lookahead to improve pic quality
+ * @brief parameterization of the lookahead algoruthn
+ *
+ * the algorithm to run-time lookahead to improve the video quality
  */
 typedef struct _vk_lookahead_cfg {
-	uint8_t frames; /** number of frames of lookahead **/
+	int32_t flags;
+	uint8_t frames; /**< number of frames to lookahead **/
 	uint8_t seg_gops;
 	uint8_t smqp;
+	uint8_t reserved;
+	/* use float which in c is defined as 4 bytes */
 	float taq_strength;
 	float saq_strength;
 	float saq_a;
@@ -500,16 +504,13 @@ typedef struct _vk_enc_cfg {
 	uint8_t  rc_mode;   /**< rate control mode, if zero fixed qp */
 	uint8_t  min_qp;    /**< min qp used by rate control */
 	uint8_t  max_qp;    /**< max qp used by rate control */
-	uint8_t  no_repeatheaders; /**< header data for all/first sync frame */
-	vk_ssim_cfg ssim_cfg;
-	vk_stats_cfg stats_cfg;
-	vk_qpmap_cfg qpmap_cfg;
-	vk_vars_cfg varmap_cfg;
-	vk_adaptqp_cfg adaptqp_cfg;
-
-	/** lookahead information */
-	uint8_t use_lookahead; /**< indicator is lookahead is used */
-	vk_lookahead_cfg lookahead_cfg;
+	uint8_t  no_repeatheaders;  /**< header data for all/first sync frame */
+	vk_ssim_cfg ssim_cfg;       /**< ssim granularity parameters */
+	vk_stats_cfg stats_cfg;     /**< statistics collection parameters */
+	vk_qpmap_cfg qpmap_cfg;     /**< quantization map parameters */
+	vk_vars_cfg varmap_cfg;     /**< varaince map parameters */
+	vk_adaptqp_cfg adaptqp_cfg; /**< adaptive quant algo parameters */
+	vk_lookahead_cfg lookahead_cfg; /**< look ahead algo paraemters  */
 } vk_enc_cfg;
 
 /** extra arguments passed to process_buffer */
