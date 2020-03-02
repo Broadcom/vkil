@@ -49,6 +49,17 @@ typedef struct _vk2host_msg {
 } vk2host_msg;
 
 /**
+ * get pointer to start of extra data in msg
+ *
+ * @params msg pointer to message
+ * @return pointer to extra data in msg
+ */
+static inline uint32_t *vk2host_getdatap(vk2host_msg *msg)
+{
+	return (uint32_t *)(msg + 1);
+}
+
+/**
  * enum type for the function id
  */
 typedef enum _vk_function_id_t {
