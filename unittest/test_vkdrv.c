@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>
+#include <inttypes.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -203,7 +204,7 @@ int32_t test_dev_send_msg(int fd, host2vk_msg *message_in, uint32_t in_size,
 	if (op_size != in_size) {
 		LOCAL_LOG(
 		    VK_LOG_ERROR,
-		    "Q[%d] func %s Writing %d bytes down but return only %d",
+		    "Q[%d] func %s Writing %d bytes down but return only %zd",
 		    message_in->queue_id,
 		    vkil_function_id_str(message_in->function_id),
 		    in_size, op_size);
@@ -447,7 +448,7 @@ int32_t test_encoder_dma(int fd, uint32_t q_id, int32_t context_id,
 			upload_accum += bw;
 			upload_accum_cnt++;
 		}
-		LOCAL_LOG(VK_LOG_INFO, "\t\t time %d ns, bw %d kbps",
+		LOCAL_LOG(VK_LOG_INFO, "\t\t time %d ns, bw %" PRIu64 " kbps",
 			  delta, bw);
 
 		message_in->function_id = VK_FID_PROC_BUF;
@@ -561,7 +562,8 @@ int32_t test_encoder_dma(int fd, uint32_t q_id, int32_t context_id,
 
 	/* output accumulated statistics */
 	LOCAL_LOG(VK_LOG_INFO,
-		  "LB failure %d Accum upload BW %d kbps, download BW %d kbps",
+		  "LB failure %d Accum upload BW %" PRIu64
+		  " kbps, download BW %" PRIu64 " kbps",
 		  lb_fail_cnt,
 		  upload_accum_cnt ? upload_accum / upload_accum_cnt : 0,
 		  download_accum_cnt ? download_accum / download_accum_cnt : 0);

@@ -12,6 +12,7 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <inttypes.h>
 #include <getopt.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -403,16 +404,22 @@ init_fail:
 	if (upload_cnt) {
 		upload_cnt *= test_param.test_size;
 		LOCAL_LOG(VK_LOG_INFO,
-		     "\t Aver Upload: total bytes %ld tot time %ld ns, %d kbps",
-		     upload_cnt, upload_tot_ns,
-		     _CALC_BW(upload_cnt, upload_tot_ns));
+			  "\t Aver Upload: total bytes %" PRId64
+			  " tot time %" PRId64
+			  " ns, %" PRId64 " kbps",
+			  upload_cnt,
+			  upload_tot_ns,
+			  _CALC_BW(upload_cnt, upload_tot_ns));
 	}
 	if (download_cnt) {
 		download_cnt *= test_param.test_size;
 		LOCAL_LOG(VK_LOG_INFO,
-		     "\t Aver Download: total bytes %ld time %ld ns, %d kbps",
-		     download_cnt, download_tot_ns,
-		     _CALC_BW(download_cnt, download_tot_ns));
+			  "\t Aver Download: total bytes %" PRId64
+			  " time %" PRId64
+			  " ns, %" PRId64 " kbps",
+			  download_cnt,
+			  download_tot_ns,
+			  _CALC_BW(download_cnt, download_tot_ns));
 	}
 
 	test_dma_lb_vkil_destroy_api(&ctx);

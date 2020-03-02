@@ -13,6 +13,7 @@
  */
 
 #include <errno.h>
+#include <inttypes.h>
 #include <signal.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -342,7 +343,7 @@ static int32_t vkil_deinit_com(void *handle)
 
 	vkil_return_msg_id(ilctx->devctx, msg2host.msg_id);
 
-	VKIL_LOG(VK_LOG_DEBUG, "ilctx=%p, devctx=%p, context_id=0x%lx",
+	VKIL_LOG(VK_LOG_DEBUG, "ilctx=%p, devctx=%p, context_id=0x%" PRIx32,
 		 ilctx, ilctx->devctx, ilctx->context_essential.handle);
 	return 0;
 
