@@ -34,6 +34,17 @@ typedef struct _host2vk_msg {
 } host2vk_msg;
 
 /**
+ * get pointer to start of extra data in msg
+ *
+ * @params msg pointer to message
+ * @return pointer to extra data in msg
+ */
+static inline void *host2vk_getdatap(host2vk_msg *msg)
+{
+	return (void *)(msg + 1);
+}
+
+/**
  * message structure from Valkyrie card to host
  */
 typedef struct _vk2host_msg {
