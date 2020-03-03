@@ -448,7 +448,8 @@ int32_t test_encoder_dma(int fd, uint32_t q_id, int32_t context_id,
 			upload_accum += bw;
 			upload_accum_cnt++;
 		}
-		LOCAL_LOG(VK_LOG_INFO, "\t\t time %d ns, bw %" PRIu64 " kbps",
+		LOCAL_LOG(VK_LOG_INFO,
+			  "\t\t time %" PRIu32 "ns, bw %" PRIu64 " kbps",
 			  delta, bw);
 
 		message_in->function_id = VK_FID_PROC_BUF;
@@ -469,7 +470,8 @@ int32_t test_encoder_dma(int fd, uint32_t q_id, int32_t context_id,
 			goto fail_send;
 
 		LOCAL_LOG(VK_LOG_INFO,
-			  "<%10d> Process buffer done in-hdl 0x%x out-hdl 0x%x",
+			  "<%10d> Process buffer done in-hdl 0x%" PRIx32
+			  " out-hdl 0x%x",
 			  i, handle, message_out->arg);
 
 		handle = message_out->arg;
@@ -477,7 +479,8 @@ int32_t test_encoder_dma(int fd, uint32_t q_id, int32_t context_id,
 		/* if process returned error, no need to do the download */
 		if (_IS_INVALID_HANDLE(handle)) {
 			LOCAL_LOG(VK_LOG_INFO,
-			   "\t\t error handle 0x%x returned, skipping download",
+			   "\t\t error handle 0x%" PRIx32
+			   " returned, skipping download",
 			   handle);
 
 			lb_fail_cnt++;
@@ -511,7 +514,7 @@ int32_t test_encoder_dma(int fd, uint32_t q_id, int32_t context_id,
 			goto fail_send;
 
 		LOCAL_LOG(VK_LOG_INFO,
-			  "<%10d> Download buf %p, size 0x%x, hdl 0x%x",
+			  "<%10d> Download buf %p, size 0x%x, hdl 0x%" PRIx32,
 			  i, param->download_buf, param->test_size, handle);
 
 		delta = *((uint32_t *)&message_out[1]);
@@ -521,7 +524,8 @@ int32_t test_encoder_dma(int fd, uint32_t q_id, int32_t context_id,
 			download_accum += bw;
 			download_accum_cnt++;
 		}
-		LOCAL_LOG(VK_LOG_INFO, "\t\t time %d ns, bw %d kbps",
+		LOCAL_LOG(VK_LOG_INFO,
+			  "\t\t time %" PRIu32 " ns, bw %" PRIu64 " kbps",
 			  delta, bw);
 		/*
 		 * perform verification.  do expect input and output
@@ -542,8 +546,10 @@ int32_t test_encoder_dma(int fd, uint32_t q_id, int32_t context_id,
 
 			if (src_len != dst_len)
 				LOCAL_LOG(VK_LOG_ERROR,
-					  "Src len 0x%x not match Dst len 0x%x",
-					  src_len, dst_len);
+					  "Src len 0x%" PRIx32
+					  " not match Dst len 0x%" PRIx32,
+					  src_len,
+					  dst_len);
 
 			for (j = 0; j < src_len; j++) {
 				if (*src != *dst) {
@@ -851,7 +857,7 @@ int main(int argc, char **argv)
 			  "Sizes supported....");
 		for (i = 0; i < ARRAY_SIZE(supported_size_tab); i++)
 			LOCAL_LOG(VK_LOG_INFO, "[%d] - 0x%x",
-				  supported_size_tab[i]);
+				  i, supported_size_tab[i]);
 		ret = -1;
 		goto deinit_exit;
 	}

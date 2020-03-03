@@ -404,9 +404,9 @@ init_fail:
 	if (upload_cnt) {
 		upload_cnt *= test_param.test_size;
 		LOCAL_LOG(VK_LOG_INFO,
-			  "\t Aver Upload: total bytes %" PRId64
-			  " tot time %" PRId64
-			  " ns, %" PRId64 " kbps",
+			  "\t Aver Upload: total bytes %" PRIu64
+			  " tot time %" PRIu64
+			  " ns, %" PRIu64 " kbps",
 			  upload_cnt,
 			  upload_tot_ns,
 			  _CALC_BW(upload_cnt, upload_tot_ns));
@@ -414,9 +414,9 @@ init_fail:
 	if (download_cnt) {
 		download_cnt *= test_param.test_size;
 		LOCAL_LOG(VK_LOG_INFO,
-			  "\t Aver Download: total bytes %" PRId64
-			  " time %" PRId64
-			  " ns, %" PRId64 " kbps",
+			  "\t Aver Download: total bytes %" PRIu64
+			  " time %" PRIu64
+			  " ns, %" PRIu64 " kbps",
 			  download_cnt,
 			  download_tot_ns,
 			  _CALC_BW(download_cnt, download_tot_ns));
