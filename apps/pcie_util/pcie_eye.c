@@ -549,7 +549,7 @@ static void display_pcie_ber(void)
 {
 	int16_t level;
 	int i, j, y;
-	double margin[BER_NR_MODES];
+	double margin[BER_NR_MODES] = {0};
 	double hor_test_result = 0;
 	double ver_test_result = 0;
 
