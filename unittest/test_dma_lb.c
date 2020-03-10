@@ -289,6 +289,7 @@ int main(int argc, char **argv)
 	uint64_t download_cnt = 0;
 	uint64_t upload_tot_ns = 0;
 	uint64_t download_tot_ns = 0;
+	uint64_t bw;
 
 	test_dma_lb_ctx ctx;
 	test_dma_lb_param test_param;
@@ -403,23 +404,27 @@ init_fail:
 					    "successful" : "fails");
 	if (upload_cnt) {
 		upload_cnt *= test_param.test_size;
+		bw = _CALC_BW(upload_cnt, upload_tot_ns);
+
 		LOCAL_LOG(VK_LOG_INFO,
 			  "\t Aver Upload: total bytes %" PRIu64
 			  " tot time %" PRIu64
 			  " ns, %" PRIu64 " kbps",
 			  upload_cnt,
 			  upload_tot_ns,
-			  _CALC_BW(upload_cnt, upload_tot_ns));
+			  bw);
 	}
 	if (download_cnt) {
 		download_cnt *= test_param.test_size;
+		bw = _CALC_BW(download_cnt, download_tot_ns);
+
 		LOCAL_LOG(VK_LOG_INFO,
 			  "\t Aver Download: total bytes %" PRIu64
 			  " time %" PRIu64
 			  " ns, %" PRIu64 " kbps",
 			  download_cnt,
 			  download_tot_ns,
-			  _CALC_BW(download_cnt, download_tot_ns));
+			  bw);
 	}
 
 	test_dma_lb_vkil_destroy_api(&ctx);
