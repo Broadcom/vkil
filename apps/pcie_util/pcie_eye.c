@@ -231,8 +231,7 @@ static int ber_read_data(uint32_t *fp, const int size)
 		if (val == BER_SIGNATURE) {
 			mode_idx++;
 			if (mode_idx >= BER_NR_MODES) {
-				printf("Invalid BER mode index %d\n",
-						mode_idx);
+				printf("Invalid BER mode index %d\n", mode_idx);
 				return -1;
 			}
 
@@ -246,6 +245,11 @@ static int ber_read_data(uint32_t *fp, const int size)
 			fetch_mode = 1;
 			sample_cnt = 0;
 			continue;
+		}
+
+		if (mode_idx < 0) {
+			printf("Invalid BER mode index %d\n", mode_idx);
+			return -1;
 		}
 
 		if (fetch_mode == 1) {
