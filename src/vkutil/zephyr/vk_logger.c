@@ -86,6 +86,7 @@ void vk_vcon_cmd_handler(const char *cmd)
 	 * directly.
 	 */
 	strncpy(tmp_buf, cmd, sizeof(tmp_buf));
+	tmp_buf[sizeof(tmp_buf) - 1] = '\0'; /* always null terminated */
 	p_char = tmp_buf;
 	_SKIP_SPACE(p_char);
 
