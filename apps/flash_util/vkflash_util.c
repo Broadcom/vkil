@@ -236,9 +236,9 @@ int main(int argc, char *argv[])
 
 	bin_filefd = fopen(bin_filename, "rb");
 	if (bin_filefd == 0) {
-		printf("Error in opening the bin file:%s,%p,%d\n", bin_filename,
-		       bin_filefd,
-		       ferror(bin_filefd));
+		printf("Error in opening the bin file:%s,%p\n",
+		       bin_filename,
+		       bin_filefd);
 		ret = -INVFILEOPS;
 		goto end;
 	}
