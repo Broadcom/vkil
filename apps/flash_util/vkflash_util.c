@@ -276,8 +276,6 @@ int main(int argc, char *argv[])
 
 	ret = fread(ctx->buffer, ctx->file_size, 1, bin_filefd);
 
-	fclose(bin_filefd);
-
 	if (ret < 1) {
 		printf("Error in reading data from file:%s,%d\n",
 		       bin_filename, ret);
@@ -336,12 +334,13 @@ int main(int argc, char *argv[])
 	flash_util_vkil_destroy_api(ctx);
 	printf("Flash Update complete\n");
 
-	if (bin_filefd)
-		fclose(bin_filefd);
 	if (ctx->buffer)
 		free(ctx->buffer);
 
-	return 0;
+	ret = 0;
 end:
+	if (bin_filefd)
+		fclose(bin_filefd);
+
 	return ret;
 }
