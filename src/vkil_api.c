@@ -221,7 +221,9 @@ static int32_t set_buffer(void *handle, const vk2host_msg *vk2host,
 			 * corrsponding buffer
 			 */
 
-			VKIL_LOG(VK_LOG_DEBUG, "i=%d buffer=%p handle=%p", i,
+			VKIL_LOG(VK_LOG_DEBUG,
+				 "i=%d buffer=%p handle=0x%" PRIx32,
+				 i,
 				 ag_buf->buffer[i],
 				 ((uint32_t *)&(vk2host->arg))[i]);
 
