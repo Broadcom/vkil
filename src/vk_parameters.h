@@ -421,7 +421,9 @@ typedef struct _vk_lookahead_cfg {
 	uint8_t frames; /**< number of frames to lookahead **/
 	uint8_t seg_gops;
 	uint8_t smqp;
-	uint8_t reserved;
+	uint8_t shotchange_threshold; /**< Matches ffmpeg: in range [0,100] **/
+	uint32_t shotlength_min;
+	uint32_t shotlength_max;
 	/* use float which in c is defined as 4 bytes */
 	float taq_strength;
 	float saq_strength;
