@@ -613,6 +613,20 @@ typedef struct _vk_pool_alloc_buffer {
 	};
 } vk_pool_alloc_buffer;
 
+/* surface flags */
+typedef enum _vk_surf_flags {
+	VK_SURF_DEC_FRAME_INTERLACED = 0x01, /**< Decoded Frames Interlaced */
+	VK_SURF_DEC_TOP_TYPE_I       = 0x02, /**< Decoded Top - IDR Frame */
+	VK_SURF_DEC_TOP_TYPE_P       = 0x04, /**< Decoded Top - I,P MBs Only */
+	VK_SURF_DEC_TOP_TYPE_B       = 0x06, /**< Decoded Top - I,P or B MBs */
+	VK_SURF_DEC_TOP_TYPE_MASK    = 0x06, /**< Decoded Top Type Mask */
+	VK_SURF_DEC_BOT_TYPE_I       = 0x08, /**< Decoded Bot - IDR Frame */
+	VK_SURF_DEC_BOT_TYPE_P       = 0x10, /**< Decoded Bot - I,P MBs Only */
+	VK_SURF_DEC_BOT_TYPE_B       = 0x18, /**< Decoded Bot - I,P or B MBs */
+	VK_SURF_DEC_BOT_TYPE_MASK    = 0x18, /**< Decoded Bot Type Mask */
+	VK_SURF_DEC_MASK             = 0xFF, /**< Decoded Full Mask */
+} vk_surf_flags;
+
 typedef enum _vkil_parameter_t {
 	VK_PARAM_NONE                   = 0,
 
@@ -660,6 +674,8 @@ typedef enum _vkil_parameter_t {
 	VK_PARAM_VIDEO_SCL_CONFIG       = 83,
 
 	VK_PARAM_PACKET_SIZE            = 96, /**< get the size of a packet */
+	/**< get the flags associated with a surface (vk_surf_flags) */
+	VK_PARAM_SURFACE_FLAGS          = 97,
 
 	/* meta configuration parameters */
 	VK_PARAM_VARMAP_SIZE            = 120,
