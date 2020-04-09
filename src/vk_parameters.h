@@ -504,6 +504,8 @@ typedef struct _vk_enc_cfg {
 	uint32_t fps;       /** frame per second */
 	uint8_t  bitdepth;  /**< if 8 , 10 bits - if 0, encoder choose */
 	uint8_t  nbframes_plus1; /**< input from FFMPEG, starting from 1 */
+	/** true if need to do gop-reset in sync with decoder's IDR frames */
+	uint8_t  idr_passthrough;
 
 	/** qp for intra frame not used if rate control on */
 	uint8_t  qpi;
