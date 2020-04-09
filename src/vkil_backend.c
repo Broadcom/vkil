@@ -18,6 +18,7 @@
  */
 #include <errno.h>
 #include <fcntl.h>
+#include <poll.h>
 #include <stdio.h>
 #include <unistd.h>
 #include "vkil_api.h"
@@ -208,19 +209,29 @@ fail:
 	return -abs(ret);
 }
 
+static int64_t vkil_get_time_us(void)
+{
+	struct timespec time_i;
+
+	clock_gettime(CLOCK_MONOTONIC, &time_i);
+	return time_i.tv_sec * 1000000ull + time_i.tv_nsec / 1000ull;
+}
+
 /**
  * @brief probe a driver for message up to VKIL_TIMEOUT_MS * wait_x
  * @param[in] driver to poll
  * @param[in|out] message returned on success
  * @param[in] max wait factor (=default_wait*wait_x, zero means no wait)
- * @return zero if success otherwise error message
+ * @return positive if success otherwise error message
  */
 static ssize_t vkil_wait_probe_msg(int fd,
 				   vk2host_msg *msg,
 				   const int32_t wait_x)
 {
-	int32_t ret, nbytes, i = 0;
+	int32_t ret, nbytes;
 	int32_t infinite_wait = (wait_x && (!VKIL_TIMEOUT_MS)) ? 1 : 0;
+	struct pollfd fds;
+	int64_t start_us, time_us, end_us;
 
 	VK_ASSERT(msg);
 	VK_ASSERT(msg->size < UINT8_MAX);
@@ -228,21 +239,59 @@ static ssize_t vkil_wait_probe_msg(int fd,
 
 	nbytes = sizeof(*msg) * (msg->size + 1);
 
-	do {
-		errno = 0;  /* required by CERT-C:2012 rule ERR30-C */
-		ret = read(fd, msg, nbytes);
-		if ((ret < 0) && (errno == EMSGSIZE))
-			return -EMSGSIZE;
+	fds.fd = fd;
+	fds.events = POLLIN | POLLRDNORM;
+	fds.revents = 0;
 
-		if (ret > 0)
-			return ret;
+	start_us = vkil_get_time_us();
+	time_us = start_us;
+	end_us = start_us + wait_x * VKIL_TIMEOUT_MS * 1000ull;
 
-		if (!wait_x)
-			return -ENOMSG;
-		usleep(1000 * VKIL_PROBE_INTERVAL_MS);
-		i++;
-	} while (i < ((wait_x * VKIL_TIMEOUT_MS) / VKIL_PROBE_INTERVAL_MS) ||
-		 infinite_wait);
+	while (1) {
+		if (infinite_wait) {
+			ret = poll(&fds, 1, 0);
+		} else if (wait_x) {
+			int time_ms;
+
+			time_ms = (end_us - time_us) / 1000;
+			if (time_ms <= 0)
+				break;
+			ret = poll(&fds, 1, time_ms);
+		} else {
+			ret = 1;
+		}
+
+		if (ret) {
+			ret = read(fd, msg, nbytes);
+			if (ret > 0) {
+#if defined(PROBE_TIME_DUMP)
+				int elapsed_us = vkil_get_time_us() - start_us;
+
+				VKIL_LOG(VK_LOG_INFO,
+					 "i=%d Poll %d us - rd %d",
+					 i, elapsed_us, ret);
+#endif
+				/*
+				 * If ret < nbytes, we have only partially read the message
+				 * and there is no way for calling code to recover.
+				 */
+				VK_ASSERT(ret == nbytes);
+				return ret;
+			}
+
+#ifdef VKDRV_USERMODEL
+			/* in sw simulation only we don't use system errno */
+			if (ret == -EMSGSIZE)
+#else
+			if ((ret < 0) && (errno == EMSGSIZE))
+#endif
+				return -EMSGSIZE;
+			if (!wait_x)
+				return -ENOMSG;
+		}
+
+		time_us = vkil_get_time_us();
+	}
 
 	VKIL_LOG(VK_LOG_WARNING, "Hit timeout %d ms", wait_x * VKIL_TIMEOUT_MS);
 	return -ETIMEDOUT; /* if we are here we have timed out */
