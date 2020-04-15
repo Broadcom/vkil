@@ -616,15 +616,15 @@ typedef struct _vk_pool_alloc_buffer {
 
 /* surface flags */
 typedef enum _vk_surf_flags {
-	VK_SURF_DEC_FRAME_INTERLACED = 0x01, /**< Decoded Frames Interlaced */
-	VK_SURF_DEC_TOP_TYPE_I       = 0x02, /**< Decoded Top - IDR Frame */
-	VK_SURF_DEC_TOP_TYPE_P       = 0x04, /**< Decoded Top - I,P MBs Only */
-	VK_SURF_DEC_TOP_TYPE_B       = 0x06, /**< Decoded Top - I,P or B MBs */
-	VK_SURF_DEC_TOP_TYPE_MASK    = 0x06, /**< Decoded Top Type Mask */
-	VK_SURF_DEC_BOT_TYPE_I       = 0x08, /**< Decoded Bot - IDR Frame */
-	VK_SURF_DEC_BOT_TYPE_P       = 0x10, /**< Decoded Bot - I,P MBs Only */
-	VK_SURF_DEC_BOT_TYPE_B       = 0x18, /**< Decoded Bot - I,P or B MBs */
-	VK_SURF_DEC_BOT_TYPE_MASK    = 0x18, /**< Decoded Bot Type Mask */
+	VK_SURF_DEC_TOP_TYPE_I       = 0x01, /**< Decoded Top - IDR Frame */
+	VK_SURF_DEC_TOP_TYPE_P       = 0x02, /**< Decoded Top - I,P MBs Only */
+	VK_SURF_DEC_TOP_TYPE_B       = 0x03, /**< Decoded Top - I,P or B MBs */
+	VK_SURF_DEC_TOP_TYPE_MASK    = 0x03, /**< Decoded Top Type Mask */
+	VK_SURF_DEC_BOT_TYPE_I       = 0x04, /**< Decoded Bot - IDR Frame */
+	VK_SURF_DEC_BOT_TYPE_P       = 0x08, /**< Decoded Bot - I,P MBs Only */
+	VK_SURF_DEC_BOT_TYPE_B       = 0x0C, /**< Decoded Bot - I,P or B MBs */
+	VK_SURF_DEC_BOT_TYPE_MASK    = 0x0C, /**< Decoded Bot Type Mask */
+	VK_SURF_DEC_FRAME_INTERLACED = 0x10, /**< Decoded Frames Interlaced */
 	VK_SURF_DEC_MASK             = 0xFF, /**< Decoded Full Mask */
 } vk_surf_flags;
 
