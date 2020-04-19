@@ -71,6 +71,17 @@ static inline uint32_t *vk2host_getdatap(vk2host_msg *msg)
 }
 
 /**
+ * get pointer to start of arg in msg
+ *
+ * @params msg pointer to message
+ * @return pointer to arg in msg
+ */
+static inline uint32_t *vk2host_getargp(vk2host_msg *msg)
+{
+	return &msg->arg;
+}
+
+/**
  * enum type for the function id
  */
 typedef enum _vk_function_id_t {
