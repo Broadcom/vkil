@@ -713,7 +713,8 @@ int32_t vkil_get_parameter(void *handle,
 
 		vkil_return_msg_id(ilctx->devctx, response->msg_id);
 		memcpy(value,
-			&((&(response->arg))[msg_size ? 1 : 0]), field_size);
+		       &((vk2host_getargp(response))[msg_size ? 1 : 0]),
+		       field_size);
 	}
 	return 0;
 
