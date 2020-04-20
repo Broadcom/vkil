@@ -36,7 +36,7 @@ typedef struct _vk_flash_util_ctx {
 	vkil_api *ilapi;
 	vkil_context *ilctx;
 	uint8_t *buffer;
-	uint32_t file_size;
+	long file_size;
 	uint32_t start_offset;
 	char *dev_id;
 } vk_flash_util_ctx;
@@ -252,17 +252,16 @@ int main(int argc, char *argv[])
 	}
 
 	ctx->file_size = ftell(bin_filefd);
+	if (ctx->file_size <= 0) {
+		printf("Invalid bin file size for file:%s\n", bin_filename);
+		ret = -INVFILEOPS;
+		goto end;
+	}
 
 	if (fseek(bin_filefd, 0, SEEK_SET) != 0) {
 		printf("Error in fseek on bin file:%s,%p,%d\n", bin_filename,
 		       bin_filefd,
 		       ferror(bin_filefd));
-		ret = -INVFILEOPS;
-		goto end;
-	}
-
-	if (ctx->file_size == 0) {
-		printf("Invalid bin file size for file:%s\n", bin_filename);
 		ret = -INVFILEOPS;
 		goto end;
 	}
@@ -284,7 +283,7 @@ int main(int argc, char *argv[])
 	}
 
 	printf("Starting the flasher test...\n");
-	printf("flash type:%d, write_offset:%d, image_size:%d\n",
+	printf("flash type:%d, write_offset:%d, image_size:%ld\n",
 	       cfg->image_type, ctx->start_offset, ctx->file_size);
 
 	ret = vkil_set_affinity(ctx->dev_id);
