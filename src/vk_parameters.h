@@ -26,9 +26,6 @@ enum _vk_role_t {
 	VK_ENCODER  = 3,
 	VK_SCALER   = 4,
 	VK_MULTIPASS_ENCODER = 5,
-	VK_OFFLINE_PASS_0_ENCODER = 6,
-	VK_OFFLINE_PASS_1_ENCODER = 7,
-	VK_OFFLINE_PASS_2_ENCODER = 8,
 	VK_ROLE_MAX = 0xF /**< the role is encoded on 4 bits */
 };
 
