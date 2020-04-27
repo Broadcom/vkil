@@ -405,6 +405,13 @@ static int32_t vkil_flush_read(vkil_devctx *devctx,
 	 */
 
 	q_id = message->queue_id;
+	if (q_id >= VKIL_MSG_Q_MAX) {
+		VKIL_LOG(VK_LOG_ERROR, "q_id %d > MAX %d in devctx %p",
+			 q_id, VKIL_MSG_Q_MAX, devctx);
+		ret = -EINVAL;
+		goto fail;
+	}
+
 	do {
 		/* first exhaust the hw pipe */
 		size = 0;
@@ -433,8 +440,7 @@ static int32_t vkil_flush_read(vkil_devctx *devctx,
 		} while (ret == -EMSGSIZE);
 
 		if (ret >= 0) {
-			node = vkil_ll_append(&devctx->vk2host[msg->queue_id],
-					      msg);
+			node = vkil_ll_append(&devctx->vk2host[q_id], msg);
 			if (!node) {
 				vkil_free((void **)&msg);
 				ret = -ENOMEM;
