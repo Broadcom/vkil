@@ -484,6 +484,13 @@ typedef enum _vk_rc_mode {
 #define VK_MULTIPASS_USE_LOOKAHEAD 0x4
 #define VK_MULTIPASS_USE_OFFLINE 0x8
 
+/** repeat-header type */
+typedef enum _vk_repeat_hdr_type {
+	VK_REPEAT_HEADER = 0, /**< Repeat the hdr for all key frames */
+	VK_NO_REPEAT_HEADER,  /**< header for first key frame only   */
+	VK_GLOBAL_HEADER,     /**< same as above + get hdr in init   */
+} vk_repeat_hdr_type;
+
 typedef struct _vk_enc_cfg {
 	uint32_t standard;  /**< video standard */
 	vk_size  size;
