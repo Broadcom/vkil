@@ -29,6 +29,7 @@ const char *vkil_function_id_str(uint32_t function_id)
 		[VK_FID_GET_PARAM]      = "get_parameter",
 		[VK_FID_TRANS_BUF]      = "transfer_buffer",
 		[VK_FID_PROC_BUF]       = "process_buffer",
+		[VK_FID_XREF_BUF]       = "reference/dereference_buffer",
 		[VK_FID_PRIVATE]        = "private",
 		[VK_FID_SHUTDOWN]       = "shutdown",
 
@@ -38,6 +39,7 @@ const char *vkil_function_id_str(uint32_t function_id)
 		[VK_FID_GET_PARAM_DONE] = "parameter_got",
 		[VK_FID_TRANS_BUF_DONE] = "buffer_transferred",
 		[VK_FID_PROC_BUF_DONE]  = "buffer_processed",
+		[VK_FID_XREF_BUF_DONE]  = "buffer_referenced/dereferenced",
 		[VK_FID_PRIVATE_DONE]   = "private_done",
 	};
 
