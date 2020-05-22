@@ -321,7 +321,7 @@ static int32_t cmp_function(const void *data, const void *data_ref)
  *	    matching the provided vk2host_msg::msg_id
  *	@li otherwise return message matching the provided
  *	    vk2host_msg::function_id
- * @return 0 or read size if success, error code otherwise
+ * @return 0 if success, error code otherwise
  */
 static int32_t retrieve_message(vkil_node **pvk2host_ll, vk2host_msg *message)
 {
@@ -358,7 +358,6 @@ static int32_t retrieve_message(vkil_node **pvk2host_ll, vk2host_msg *message)
 	if (message->size >= msg->size) {
 		msglen = sizeof(*msg) * (msg->size + 1);
 		memcpy(message, msg, msglen);
-		ret = msglen;
 		vkil_ll_delete(pvk2host_ll, node);
 		vkil_free((void **)&msg);
 	} else {
@@ -373,8 +372,7 @@ static int32_t retrieve_message(vkil_node **pvk2host_ll, vk2host_msg *message)
 			 (!message->arg) ?
 			 "generic error" : strerror(-(message->arg)));
 		VKIL_LOG_VK2HOST_MSG(VK_LOG_ERROR, message);
-		ret = -EPERM; /* TODO: to be more specific */
-		goto out;
+		ret = -EADV;
 	}
 
 out:
@@ -479,9 +477,11 @@ fail:
  * into the vkil backend linkd list; then poll the SW linked list again
  * @param[in] devctx device context
  * @param[in|out] returned message
- * @return 0 or read size if success, error code otherwise
+ * @return 0 on success, -EADV if read message report an error, other errors
+ *           code otherwise
  */
-ssize_t vkil_read(vkil_devctx *devctx, vk2host_msg *msg, int32_t wait)
+int32_t vkil_read(vkil_devctx * const devctx, vk2host_msg * const msg,
+		  const int32_t wait)
 {
 	int32_t ret, retm;
 

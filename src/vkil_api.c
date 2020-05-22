@@ -148,8 +148,8 @@ static void get_buffer(void *handle, uint32_t *nbuf,
 }
 
 /* macros for handling error condition */
-#define VKDRV_WR_ERR(_ret, _size)     ((_ret < 0) || (_ret != _size))
-#define VKDRV_RD_ERR(_ret, _size)     ((_ret < 0) || (_ret != _size))
+#define VKDRV_WR_ERR(_ret, _size) ((_ret < 0) || (_ret != _size))
+#define VKDRV_RD_ERR(_ret) ((_ret < 0) && (_ret != -EADV))
 
 /**
  * @brief populate a buffer descriptor from a message
@@ -346,14 +346,14 @@ static int32_t vkil_deinit_com(void *handle)
 	 */
 
 	ret = vkil_read((void *)ilctx->devctx, &msg2host, WAIT_INIT);
-	if (VKDRV_RD_ERR(ret, sizeof(msg2host)))
+	if (VKDRV_RD_ERR(ret))
 		goto fail_read;
 
 	vkil_return_msg_id(ilctx->devctx, msg2host.msg_id);
 
 	VKIL_LOG(VK_LOG_DEBUG, "ilctx=%p, devctx=%p, context_id=0x%" PRIx32,
 		 ilctx, ilctx->devctx, ilctx->context_essential.handle);
-	return 0;
+	return ret;
 
 fail_write:
 	return fail_write(ret, ilctx);
@@ -414,7 +414,7 @@ static int32_t vkil_init_com(void *handle)
 	 * usual so we don't abort at the first timeout
 	 */
 	ret = vkil_read((void *)ilctx->devctx, &msg2host, WAIT_INIT);
-	if (VKDRV_RD_ERR(ret, sizeof(msg2host)))
+	if (VKDRV_RD_ERR(ret))
 		goto fail_read;
 
 	vkil_return_msg_id(ilctx->devctx, msg2host.msg_id);
@@ -423,7 +423,7 @@ static int32_t vkil_init_com(void *handle)
 
 	VKIL_LOG(VK_LOG_DEBUG, "ilctx=%p: card inited %p for context_id=0x%x",
 		 ilctx, ilctx->devctx, ilctx->context_essential.handle);
-	return 0;
+	return ret;
 
 fail_write:
 	return fail_write(ret, ilctx);
@@ -631,6 +631,7 @@ int32_t vkil_set_parameter(void *handle,
 		vkil_return_msg_id(ilctx->devctx, message->msg_id);
 		goto fail_write;
 	}
+	ret = 0;
 
 	if (cmd & VK_CMD_OPT_BLOCKING) {
 		/* we wait for the the card response */
@@ -642,12 +643,12 @@ int32_t vkil_set_parameter(void *handle,
 		response.size        = 0;
 		ret = vkil_read((void *)ilctx->devctx, &response,
 				VKIL_READ_TIMEOUT);
-		if (VKDRV_RD_ERR(ret, sizeof(response)))
+		if (VKDRV_RD_ERR(ret))
 			goto fail_read;
 
 		vkil_return_msg_id(ilctx->devctx, response.msg_id);
 	}
-	return 0;
+	return ret;
 
 fail_write:
 	return fail_write(ret, ilctx);
@@ -699,6 +700,7 @@ int32_t vkil_get_parameter(void *handle,
 		vkil_return_msg_id(ilctx->devctx, message->msg_id);
 		goto fail_write;
 	}
+	ret = 0;
 
 	if (cmd & VK_CMD_OPT_BLOCKING) {
 		/* we wait for the the card response */
@@ -710,7 +712,7 @@ int32_t vkil_get_parameter(void *handle,
 		response->size        = msg_size;
 		ret = vkil_read((void *)ilctx->devctx, response,
 				VKIL_READ_TIMEOUT);
-		if (VKDRV_RD_ERR(ret, sizeof(response)))
+		if (VKDRV_RD_ERR(ret))
 			goto fail_read;
 
 		vkil_return_msg_id(ilctx->devctx, response->msg_id);
@@ -718,7 +720,7 @@ int32_t vkil_get_parameter(void *handle,
 		       &((vk2host_getargp(response))[msg_size ? 1 : 0]),
 		       field_size);
 	}
-	return 0;
+	return ret;
 
 fail_write:
 	return fail_write(ret, ilctx);
@@ -1012,7 +1014,7 @@ static int32_t vkil_transfer_buffer(void *component_handle,
 				    void *buffer_handle,
 				    const vkil_command_t cmd)
 {
-	int32_t ret, msg_id = 0;
+	int32_t ret, ret1 = 0, msg_id = 0;
 	vkil_buffer *buffer = buffer_handle;
 	const vkil_context *ilctx = component_handle;
 	const vkil_command_t load_mode = cmd & VK_CMD_LOAD_MASK;
@@ -1083,12 +1085,13 @@ static int32_t vkil_transfer_buffer(void *component_handle,
 		response.context_id  = ilctx->context_essential.handle;
 		response.size        = 0;
 		ret = vkil_read((void *)ilctx->devctx, &response, wait);
-		if (VKDRV_RD_ERR(ret, sizeof(response)))
+		if (VKDRV_RD_ERR(ret))
 			goto fail_read;
 
+		ret1 = ret;
 		buffer->handle = response.arg;
 		ret = vkil_get_msg_user_data(ilctx->devctx, response.msg_id,
-					     &buffer->user_data);
+					      &buffer->user_data);
 		/* we return the message no matter the error status above */
 		vkil_return_msg_id(ilctx->devctx, response.msg_id);
 		if (ret)
@@ -1098,10 +1101,10 @@ static int32_t vkil_transfer_buffer(void *component_handle,
 		if ((cmd & VK_CMD_MASK) == VK_CMD_UPLOAD) {
 			ret = buffer_ref(buffer, 1);
 			if (ret)
-				goto fail_write;
+				goto fail_read;
 		}
 	}
-	return 0;
+	return ret1;
 
 fail_write:
 	return fail_write(ret, ilctx);
@@ -1136,7 +1139,7 @@ int32_t vkil_process_buffer(void *component_handle,
 	const vkil_context *ilctx = component_handle;
 	vkil_context_internal *ilpriv;
 	vkil_buffer *buffer;
-	int32_t ret = 0;
+	int32_t ret1 = 0, ret = 0;
 	int32_t msg_id = 0;
 	uint32_t handles[VKIL_MAX_AGGREGATED_BUFFERS];
 	uint32_t nbuf, msg_size;
@@ -1205,12 +1208,13 @@ int32_t vkil_process_buffer(void *component_handle,
 		response->context_id  = ilctx->context_essential.handle;
 		response->size        = VKIL_RET_MSG_MAX_SIZE - 1;
 		ret = vkil_read((void *)ilctx->devctx, response, wait);
-		if (VKDRV_RD_ERR(ret,
-				 sizeof(vk2host_msg) * (response->size + 1)))
+		if (VKDRV_RD_ERR(ret))
 			goto fail_read;
 
+		ret1 = ret;
+
 		ret = vkil_get_msg_user_data(ilctx->devctx, response->msg_id,
-					     &user_data);
+					      &user_data);
 		/* we return the message no matter the error status above */
 		vkil_return_msg_id(ilctx->devctx, response->msg_id);
 		if (ret)
@@ -1219,7 +1223,7 @@ int32_t vkil_process_buffer(void *component_handle,
 		if (ret)
 			goto fail_read;
 	}
-	return ret;
+	return ret1;
 
 fail_write:
 	return fail_write(ret, ilctx);
@@ -1250,7 +1254,7 @@ int32_t vkil_xref_buffer(void *ctx_handle,
 			 const int32_t ref_delta,
 			 const vkil_command_t cmd)
 {
-	int32_t ret, msg_id = 0;
+	int32_t ret, ret1 = 0, msg_id = 0;
 	vkil_buffer *buffer = buffer_handle;
 	host2vk_msg message[1];
 
@@ -1311,12 +1315,13 @@ int32_t vkil_xref_buffer(void *ctx_handle,
 		response.context_id = ilctx->context_essential.handle;
 		response.size = 0;
 		ret = vkil_read((void *)ilctx->devctx, &response, wait);
-		if (VKDRV_RD_ERR(ret, sizeof(response)))
+		if (VKDRV_RD_ERR(ret))
 			goto fail_read;
 
+		ret1 = ret;
 		buffer->handle = response.arg;
 		ret = vkil_get_msg_user_data(ilctx->devctx, response.msg_id,
-					     &buffer->user_data);
+					      &buffer->user_data);
 		/* we return the message no matter the error status above */
 		vkil_return_msg_id(ilctx->devctx, response.msg_id);
 		if (ret)
@@ -1328,7 +1333,7 @@ int32_t vkil_xref_buffer(void *ctx_handle,
 				goto fail_read;
 		}
 	}
-	return 0;
+	return ret1;
 
 fail_write:
 	return fail_write(ret, ilctx);
