@@ -679,6 +679,8 @@ typedef enum _vkil_parameter_t {
 	VK_PARAM_POOL_SIZE_CONFIG        = 68,
 	/* Alloc a buffer in a given pool  */
 	VK_PARAM_POOL_ALLOC_BUFFER       = 69,
+	/* Get some statistics about a given pool */
+	VK_PARAM_POOL_STATS              = 70,
 
 	/* scaler configuration parameters */
 	VK_PARAM_SCALER_FILTER          = 80, /**< 0 means undefined */
