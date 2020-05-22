@@ -620,6 +620,13 @@ typedef struct _vk_pool_alloc_buffer {
 	};
 } vk_pool_alloc_buffer;
 
+#define VK_LOG_LINE 80
+
+/** error message */
+typedef struct _vk_error {
+	char log[VK_LOG_LINE]; /**< verbose error message */
+} vk_error;
+
 /* surface flags */
 typedef enum _vk_surf_flags {
 	VK_SURF_DEC_TOP_TYPE_I       = 0x01, /**< Decoded Top - IDR Frame */
@@ -691,7 +698,7 @@ typedef enum _vkil_parameter_t {
 
 	VK_PARAM_NEED_MORE_INPUT        = 160,
 	VK_PARAM_IS_STREAM_INTERLACE    = 161,
-
+	VK_PARAM_ERROR                  = 255,
 	VK_PARAM_MAX = 0x0FFF,
 } vkil_parameter_t;
 
