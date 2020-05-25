@@ -148,7 +148,7 @@ static void get_buffer(void *handle, uint32_t *nbuf,
 }
 
 /* macros for handling error condition */
-#define VKDRV_WR_ERR(_ret, _size) ((_ret < 0) || (_ret != _size))
+#define VKDRV_WR_ERR(_ret) ((_ret) < 0)
 #define VKDRV_RD_ERR(_ret) ((_ret < 0) && (_ret != -EADV))
 
 /**
@@ -329,7 +329,7 @@ static int32_t vkil_deinit_com(void *handle)
 		goto fail_write;
 
 	ret = vkil_write((void *)ilctx->devctx, &msg2vk);
-	if (VKDRV_WR_ERR(ret, sizeof(msg2vk))) {
+	if (VKDRV_WR_ERR(ret)) {
 		vkil_return_msg_id(ilctx->devctx, msg2vk.msg_id);
 		goto fail_write;
 	}
@@ -399,7 +399,7 @@ static int32_t vkil_init_com(void *handle)
 	}
 
 	ret = vkil_write((void *)ilctx->devctx, &msg2vk);
-	if (VKDRV_WR_ERR(ret, sizeof(msg2vk))) {
+	if (VKDRV_WR_ERR(ret)) {
 		vkil_return_msg_id(ilctx->devctx, msg2vk.msg_id);
 		goto fail_write;
 	}
@@ -627,11 +627,10 @@ int32_t vkil_set_parameter(void *handle,
 	memcpy(msg_size ? (uint32_t *) &message[1] : &message->args[1],
 	       value, field_size);
 	ret = vkil_write((void *)ilctx->devctx, message);
-	if (VKDRV_WR_ERR(ret, sizeof(message))) {
+	if (VKDRV_WR_ERR(ret)) {
 		vkil_return_msg_id(ilctx->devctx, message->msg_id);
 		goto fail_write;
 	}
-	ret = 0;
 
 	if (cmd & VK_CMD_OPT_BLOCKING) {
 		/* we wait for the the card response */
@@ -696,11 +695,10 @@ int32_t vkil_get_parameter(void *handle,
 	       value, field_size);
 
 	ret = vkil_write((void *)ilctx->devctx, message);
-	if (VKDRV_WR_ERR(ret, sizeof(message))) {
+	if (VKDRV_WR_ERR(ret)) {
 		vkil_return_msg_id(ilctx->devctx, message->msg_id);
 		goto fail_write;
 	}
-	ret = 0;
 
 	if (cmd & VK_CMD_OPT_BLOCKING) {
 		/* we wait for the the card response */
@@ -1060,7 +1058,7 @@ static int32_t vkil_transfer_buffer(void *component_handle,
 
 		/* then we write the command to the queue */
 		ret = vkil_write((void *)ilctx->devctx, message);
-		if (VKDRV_WR_ERR(ret, sizeof(host2vk_msg)*(msg_size + 1))) {
+		if (VKDRV_WR_ERR(ret)) {
 			vkil_return_msg_id(ilctx->devctx, message->msg_id);
 			goto fail_write;
 		}
@@ -1182,7 +1180,7 @@ int32_t vkil_process_buffer(void *component_handle,
 		memcpy(&message->args[1], handles, nbuf * sizeof(uint32_t));
 
 		ret = vkil_write((void *)ilctx->devctx, message);
-		if (VKDRV_WR_ERR(ret, (msg_size + 1) * sizeof(host2vk_msg))) {
+		if (VKDRV_WR_ERR(ret)) {
 			vkil_return_msg_id(ilctx->devctx,
 					   message->msg_id);
 			goto fail_write;
@@ -1290,7 +1288,7 @@ int32_t vkil_xref_buffer(void *ctx_handle,
 
 		/* then we write the command to the queue */
 		ret = vkil_write((void *)ilctx->devctx, message);
-		if (VKDRV_WR_ERR(ret, sizeof(host2vk_msg))) {
+		if (VKDRV_WR_ERR(ret)) {
 			vkil_return_msg_id(ilctx->devctx, message->msg_id);
 			goto fail_write;
 		}

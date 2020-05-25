@@ -64,7 +64,7 @@ typedef struct _vkil_context_internal {
 	int32_t reserved;
 } vkil_context_internal;
 
-ssize_t vkil_write(vkil_devctx *devctx, host2vk_msg *msg);
+int32_t vkil_write(vkil_devctx * const devctx, host2vk_msg * const msg);
 int32_t vkil_read(vkil_devctx * const devctx, vk2host_msg * const msg,
 		  const int32_t wait);
 int32_t vkil_init_dev(void **handle);
