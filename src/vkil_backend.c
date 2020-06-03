@@ -543,6 +543,19 @@ out:
 	return ret;
 }
 
+void vkil_deinit_node_list(vkil_node *ptr)
+{
+	vkil_node *nxt;
+
+	while (ptr) {
+		nxt = ptr->next;
+		if (ptr->data)
+			vkil_free((void **)&ptr->data);
+		vkil_free((void **)&ptr);
+		ptr = nxt;
+	}
+}
+
 /**
  * @brief denit the device
  *
@@ -552,6 +565,7 @@ out:
  */
 int32_t vkil_deinit_dev(void **handle)
 {
+	int i;
 	VKIL_LOG(VK_LOG_DEBUG, "");
 
 	if (*handle) {
@@ -565,6 +579,10 @@ int32_t vkil_deinit_dev(void **handle)
 			vkil_deinit_msglist(devctx);
 			close(devctx->fd);
 			pthread_mutex_destroy(&devctx->mwx);
+			for (i = 0; i < VKIL_MSG_Q_MAX; i++) {
+				vkil_deinit_node_list(devctx->vk2host[i]);
+				devctx->vk2host[i] = NULL;
+			}
 			vkil_free(handle);
 		}
 	}
