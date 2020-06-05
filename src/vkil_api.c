@@ -92,15 +92,11 @@ static int fail_write(const int error, const void *ilctx)
 static int fail_read(const int error, const void *ilctx)
 {
 	if ((error == -ENOMSG) || (error == -EAGAIN))
-		/*
-		 * the response could take more time to return (ETIMEOUT),
-		 * so not necessarily always a real error
-		 */
 		return -EAGAIN; /* request the host to try again */
 	else if (error)
-		VKIL_LOG(VK_LOG_ERROR,
-			 "failure %d on reading message in ilctx %p",
-			 error, ilctx);
+		VKIL_LOG(error == -ETIMEDOUT ? VK_LOG_WARNING : VK_LOG_ERROR,
+			 "failure %s (%d) on reading message in ilctx %p",
+			 strerror(-error), error, ilctx);
 	return error;
 }
 

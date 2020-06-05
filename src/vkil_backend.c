@@ -421,10 +421,12 @@ static int32_t vkil_flush_read(vkil_devctx *devctx,
 			ret = vkil_mallocz((void **)&msg,
 					   sizeof(*msg) * (size + 1));
 			if (ret)
-				goto fail;
+				goto fail_malloc;
 			msg->size = size;
 			msg->queue_id = q_id;
 			ret = vkil_wait_probe_msg(devctx->fd, msg, wait);
+			if (ret == -ETIMEDOUT)
+				goto fail;
 
 			/* if the message size is too small, the driver
 			 * should return the required size in
@@ -440,7 +442,6 @@ static int32_t vkil_flush_read(vkil_devctx *devctx,
 		if (ret >= 0) {
 			node = vkil_ll_append(&devctx->vk2host[q_id], msg);
 			if (!node) {
-				vkil_free((void **)&msg);
 				ret = -ENOMEM;
 				goto fail;
 			}
@@ -460,12 +461,14 @@ static int32_t vkil_flush_read(vkil_devctx *devctx,
 	} while (ret >= 0);
 
 	/*
-	 * here the return will be negative either -ETIMEOUT or
-	 * -ENOMSG, since that is the expected result, we return 0 as success
+	 * here the return will be negative -ENOMSG, since that is the expected
+	 * result, we return 0 as success
 	 */
 	return 0;
 
 fail:
+	vkil_free((void **)&msg);
+fail_malloc:
 	return ret;
 }
 
