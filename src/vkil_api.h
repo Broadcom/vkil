@@ -41,12 +41,27 @@ typedef enum _vkil_buffer_type {
 #define VKIL_BUFFER_SURFACE_FLAG_INTERLACE 0x000001
 #define VKIL_BUFFER_SURFACE_FLAG_EOS       0x010000
 
+/** The shotchange field indicates how many frames there are from this frame
+ * to the next known shotchange (but not EOS). 0 means the current frame is a
+ * shotchange, VKIL_OFFLINE_NO_FUTURE_SHOTCHANGE means there are none within
+ * the next VKIL_OFFLINE_NO_FUTURE_SHOTCHANGE - 1 frames (or until EOS if that
+ * is fewer).
+ *
+ * This doesn't cover IDR passthrough where we don't know shotchanges in
+ * advance. It also doesn't cover EOS in cases where we have already processed
+ * the clip (offline): this would be useful to know but our current data cache
+ * format doesn't provide for storing it. Bit 15 has been reserved for an EOS
+ * flag for this purpose in the future.
+ */
 #define VKIL_OFFLINE_SHOTCHANGE_POS 0
-#define VKIL_OFFLINE_FRAMEQP_POS 8
-#define VKIL_OFFLINE_DELTAQP_POS 16
-#define VKIL_OFFLINE_SHOTCHANGE_MASK 1
+#define VKIL_OFFLINE_RESERVED_POS 15
+#define VKIL_OFFLINE_FRAMEQP_POS 16
+#define VKIL_OFFLINE_DELTAQP_POS 24
+#define VKIL_OFFLINE_SHOTCHANGE_MASK 0x8fff
+#define VKIL_OFFLINE_RESERVED_MASK 0x1
 #define VKIL_OFFLINE_FRAMEQP_MASK 0x3f
 #define VKIL_OFFLINE_DELTAQP_MASK 0x3f
+#define VKIL_OFFLINE_NO_FUTURE_SHOTCHANGE 0x8fff
 
 /**
  * @brief generic descriptor
