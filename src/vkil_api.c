@@ -552,7 +552,6 @@ fail_malloc:
 	return ret;
 
 fail:
-	vkil_deinit(handle);
 	return ret;
 };
 

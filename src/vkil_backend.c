@@ -368,10 +368,10 @@ static int32_t retrieve_message(vkil_node **pvk2host_ll, vk2host_msg *message)
 	}
 
 	if (message->hw_status == VK_STATE_ERROR) {
-		VKIL_LOG(VK_LOG_ERROR, "VK_STATE_ERROR => %s",
+		VKIL_LOG(VK_LOG_DEBUG, "VK_STATE_ERROR => %s",
 			 (!message->arg) ?
 			 "generic error" : strerror(-(message->arg)));
-		VKIL_LOG_VK2HOST_MSG(VK_LOG_ERROR, message);
+		VKIL_LOG_VK2HOST_MSG(VK_LOG_DEBUG, message);
 		ret = -EADV;
 	}
 
