@@ -17,6 +17,18 @@ typedef struct _logger_ctrl {
 	const char *tag;
 } logger_ctrl;
 
+#ifdef IPC_USE_SYSLOG
+
+#include <syslog.h>
+
+/* Map BRCM defined levels onto syslog levels */
+#define LOG_ERROR LOG_ERR
+#define LOG_PANIC LOG_CRIT
+
+typedef unsigned int log_level;
+
+#else /* IPC_USE_SYSLOG */
+
 typedef enum _log_level {
 	/** something went very wrong, and we gonna crash (assert)*/
 	LOG_PANIC       = 0,
@@ -29,6 +41,8 @@ typedef enum _log_level {
 	/** debugging info */
 	LOG_DEBUG       = 128
 } log_level;
+
+#endif /* IPC_USE_SYSLOG */
 
 /**
  * @brief Type of logging which specifies parameters' size
