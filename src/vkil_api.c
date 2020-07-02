@@ -74,7 +74,7 @@ static int fail_write(const int error, const void *ilctx)
 	 * to know, so we need to do some special handling here.
 	 */
 	VKIL_LOG(VK_LOG_ERROR,
-		 "Failure on writing mssage in ilctx %p - %s(%d)\n",
+		 "Failure on writing message in ilctx %p - %s(%d)\n",
 		 ilctx, strerror(-error), error);
 	if ((error == -EAGAIN) || (error == -EPERM))
 		kill(getpid(), SIGINT);
@@ -148,8 +148,37 @@ static void get_buffer(void *handle, uint32_t *nbuf,
 #define VKDRV_RD_ERR(_ret) ((_ret < 0) && (_ret != -EADV))
 
 /**
- * @brief populate a buffer descriptor from a message
- * @param[in,out] handle buffer descriptor to be populated
+ * @brief check if the buffer is referenced
+ * @param[in,out] buffer  buffer to check
+ * @return zero if the buffer is referenced, -EINVAL otherwise
+ */
+static int buffer_check_ref(const vkil_buffer *buffer)
+{
+	if ((buffer->type != VKIL_BUF_AG_BUFFERS) &&
+	    (buffer->type != VKIL_BUF_EXTRA_FIELD)) {
+		/* a single handle is returned */
+		if (buffer->handle && (!buffer->ref))
+			return -ENOBUFS;
+	} else if (buffer->type == VKIL_BUF_AG_BUFFERS) {
+		vkil_aggregated_buffers *ag_buf =
+			(vkil_aggregated_buffers *)buffer;
+		int i;
+
+		for (i = 0; i < ag_buf->nbuffers; i++) {
+			if (ag_buf->buffer[i] &&
+			    ag_buf->buffer[i]->handle &&
+			    (!ag_buf->buffer[i]->ref) &&
+			    (ag_buf->buffer[i]->type != VKIL_BUF_EXTRA_FIELD))
+				return -ENOBUFS;
+		}
+	}
+
+	return 0;
+}
+
+/**
+ * @brief reference/dereference a buffer
+ * @param[in,out] buffer  buffer to reference/dereference
  * @param[in] ref_data reference increment decrement
  */
 static int32_t buffer_ref(vkil_buffer *buffer, const int ref_delta)
@@ -1005,8 +1034,8 @@ static int32_t vkil_sanity_check_buffer(vkil_buffer *buffer)
  * @param[in] host_buffer	buffer to transfer
  * @param[in] cmd		transfer direction (upload/download) and mode
  *				(blocking or not)
- * @param[out] transfereed_bytes transferred bytes if positive,
- *                               required buffer exension in byte if negative
+ * @param[out] transferred_bytes transferred bytes if positive,
+ *                               required buffer extension in byte if negative
  * @return			 zero on success, error code otherwise
  * @pre the  _vkil_buffer to transfer must have a valid _vkil_buffer_type
  */
@@ -1057,6 +1086,11 @@ static int32_t vkil_transfer_buffer2(void *component_handle,
 		message->size        = msg_size;
 		message->args[0]     = load_mode;
 
+		if ((cmd & VK_CMD_MASK) == VK_CMD_DOWNLOAD) {
+			ret = buffer_check_ref(buffer);
+			if (ret)
+				goto fail_write;
+		}
 		ret = get_vkil_nplanes(buffer_handle);
 		if (ret < 0) {
 			VKIL_LOG(VK_LOG_WARNING, "");
@@ -1138,12 +1172,12 @@ fail:
 /**
  * @brief transfer buffers
  *
- * This function need to be called for all buffer to transfer to/from the the
+ * This function need to be called for all buffer to transfer to/from the
  * Valkyrie card.
  * @li all buffer transfer are done via DMA
  * @li the card memory management are under the card control, typically an
- * upload infers a memory allocation on the card, and a downlaod a memory
- * freeing. the vkil see only opaque handle  to on card buffer descriptor
+ * upload infers a memory allocation on the card, and a download on memory
+ * freeing. the vkil sees only opaque handle  to on card buffer descriptor
  * in no case the host can see the on card used memory addresses
  *
  * @param[in] component_handle	handle to a vkil_context
@@ -1226,6 +1260,10 @@ int32_t vkil_process_buffer(void *component_handle,
 		ret = preset_host2vk_msg(message, component_handle,
 					 VK_FID_PROC_BUF,
 					 buffer->user_data);
+		if (ret)
+			goto fail_write;
+
+		ret = buffer_check_ref(buffer);
 		if (ret)
 			goto fail_write;
 
@@ -1340,6 +1378,11 @@ int32_t vkil_xref_buffer(void *ctx_handle,
 		message->args[0] = ref_delta;
 		message->args[1] = buffer->handle;
 
+		if (ref_delta < 0) {
+			ret = buffer_check_ref(buffer);
+			if (ret)
+				goto fail_write;
+		}
 
 		/* then we write the command to the queue */
 		ret = vkil_write((void *)ilctx->devctx, message);
