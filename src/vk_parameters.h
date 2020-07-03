@@ -620,6 +620,15 @@ typedef struct _vk_pool_alloc_buffer {
 	};
 } vk_pool_alloc_buffer;
 
+/**
+ * Set/Get header configuration
+ */
+#define VK_MAX_BUFFER_SIZE 160
+typedef struct _vk_set_get_header {
+	uint32_t handle;
+	uint8_t buffer[VK_MAX_BUFFER_SIZE];
+} vk_header_cfg;
+
 #define VK_LOG_LINE 80
 
 /** error message */
@@ -692,6 +701,8 @@ typedef enum _vkil_parameter_t {
 	VK_PARAM_PACKET_SIZE            = 96, /**< get the size of a packet */
 	/**< get the flags associated with a surface (vk_surf_flags) */
 	VK_PARAM_SURFACE_FLAGS          = 97,
+	/* Get/set the vksim_buffer header for a given handle (vk_header_cfg) */
+	VK_PARAM_BUFFER_HEADER          = 98,
 
 	/* meta configuration parameters */
 	VK_PARAM_VARMAP_SIZE            = 120,

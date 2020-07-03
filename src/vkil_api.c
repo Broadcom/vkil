@@ -578,6 +578,8 @@ static int32_t vkil_get_struct_size(const vkil_parameter_t field)
 		return sizeof(vk_pool_alloc_buffer);
 	else if (field == VK_PARAM_ERROR)
 		return sizeof(vk_error);
+	else if (field == VK_PARAM_BUFFER_HEADER)
+		return sizeof(vk_header_cfg);
 	/* this is the default value when not structure is defined */
 	return sizeof(int32_t);
 }
