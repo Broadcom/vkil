@@ -154,18 +154,20 @@ static void get_buffer(void *handle, uint32_t *nbuf,
  */
 static int32_t buffer_ref(vkil_buffer *buffer, const int ref_delta)
 {
-	int i;
-
-	if (buffer->type != VKIL_BUF_AG_BUFFERS) {
+	if ((buffer->type != VKIL_BUF_AG_BUFFERS) &&
+	    (buffer->type != VKIL_BUF_EXTRA_FIELD)) {
 		/* a single handle is returned */
 		if (buffer->handle)
 			buffer->ref += ref_delta;
 	} else if (buffer->type == VKIL_BUF_AG_BUFFERS) {
+		int i;
 		vkil_aggregated_buffers *ag_buf =
 			(vkil_aggregated_buffers *)buffer;
 
 		for (i = 0; i < ag_buf->nbuffers; i++) {
-			if (ag_buf->buffer[i] && ag_buf->buffer[i]->handle)
+			if (ag_buf->buffer[i] &&
+			    ag_buf->buffer[i]->handle &&
+			    (ag_buf->buffer[i]->type != VKIL_BUF_EXTRA_FIELD))
 				ag_buf->buffer[i]->ref += ref_delta;
 		}
 	}
@@ -982,6 +984,7 @@ static int32_t vkil_sanity_check_buffer(vkil_buffer *buffer)
 	case VKIL_BUF_PACKET:
 	case VKIL_BUF_SURFACE:
 	case VKIL_BUF_AG_BUFFERS:
+	case VKIL_BUF_EXTRA_FIELD:
 		return 0;
 	}
 	return -EINVAL;

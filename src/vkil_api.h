@@ -26,6 +26,7 @@ typedef enum _vkil_buffer_type {
 	VKIL_BUF_PACKET      = 2,
 	VKIL_BUF_SURFACE     = 3,
 	VKIL_BUF_AG_BUFFERS  = 4,
+	VKIL_BUF_EXTRA_FIELD = 5,
 	VKIL_BUF_MAX         = 0xF
 } vkil_buffer_type;
 
