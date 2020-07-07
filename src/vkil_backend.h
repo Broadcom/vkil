@@ -19,6 +19,8 @@
 
 /* msg size is expressed in multile of 16 bytes */
 #define MSG_SIZE(size) ((size + 15)/16)
+/** Bit width of the msg_id field in the host2vk_msg and vk2host_msg structs */
+#define MSG_ID_BIT_WIDTH 12
 
 /**
  * message structure from host to Valkyrie card
@@ -28,7 +30,8 @@ typedef struct _host2vk_msg {
 	uint8_t function_id;
 	uint8_t size;           /**< message size is 16*(1+size) bytes */
 	uint16_t queue_id:4 ;   /**< this provide the input queue index */
-	uint16_t msg_id:12 ;    /**< unique message identifier in the queue */
+	/** unique message identifier in the queue */
+	uint16_t msg_id:MSG_ID_BIT_WIDTH;
 	uint32_t context_id;    /**< handle to the HW context */
 	uint32_t args[2];       /**< argument list taken by the function */
 } host2vk_msg;
@@ -52,7 +55,8 @@ typedef struct _vk2host_msg {
 	uint8_t function_id;
 	uint8_t size;           /**< message size is 16*(1+size) bytes */
 	uint16_t queue_id:4 ;   /**< this match the host2vk_msg (queue_id) */
-	uint16_t msg_id:12 ;    /**< this match the host2vk_msg (msg_id) */
+	/** this match the host2vk_msg (msg_id) */
+	uint16_t msg_id:MSG_ID_BIT_WIDTH;
 	uint32_t context_id;    /**< handle to the HW context */
 	/** return hw status. if ERROR, error_code carries in arg */
 	uint32_t hw_status;
