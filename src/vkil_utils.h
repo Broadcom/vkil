@@ -11,19 +11,7 @@
 #ifndef VKIL_UTILS_H
 #define VKIL_UTILS_H
 
-#include <assert.h>
-#include <stdlib.h>
-#include "vk_logger.h"
-
-#define VK_ASSERT(cond) do {                                               \
-	if (!(cond)) {                                                     \
-		vk_log(__func__, VK_LOG_MOD_SYS, LOG_TYPE_INT,             \
-		       VK_LOG_PANIC,                                       \
-		       " %s:%d, assert %s failed",                         \
-			__FILE__, __LINE__, #cond);                        \
-		abort();                                                   \
-	}                                                                  \
-} while (0)
+#include "vk_common.h"
 
 #ifndef MIN
 #define MIN(a, b) (((a) < (b))?(a):(b))
