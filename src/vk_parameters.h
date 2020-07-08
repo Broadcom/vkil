@@ -13,7 +13,7 @@
 #define VK_NEW_CTX  0 /**< indicate a request for new context */
 #define VK_INFO_CTX 0 /**< general info request without context */
 #define VK_BUF_EOS  0 /**< indicate an end of stream (no more buffer) */
-
+#define VK_BUF_RPT  1 /**< repeat last buffer */
 #define VK_DEC_OUT_INVALID_HDL 0xDEADBEEF /**< indicates dummy reply by card */
 
 /**
