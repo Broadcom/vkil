@@ -533,10 +533,10 @@ typedef struct _vk_enc_cfg {
 
 /** extra arguments passed to process_buffer */
 typedef struct _vk_enc_surface_attrs {
-	uint32_t qpmap;    /**< handle on qpmap if non zero */
-	uint32_t varmap;   /**< handle on varmap if non zero */
-	uint32_t quality;  /**< quality index if non zero */
-	uint32_t reserved; /**< to keep the structure 16 bytes */
+	uint32_t qpmap;     /**< handle on qpmap if non zero */
+	uint32_t varmap;    /**< handle on varmap if non zero */
+	uint32_t quality;   /**< quality index if non zero */
+	uint32_t gop_reset; /**< force gop_reset if non zero */
 } vk_enc_surface_attrs;
 
 /** filter type */
