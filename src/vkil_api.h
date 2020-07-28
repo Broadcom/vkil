@@ -242,6 +242,15 @@ typedef struct _vkil_api {
 	int32_t (*transfer_buffer)(void *ctx_handle,
 				   void *buffer_handle,
 				   const vkil_command_t cmd);
+
+	/**
+	 * Same as above except the transferred size or buffer size extension
+	 * requess is explicitly passed in argument
+	 */
+	int32_t (*transfer_buffer2)(void *ctx_handle,
+				    void *buffer_handle,
+				    const vkil_command_t cmd,
+				    int32_t *size);
 	/**
 	 * the process buffer typically "consumes" the buffer provided in
 	 * input; that is dereference  the input buffer which will not be

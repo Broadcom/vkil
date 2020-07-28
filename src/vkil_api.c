@@ -1005,12 +1005,15 @@ static int32_t vkil_sanity_check_buffer(vkil_buffer *buffer)
  * @param[in] host_buffer	buffer to transfer
  * @param[in] cmd		transfer direction (upload/download) and mode
  *				(blocking or not)
- * @return			zero on success, error code otherwise
+ * @param[out] transfereed_bytes transferred bytes if positive,
+ *                               required buffer exension in byte if negative
+ * @return			 zero on success, error code otherwise
  * @pre the  _vkil_buffer to transfer must have a valid _vkil_buffer_type
  */
-static int32_t vkil_transfer_buffer(void *component_handle,
-				    void *buffer_handle,
-				    const vkil_command_t cmd)
+static int32_t vkil_transfer_buffer2(void *component_handle,
+				     void *buffer_handle,
+				     const vkil_command_t cmd,
+				     int32_t *transferred_bytes)
 {
 	int32_t ret, ret1 = 0, msg_id = 0;
 	vkil_buffer *buffer = buffer_handle;
@@ -1083,11 +1086,11 @@ static int32_t vkil_transfer_buffer(void *component_handle,
 		response.context_id  = ilctx->context_essential.handle;
 		response.size        = 0;
 		ret = vkil_read((void *)ilctx->devctx, &response, wait);
+
 		if (VKDRV_RD_ERR(ret))
 			goto fail_read;
 
 		ret1 = ret;
-		buffer->handle = response.arg;
 		ret = vkil_get_msg_user_data(ilctx->devctx, response.msg_id,
 					      &buffer->user_data);
 		/* we return the message no matter the error status above */
@@ -1097,9 +1100,13 @@ static int32_t vkil_transfer_buffer(void *component_handle,
 
 
 		if ((cmd & VK_CMD_MASK) == VK_CMD_UPLOAD) {
+			buffer->handle = response.arg;
+			*transferred_bytes = 0;
 			ret = buffer_ref(buffer, 1);
 			if (ret)
 				goto fail_read;
+		} else {
+			*transferred_bytes = response.arg;
 		}
 	}
 	return ret1;
@@ -1114,6 +1121,41 @@ fail:
 	VKIL_LOG(VK_LOG_ERROR, "failure %d in ilctx %p", ret, ilctx);
 	return ret;
 };
+
+/**
+ * @brief transfer buffers
+ *
+ * This function need to be called for all buffer to transfer to/from the the
+ * Valkyrie card.
+ * @li all buffer transfer are done via DMA
+ * @li the card memory management are under the card control, typically an
+ * upload infers a memory allocation on the card, and a downlaod a memory
+ * freeing. the vkil see only opaque handle  to on card buffer descriptor
+ * in no case the host can see the on card used memory addresses
+ *
+ * @param[in] component_handle	handle to a vkil_context
+ * @param[in] host_buffer	buffer to transfer
+ * @param[in] cmd		transfer direction (upload/download) and mode
+ *				(blocking or not)
+ * @return			zero on success, error code otherwise
+ * @pre the  _vkil_buffer to transfer must have a valid _vkil_buffer_type
+ */
+static int32_t vkil_transfer_buffer(void *component_handle,
+				    void *buffer_handle,
+				    const vkil_command_t cmd)
+{
+	int32_t size = 0;
+	int ret;
+
+	ret = vkil_transfer_buffer2(component_handle, buffer_handle, cmd, &size);
+
+	if ((!ret) &&
+	    ((cmd & VK_CMD_MASK) == VK_CMD_DOWNLOAD) &&
+	    ((cmd & VK_CMD_OPT_BLOCKING) || (cmd & VK_CMD_OPT_CB)))
+		((vkil_buffer *)buffer_handle)->handle = size;
+
+	return ret;
+}
 
 /**
  * @brief process a buffer
@@ -1370,6 +1412,7 @@ void *vkil_create_api(void)
 		.set_parameter         = vkil_set_parameter,
 		.get_parameter         = vkil_get_parameter,
 		.transfer_buffer       = vkil_transfer_buffer,
+		.transfer_buffer2      = vkil_transfer_buffer2,
 		.process_buffer        = vkil_process_buffer,
 		.xref_buffer           = vkil_xref_buffer,
 	};
