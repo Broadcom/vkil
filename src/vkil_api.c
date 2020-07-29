@@ -55,6 +55,12 @@ static struct _vkil_cfg {
 /** max msg size that can be sent to card */
 #define VKIL_SEND_MSG_MAX_SIZE 16
 
+/* return arg will have 24 bits for size and 8 bits for flags */
+#define VK_SIZE_POS 0
+#define VK_FLAG_POS 24
+#define VK_SIZE_MASK 0xFFFFFF
+#define VK_FLAG_MASK 0XFF
+
 /**
  * @brief instrument the write failure
 
@@ -95,7 +101,7 @@ static int fail_read(const int error, const void *ilctx)
 		return -EAGAIN; /* request the host to try again */
 	else if (error)
 		VKIL_LOG(error == -ETIMEDOUT ? VK_LOG_WARNING : VK_LOG_ERROR,
-			 "failure %s (%d) on reading message in ilctx %p",
+			 "Failure %s (%d) on reading message in ilctx %p",
 			 strerror(-error), error, ilctx);
 	return error;
 }
@@ -1022,6 +1028,14 @@ static int32_t vkil_transfer_buffer2(void *component_handle,
 	int32_t size = get_vkil2vk_buffer_size(buffer);
 	int32_t msg_size = MSG_SIZE(size);
 	host2vk_msg message[msg_size + 1];
+	int32_t ref_delta = 0;
+	/*
+	 * we create a structure to allow to specify a 24 bits field which
+	 * grants us proper handling of sign extension
+	 */
+	struct {
+		int32_t used_size:VK_FLAG_POS;
+	} ret_size = {.used_size = 0};
 
 	VKIL_LOG(VK_LOG_DEBUG, "ilctx=%p, buffer=%p, cmd=0x%x (%s%s)",
 		 ilctx,
@@ -1067,11 +1081,8 @@ static int32_t vkil_transfer_buffer2(void *component_handle,
 		}
 		msg_id = message->msg_id;
 
-		if ((cmd & VK_CMD_MASK) == VK_CMD_DOWNLOAD) {
-			ret = buffer_ref(buffer, -1);
-			if (ret)
-				goto fail_write;
-		}
+		if ((cmd & VK_CMD_MASK) == VK_CMD_DOWNLOAD)
+			ref_delta = -1;
 	}
 
 	if ((cmd & VK_CMD_OPT_BLOCKING) || (cmd & VK_CMD_OPT_CB)) {
@@ -1091,6 +1102,12 @@ static int32_t vkil_transfer_buffer2(void *component_handle,
 			goto fail_read;
 
 		ret1 = ret;
+		ret_size.used_size = response.arg & VK_SIZE_MASK;
+		if ((cmd & VK_CMD_MASK) == VK_CMD_DOWNLOAD && ret_size.used_size < 0) {
+			/* we haven't downloaded whole buffer, so don't dereference it */
+			ref_delta = 0;
+		}
+
 		ret = vkil_get_msg_user_data(ilctx->devctx, response.msg_id,
 					      &buffer->user_data);
 		/* we return the message no matter the error status above */
@@ -1102,12 +1119,16 @@ static int32_t vkil_transfer_buffer2(void *component_handle,
 		if ((cmd & VK_CMD_MASK) == VK_CMD_UPLOAD) {
 			buffer->handle = response.arg;
 			*transferred_bytes = 0;
-			ret = buffer_ref(buffer, 1);
-			if (ret)
-				goto fail_read;
+			ref_delta = 1;
 		} else {
 			*transferred_bytes = response.arg;
 		}
+	}
+
+	if (ref_delta) {
+		ret = buffer_ref(buffer, ref_delta);
+		if (ret)
+			goto fail_write;
 	}
 	return ret1;
 
