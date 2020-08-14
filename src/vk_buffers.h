@@ -19,19 +19,13 @@
 #define __packed __attribute__((packed))
 #endif
 
-
-/** flags used by vk_buffer */
-#define VK_BUFFER_FLAG_INTERLACE 0x000001
-#define VK_BUFFER_FLAG_EOS       0x010000
-
-
 typedef enum _vk_buffer_type {
 	VK_BUF_UNDEF       =    0,
 	VK_BUF_METADATA    =  0x1,
 	VK_BUF_PACKET      =  0x2,
 	VK_BUF_SURFACE     = 0x4,
 	VK_BUF_AG_BUFFERS  = 0x8,
-	VK_BUF_MAX         = 0xF
+	VK_BUF_MAX         = 0xf
 } vk_buffer_type;
 
 /**
@@ -87,5 +81,58 @@ typedef struct _vk_buffer_packet {
 	uint32_t  size;      /**< total buffer size in bytes */
 	uint64_t  data;      /**< Pointer to buffer start on Host memory*/
 } vk_buffer_packet;
+
+/*
+ * common macros
+ */
+
+/* return arg will have 24 bits for size and 8 bits for flags */
+#define VK_SIZE_POS 0
+#define VK_FLAG_POS 24
+#define VK_SIZE_MASK 0xffffff
+#define VK_FLAG_MASK 0Xff
+
+/**
+ * A SSIM result is provided for each point of a 4x4 grid (labelled "0");
+ * offseted by 2x2 pels from the top left; except the rightmost column or
+ * bottom most row of the grid (labelled "X"). The SSIM itself is computed
+ * on a 8x8 block
+ *  ------------------SURF_SZ-------------------
+ *  | x x x x x x x x x x x ... x x x x x x x x|
+ *  | x x x x x x x x x x x ... x x x x x x x x|
+ *  | x x 0 x x x 0 x x x 0 ... 0 x x x X x x x|
+ *  | x x x x x x x x x x x ... x x x x x x x x|
+ *  | x x x x x x x x x x x ... x x x x x x x x|
+ *  | x x x x x x x x x x x ... x x x x x x x x|
+ *  | x x 0 x x x 0 x x x 0 ... 0 x x x X x x x|
+ *  | x x x x x x x x x x x ... x x x x x x x x|
+ *  | x x x x x x x x x x x ... x x x x x x x x|
+ *  | x x x x x x x x x x x ... x x x x x x x x|
+ *  | x x 0 x x x 0 x x x 0 ... 0 x x x X x x x|
+ *  | ........................................ |
+ *  | x x 0 x x x 0 x x x 0 ... 0 x x x x x x x|
+ *  | x x x x x x x x x x x ... x x x x x x x x|
+ *  | x x x x x x x x x x x ... x x x x x x x x|
+ *  | x x x x x x x x x x x ... x x x x x x x x|
+ *  | x x X x x x X x x x X ... X x x x X x x x|
+ *  | x x x x x x x x x x x ... x x x x x x x x|
+ *  | x x x x x x x x x x x ... x x x x x x x x|
+ *  | x x x x x x x x x x x ... x x x x x x x x|
+ *  --------------------------------------------
+ * The formula below then gives the number of these point per direction
+ */
+#define NUM_4x4_GRID_PT(surf_sz) (((surf_sz) / 4) - 1)
+
+#define SB_ROUNDUP(log2_sb_sz) ((1 << (log2_sb_sz)) - 1)
+
+/*
+ * then the result can be aggregated in super block, which size is expressed in
+ * number of point on which the SSIM result wil be aggregated
+ * (either average of the atomic result or minimum (worst) value)
+ * the number of super block per direction is then expressed as below
+ * where number of SB is rounded up (means it will be partial super blocks)
+ */
+#define NUM_SB(sz, log2_sb) ((NUM_4x4_GRID_PT(sz) + SB_ROUNDUP((log2_sb))) \
+			     >> (log2_sb))
 
 #endif

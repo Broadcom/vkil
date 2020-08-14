@@ -15,10 +15,8 @@
 #include <string.h>
 #include "vk_parameters.h"
 
-#define VK_START_VALID_HANDLE (0x400)
+#define VK_START_VALID_HANDLE 0x400
 
-/* msg size is expressed in multile of 16 bytes */
-#define MSG_SIZE(size) ((size + 15)/16)
 /** Bit width of the msg_id field in the host2vk_msg and vk2host_msg structs */
 #define MSG_ID_BIT_WIDTH 12
 
@@ -164,5 +162,9 @@ const char *vkil_cmd_str(uint32_t cmd);
  * return command's option string
  */
 const char *vkil_cmd_opts_str(uint32_t cmd);
+
+/* msg size is expressed in multiple of 16 bytes */
+#define MSG_SIZE(size) (((size) + sizeof(host2vk_msg) - 1) \
+			/ sizeof(host2vk_msg))
 
 #endif

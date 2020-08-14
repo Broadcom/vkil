@@ -55,12 +55,6 @@ static struct _vkil_cfg {
 /** max msg size that can be sent to card */
 #define VKIL_SEND_MSG_MAX_SIZE 16
 
-/* return arg will have 24 bits for size and 8 bits for flags */
-#define VK_SIZE_POS 0
-#define VK_FLAG_POS 24
-#define VK_SIZE_MASK 0xFFFFFF
-#define VK_FLAG_MASK 0XFF
-
 /**
  * @brief instrument the write failure
 
