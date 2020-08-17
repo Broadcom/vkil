@@ -540,7 +540,7 @@ typedef enum _vk_rc_mode {
 	VK_RC_QTY   = 4, /**< quality */
 	VK_RC_FRAME = 5, /**< per frame qp */
 	VK_RC_MAX   = 6,
-	VK_RC_DEF   = VK_RC_QTY,
+	VK_RC_DEF   = VK_RC_STD,
 } vk_rc_mode;
 
 /** flags for multipass information (needs to be in one byte) */
