@@ -135,4 +135,19 @@ typedef struct _vk_buffer_packet {
 #define NUM_SB(sz, log2_sb) ((NUM_4x4_GRID_PT(sz) + SB_ROUNDUP((log2_sb))) \
 			     >> (log2_sb))
 
+/*
+ * SSIM requires the outbuffer to be 128bytes aligned.
+ * To satisfy the alignment the minimum outbuffer allocated
+ * is 128 bytes.
+ * TODO: Add support for memory allocation with alignment.
+ */
+#define SSIM_MIN_BUFFER_SIZE 512
+#define SSIM_VALUE_SIZE_IN_BYTES 8
+#define MAX_SSIM_LOG_SB 9
+/*
+ * surface size is granted big enough to at least generate one 8x8 ssim block
+ * per plane
+ */
+#define MIN_SSIM_SURFACE_SIZE 32
+
 #endif
