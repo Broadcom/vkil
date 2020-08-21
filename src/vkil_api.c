@@ -1091,32 +1091,30 @@ static int32_t vkil_transfer_buffer2(void *component_handle,
 		response.context_id  = ilctx->context_essential.handle;
 		response.size        = 0;
 		ret = vkil_read((void *)ilctx->devctx, &response, wait);
-
 		if (VKDRV_RD_ERR(ret))
 			goto fail_read;
 
-		ret1 = ret;
-		ret_size.used_size = response.arg & VK_SIZE_MASK;
-		if ((cmd & VK_CMD_MASK) == VK_CMD_DOWNLOAD && ret_size.used_size < 0) {
-			/* we haven't downloaded whole buffer, so don't dereference it */
-			ref_delta = 0;
+		if ((cmd & VK_CMD_MASK) == VK_CMD_UPLOAD) {
+			buffer->handle = response.arg;
+			*transferred_bytes = 0;
+			ref_delta = 1;
+		} else { /* VK_CMD_DOWNLOAD */
+			ret_size.used_size = response.arg & VK_SIZE_MASK;
+			if (ret_size.used_size < 0)
+				/* buffer not downloaded,  not dereferenced */
+				ref_delta = 0;
+			*transferred_bytes = ret_size.used_size;
+			buffer->flags = (uint16_t)((response.arg >> VK_FLAG_POS)
+						    & VK_FLAG_MASK);
 		}
 
+		ret1 = ret;
 		ret = vkil_get_msg_user_data(ilctx->devctx, response.msg_id,
 					      &buffer->user_data);
 		/* we return the message no matter the error status above */
 		vkil_return_msg_id(ilctx->devctx, response.msg_id);
 		if (ret)
 			goto fail_read;
-
-
-		if ((cmd & VK_CMD_MASK) == VK_CMD_UPLOAD) {
-			buffer->handle = response.arg;
-			*transferred_bytes = 0;
-			ref_delta = 1;
-		} else {
-			*transferred_bytes = response.arg;
-		}
 	}
 
 	if (ref_delta) {
