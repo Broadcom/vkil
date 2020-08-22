@@ -86,11 +86,11 @@ typedef struct _vk_buffer_packet {
  * common macros
  */
 
-/* return arg will have 24 bits for size and 8 bits for flags */
+/* return arg have 28 bits for size and 4 bits for flags */
 #define VK_SIZE_POS 0
-#define VK_FLAG_POS 24
-#define VK_SIZE_MASK 0xffffff
-#define VK_FLAG_MASK 0Xff
+#define VK_FLAG_POS 28
+#define VK_SIZE_MASK ((1 << VK_FLAG_POS) - 1)
+#define VK_FLAG_MASK (UINT32_MAX ^ VK_SIZE_MASK)
 
 /**
  * A SSIM result is provided for each point of a 4x4 grid (labelled "0");
