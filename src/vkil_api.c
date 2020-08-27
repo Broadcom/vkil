@@ -804,8 +804,8 @@ static int32_t convert_vkil2vk_buffer_surface(vk_buffer_surface *surface,
 	 * PAX DMA transfer sizes are required to be 4 byte aligned
 	 * we guarantee this by enforcing the image stride to be 4 byte aligned
 	 */
-	VK_ASSERT(!(ilsurface->stride[0] & 0x3));
-	VK_ASSERT(!(ilsurface->stride[1] & 0x3));
+	VK_ASSERT(!(ilsurface->stride[0] & (VKIL_BUF_ALIGN - 1)));
+	VK_ASSERT(!(ilsurface->stride[1] & (VKIL_BUF_ALIGN - 1)));
 
 	convert_vkil2vk_buffer_prefix(&surface->prefix, &ilsurface->prefix);
 	surface->prefix.type  = VK_BUF_SURFACE;
@@ -887,7 +887,7 @@ static int32_t convert_vkil2vk_buffer_packet(vk_buffer_packet *packet,
 	VK_ASSERT(sizeof(void *) == sizeof(uint64_t));
 
 	/* PAX DMA transfer sizes are required to be 4 byte aligned */
-	VK_ASSERT(!(il_packet->size & 0x3));
+	VK_ASSERT(!(il_packet->size & (VKIL_BUF_ALIGN - 1)));
 
 	convert_vkil2vk_buffer_prefix(&packet->prefix, &il_packet->prefix);
 	packet->prefix.type   = VK_BUF_PACKET;
@@ -916,7 +916,7 @@ static int32_t convert_vkil2vk_buffer_metadata(vk_buffer_metadata *mdata,
 	VK_ASSERT(sizeof(void *) == sizeof(uint64_t));
 
 	/* PAX DMA transfer sizes are required to be 4 byte aligned */
-	VK_ASSERT(!(il_mdata->size & 0x3));
+	VK_ASSERT(!(il_mdata->size & (VKIL_BUF_ALIGN - 1)));
 
 	convert_vkil2vk_buffer_prefix(&mdata->prefix, &il_mdata->prefix);
 	mdata->prefix.type     = VK_BUF_METADATA;

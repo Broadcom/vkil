@@ -18,6 +18,9 @@
 #include "vk_parameters.h"
 
 #define VKIL_MAX_AGGREGATED_BUFFERS 17
+#define VKIL_BUF_ALIGN 4 /**< required byte alignment */
+/**< vk hardware supports only pixel formatting on  2 planes (luma/chroma) */
+#define VKIL_BUF_NPLANES 2
 
 /** Buffer type descriptor */
 typedef enum _vkil_buffer_type {
@@ -133,9 +136,9 @@ typedef struct _vkil_buffer_surface {
 	uint16_t yoffset; /**< Luma y offset */
 	uint16_t format; /** color format and pixel depth */
 	uint16_t quality; /**< quality index */
-	uint32_t stride[2]; /**< Stride between rows, in bytes */
-	void *plane_top[2]; /**< Y, UV top field */
-	void *plane_bot[2]; /**< bottom field (interlace only) */
+	uint32_t stride[VKIL_BUF_NPLANES]; /**< Stride between rows, in bytes */
+	void *plane_top[VKIL_BUF_NPLANES]; /**< Y, UV top field */
+	void *plane_bot[VKIL_BUF_NPLANES]; /**< bottom field (interlace only) */
 } vkil_buffer_surface;
 
 /**
