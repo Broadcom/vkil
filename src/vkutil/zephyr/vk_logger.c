@@ -62,6 +62,7 @@ void vk_log(const char *prefix, vk_log_mod log_mod,
 	va_end(vl);
 }
 
+#ifdef VK_VKCON_ENABLE
 void vk_vcon_cmd_handler(const char *cmd)
 {
 	int argc;
@@ -157,6 +158,13 @@ void vk_vcon_cmd_handler(const char *cmd)
 
 	}
 }
+#else
+void vk_vcon_cmd_handler(const char *cmd)
+{
+	/* vkcon is currently not supported for Viper */
+	ARG_UNUSED(cmd);
+}
+#endif
 
 /**
  * logger init
