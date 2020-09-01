@@ -429,6 +429,35 @@ typedef struct _vk_lookahead_cfg {
 	float saq_b;
 } vk_lookahead_cfg;
 
+typedef enum _vk_color_range {
+	VK_COL_RANGE_UNDEF = 0, /**< unspecified or unknown range */
+	VK_COL_RANGE_LIMITED = 1, /**< the normal 219*2^(n-8) MPEG YUV ranges */
+	VK_COL_RANGE_FULL = 2, /**< the normal 2^n-1   JPEG YUV ranges */
+	VK_COL_MAX = 0xff /**< range is coded on 8 bits */
+} vk_color_range;
+
+/**
+ * @brief color information
+ *
+ * structure carrying field defined  by  Recommendation ITU-T H.273  /
+ * ISO/IEC 23001-8 (below description refers only to ITU-T H.273)
+ *
+ * Fields that establish properties of a video are  carried in
+ * vui (video usability field information) as defined in
+ * ITU-T H.264 § Annex E / ITU-T H.265 § Annex E whenever flag
+ * VK_CFG_FLAG_ENABLE is set
+ */
+typedef struct _vk_color_cfg {
+	int32_t flags;
+	uint8_t range; /**< color range */
+	/** source primaries as defined by ITU-T H.273 (12/2016) § 8.1 */
+	uint8_t primaries;
+	/** transfer characteristic as defined by ITU-T H.273 (12/2016) § 8.2 */
+	uint8_t transfer;
+	/** matrix coefficients  as defined by ITU-T H.273 (12/2016) § 8.3 */
+	uint8_t matrix;
+} vk_color_cfg;
+
 typedef struct _vk_qpmap_cfg {
 	int32_t flags;
 	int32_t size; /**< bytes required to store a frame qpmap */
@@ -523,6 +552,7 @@ typedef struct _vk_enc_cfg {
 	uint8_t  max_qp;    /**< max qp used by rate control */
 
 	uint8_t  no_repeatheaders;  /**< header data for all/first sync frame */
+	vk_color_cfg color_cfg;     /**< color information */
 	vk_ssim_cfg ssim_cfg;       /**< ssim granularity parameters */
 	vk_stats_cfg stats_cfg;     /**< statistics collection parameters */
 	vk_qpmap_cfg qpmap_cfg;     /**< quantization map parameters */
@@ -670,6 +700,7 @@ typedef enum _vkil_parameter_t {
 	VK_PARAM_VIDEO_CODEC            = 16, /**< 0 means undefined */
 	VK_PARAM_VIDEO_PROFILEANDLEVEL  = 17, /**< 0 means undefined */
 	VK_PARAM_CODEC_CONFIG           = 18, /**< set/get codec config */
+	VK_PARAM_COLOR_CONFIG           = 19, /**< set/get color config */
 
 	VK_PARAM_VIDEO_SIZE             = 32, /**< 0 means undefined */
 	VK_PARAM_VIDEO_FORMAT           = 33, /**< 0 means undefined */
