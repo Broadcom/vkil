@@ -154,22 +154,33 @@ static void get_buffer(void *handle, uint32_t *nbuf,
  */
 static int buffer_check_ref(const vkil_buffer *buffer)
 {
+	int i;
+
 	if ((buffer->type != VKIL_BUF_AG_BUFFERS) &&
 	    (buffer->type != VKIL_BUF_EXTRA_FIELD)) {
 		/* a single handle is returned */
-		if (buffer->handle && (!buffer->ref))
+		if (buffer->handle && (!buffer->ref)) {
+			VKIL_LOG(VK_LOG_ERROR,
+				 "buffer handle=0x%x type=%d",
+				 buffer->handle, buffer->type);
 			return -ENOBUFS;
+		}
 	} else if (buffer->type == VKIL_BUF_AG_BUFFERS) {
 		vkil_aggregated_buffers *ag_buf =
 			(vkil_aggregated_buffers *)buffer;
-		int i;
 
 		for (i = 0; i < ag_buf->nbuffers; i++) {
 			if (ag_buf->buffer[i] &&
 			    ag_buf->buffer[i]->handle &&
 			    (!ag_buf->buffer[i]->ref) &&
-			    (ag_buf->buffer[i]->type != VKIL_BUF_EXTRA_FIELD))
+			    (ag_buf->buffer[i]->type != VKIL_BUF_EXTRA_FIELD)) {
+				VKIL_LOG(VK_LOG_ERROR,
+					 "ag_buffer[%d] handle=0x%x, type=%d",
+					 i,
+					 ag_buf->buffer[i]->handle,
+					 ag_buf->buffer[i]->type);
 				return -ENOBUFS;
+			}
 		}
 	}
 
