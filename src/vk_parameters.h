@@ -295,6 +295,21 @@ typedef struct _vk_surface_stats {
 	uint32_t ref_pic_count[2]; /**< display order pic cnt of references */
 } vk_surface_stats;
 
+typedef struct _vk_me_stats {
+	uint32_t intra_rd_cost : 26; /* Intra RD cost (distortion+lambda*bits) */
+	uint32_t inter_used    :  1; /* Inter selected by RD */
+	uint32_t coarse_mvs    :  1; /* Bit used to tell the FW to use only coarse (top left) MVs */
+	uint32_t pad1          :  4; /* Unused bits */
+	uint32_t inter_rd_cost : 26; /* Inter RD cost (distortion+lambda*bits) */
+	uint32_t l0            :  4; /* Bits {BR,BL,TR,TL} set if List 0 MV used*/
+	uint32_t pad2          :  2; /* Unused bits */
+	uint32_t intra_bit_cost: 13; /* Intra RD bit estimate */
+	uint32_t inter_bit_cost: 13; /* Inter RD bit estimate */
+	uint32_t l1            :  4; /* Bits {BR,BL,TR,TL} set if List 1 MV used*/
+	uint32_t pad3          :  2; /* Unused bits */
+	int16_t mv[8][2]; /* Motion vector array */
+} vk_me_stats;
+
 #define VK_SCL_MAX_PHASES    32
 #define VK_SCL_MAX_HOR_COEFS  8
 #define VK_SCL_MAX_VER_COEFS  4
@@ -468,6 +483,12 @@ typedef struct _vk_stats_cfg {
 	int32_t size; /**< bytes required to store a frame stats */
 } vk_stats_cfg;
 
+typedef struct _vk_me_stats_cfg {
+	int32_t flags;
+	int32_t size; /**< bytes required to store a frame of me stats */
+	uint8_t coarse_mvs; /**< set to non-zero to use coarse motion vectors */
+} vk_me_stats_cfg;
+
 typedef struct _vk_ssim_cfg {
 	int32_t flags;
 	 /**< log2 of super block size in 4x4pels unit */
@@ -556,6 +577,7 @@ typedef struct _vk_enc_cfg {
 	vk_color_cfg color_cfg;     /**< color information */
 	vk_ssim_cfg ssim_cfg;       /**< ssim granularity parameters */
 	vk_stats_cfg stats_cfg;     /**< statistics collection parameters */
+	vk_me_stats_cfg me_stats_cfg;/**< motion estimation stats collection params*/
 	vk_qpmap_cfg qpmap_cfg;     /**< quantization map parameters */
 	vk_vars_cfg varmap_cfg;     /**< varaince map parameters */
 	vk_adaptqp_cfg adaptqp_cfg; /**< adaptive quant algo parameters */
