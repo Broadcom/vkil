@@ -488,12 +488,13 @@ typedef enum _vk_format_type {
 
 /** vk gop type  */
 typedef enum _vk_gop_type {
-	VK_GOP_UNDEF          = 0, /**< not defined                      */
-	VK_GOP_BIDIRECTIONAL  = 1, /**< bframes + reorder                */
-	VK_GOP_LOWDELAY       = 2, /**< low delay (no frame reordering)  */
-	VK_GOP_PYRAMID        = 3, /**< B frame can be used as reference */
-	VK_GOP_MAX            = 4, /**< MAX                              */
-	VK_GOP_DEF            = VK_GOP_PYRAMID,
+	VK_GOP_UNDEF            = 0, /**< not defined                      */
+	VK_GOP_BIDIRECTIONAL    = 1, /**< bframes + reorder                */
+	VK_GOP_LOWDELAY         = 2, /**< low delay (no frame reordering)  */
+	VK_GOP_PYRAMID          = 3, /**< B frame can be used as reference */
+	VK_GOP_PYRAMID_EXPLICIT = 4, /**< B frame can be used as reference */
+	VK_GOP_MAX              = 5, /**< MAX                              */
+	VK_GOP_DEF              = VK_GOP_PYRAMID,
 } vk_gop_type;
 
 /** rate control mode.  Note: 0->4 is a direct 1-to-1 mapping to MVE FW */
@@ -707,6 +708,7 @@ typedef enum _vkil_parameter_t {
 	VK_PARAM_VIDEO_ENC_CONFIG       = 48,
 	VK_PARAM_VIDEO_ENC_GOP_TYPE     = 49,
 	VK_PARAM_VIDEO_DEC_FPS          = 50,
+	VK_PARAM_VIDEO_ENC_HYPERPYRAMID_SUPPORTED = 51,
 
 	VK_PARAM_PORT                    = 64, /**< set input/output cmpt pad */
 	/* get the size of a pool associated to vk_port_id passed in arg[1] */
