@@ -47,7 +47,7 @@ static struct _vkil_cfg {
 #define VKIL_READ_TIMEOUT 1
 #endif
 /** this wait factor tells vkil_read to wait "extra time" for message */
-#define WAIT_INIT (VKIL_READ_TIMEOUT * 10)
+#define WAIT_INIT (VKIL_READ_TIMEOUT)
 
 /** max expected return message size, can be locally overidden */
 #define VKIL_RET_MSG_MAX_SIZE 16
