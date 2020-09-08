@@ -1045,8 +1045,10 @@ static int32_t vkil_sanity_check_buffer(vkil_buffer *buffer)
  * @param[in] host_buffer	buffer to transfer
  * @param[in] cmd		transfer direction (upload/download) and mode
  *				(blocking or not)
- * @param[out] transferred_bytes transferred bytes if positive,
+ * @param[out] transferred_bytes downlaoded  bytes if positive,
  *                               required buffer extension in byte if negative
+ *                               The field is mandatory for download, but can be
+ *                               set to NULL in upload mode
  * @return			 zero on success, error code otherwise
  * @pre the  _vkil_buffer to transfer must have a valid _vkil_buffer_type
  */
@@ -1141,9 +1143,11 @@ static int32_t vkil_transfer_buffer2(void *component_handle,
 
 		if ((cmd & VK_CMD_MASK) == VK_CMD_UPLOAD) {
 			buffer->handle = response.arg;
-			*transferred_bytes = 0;
+			if (transferred_bytes)
+				*transferred_bytes = 0;
 			ref_delta = 1;
 		} else { /* VK_CMD_DOWNLOAD */
+			VK_ASSERT(transferred_bytes);
 			ret_size.used_size = response.arg & VK_SIZE_MASK;
 			if (ret_size.used_size < 0)
 				/* buffer not downloaded,  not dereferenced */
