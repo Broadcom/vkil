@@ -386,8 +386,8 @@ int32_t test_encoder_dma(int fd, uint32_t q_id, int32_t context_id,
 	vk_buffer_packet buffer_packet;
 
 	/* macro to calculate bandwidth in kbps */
-#define _CALC_BW(_bytes, _time_ns) \
-	((((uint64_t)_bytes) * 8) / (((uint64_t)_time_ns) / 1000000ULL))
+#define _CALC_BW(_bytes, _time_ms) \
+	((((uint64_t)(_bytes)) * 8) / ((uint64_t)(_time_ms)))
 
 	memset(message_in, 0, sizeof(host2vk_msg));
 	memset(message_out, 0, sizeof(vk2host_msg));
@@ -449,7 +449,7 @@ int32_t test_encoder_dma(int fd, uint32_t q_id, int32_t context_id,
 			upload_accum_cnt++;
 		}
 		LOCAL_LOG(VK_LOG_INFO,
-			  "\t\t time %" PRIu32 "ns, bw %" PRIu64 " kbps",
+			  "\t\t time %" PRIu32 "ms, bw %" PRIu64 " kbps",
 			  delta, bw);
 
 		message_in->function_id = VK_FID_PROC_BUF;
@@ -525,7 +525,7 @@ int32_t test_encoder_dma(int fd, uint32_t q_id, int32_t context_id,
 			download_accum_cnt++;
 		}
 		LOCAL_LOG(VK_LOG_INFO,
-			  "\t\t time %" PRIu32 " ns, bw %" PRIu64 " kbps",
+			  "\t\t time %" PRIu32 " ms, bw %" PRIu64 " kbps",
 			  delta, bw);
 		/*
 		 * perform verification.  do expect input and output
@@ -642,6 +642,7 @@ int32_t test_dev(const char *dev_name, const test_vkdrv_param *param)
 
 			curr_role = test_role_list[i];
 			ctx_essential.component_role = curr_role;
+			ctx_essential.pid = getpid();
 
 			message_in.function_id = VK_FID_INIT;
 			message_in.size = 0;
