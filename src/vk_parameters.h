@@ -409,6 +409,17 @@ typedef struct _vk_qpmap_bpr {
  * parameterization of the qp delta map generator
  * the algorithm take in input a varainec map, and genertae a qpmap.
  */
+#define VK_ADAPT_QP_A_SET (1 << 1)
+#define VK_ADAPT_QP_B_SET (1 << 2)
+#define VK_ADAPT_QP_SPLIT_THRESH_SET (1 << 3)
+#define VK_ADAPT_QP_BPR_FORCE_SET (1 << 4)
+#define VK_ADAPT_QP_LAST_QPD_MODE_SET (1 << 5)
+#define VK_ADAPT_QP_SIG_COST_THRESHOLD_QP_SET (1 << 6)
+#define VK_ADAPT_QP_QPD_SUM_DISABLE_THRESHOLD_QP_SET (1 << 7)
+#define VK_ADAPT_QP_AQ_MODE_SET (1 << 8)
+#define VK_ADAPT_QP_SIG_COST_THRESHOLD_BPP_SET (1 << 9)
+#define VK_ADAPT_QP_QPD_SUM_DISABLE_THRESHOLD_BPP_SET (1 << 10)
+#define VK_ADAPT_QP_QPD_SUM_THRESHOLD_SET (1 << 11)
 typedef struct _vk_adaptqp_cfg {
 	int32_t flags;
 	int32_t a; /**< Value used in qpdelta =  (a * log2(variance)) + b */
@@ -418,7 +429,8 @@ typedef struct _vk_adaptqp_cfg {
 	int8_t last_qpd_mode;
 	int8_t sig_cost_threshold_qp;
 	int8_t qpd_sum_disable_threshold_qp;
-	uint8_t reserved[3]; /* Padding added by compiler */
+	uint8_t aq_mode;
+	uint8_t reserved[2]; /* Padding added by compiler */
 	uint32_t sig_cost_threshold_bpp; /**< (8.24) fixed point format */
 	uint32_t qpd_sum_disable_threshold_bpp; /**< (8.24) fixed point */
 	int32_t qpd_sum_threshold;
