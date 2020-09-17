@@ -90,7 +90,7 @@ typedef struct _vk_buffer_packet {
 #define VK_SIZE_POS 0
 #define VK_FLAG_POS 28
 #define VK_SIZE_MASK ((1 << VK_FLAG_POS) - 1)
-#define VK_FLAG_MASK (UINT32_MAX ^ VK_SIZE_MASK)
+#define VK_FLAG_MASK ((1 << ((sizeof(uint32_t) * 8) - VK_FLAG_POS)) - 1)
 
 /**
  * A SSIM result is provided for each point of a 4x4 grid (labelled "0");
