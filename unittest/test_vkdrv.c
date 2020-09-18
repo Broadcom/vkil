@@ -261,7 +261,7 @@ int32_t test_vkdrv_configure_encoder(int fd, uint32_t q_id,
 	enc_cfg->profile = (param->enc_profile >> 16) & 0xFFFF;
 	enc_cfg->level =  param->enc_profile & 0xFFFF;
 	enc_cfg->bitrate = 2000000;
-	enc_cfg->rc_mode = VK_RC_DEF;
+	enc_cfg->rc_cfg.rc_mode = VK_RC_DEF;
 	/* fps is in [numerator:16][denominator:16] format */
 	enc_cfg->fps = (30 << 16) | 1;
 	enc_cfg->gop_size = 30; /* just use default */
