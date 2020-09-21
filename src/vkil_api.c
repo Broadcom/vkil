@@ -659,11 +659,11 @@ int32_t vkil_set_parameter(void *handle,
 	if (ret)
 		goto fail_write;
 	/* complete message setting */
-	message->size        = msg_size;
-	message->args[0]     = field;
+	message->size = msg_size;
+	VKMSG_FIELD(message) = field;
 
 	/* align  structure copy on 16 bytes boundary */
-	memcpy(msg_size ? (uint32_t *) &message[1] : &message->args[1],
+	memcpy(msg_size ? host2vk_getdatap(message) : &VKMSG_FIELD_VAL(message),
 	       value, field_size);
 	ret = vkil_write((void *)ilctx->devctx, message);
 	if (VKDRV_WR_ERR(ret)) {
@@ -728,9 +728,9 @@ int32_t vkil_get_parameter(void *handle,
 	if (ret)
 		goto fail_write;
 	/* complete setting */
-	message->size        = msg_size;
-	message->args[0]       = field;
-	memcpy(msg_size ? (uint32_t *) &message[1] : &message->args[1],
+	message->size = msg_size;
+	VKMSG_FIELD(message) = field;
+	memcpy(msg_size ? host2vk_getdatap(message) : &VKMSG_FIELD_VAL(message),
 	       value, field_size);
 
 	ret = vkil_write((void *)ilctx->devctx, message);
@@ -1096,8 +1096,8 @@ static int32_t vkil_transfer_buffer2(void *component_handle,
 			goto fail_write;
 
 		/* complete setting */
-		message->size        = msg_size;
-		message->args[0]     = load_mode;
+		message->size = msg_size;
+		VKMSG_CMD(message) = load_mode;
 
 		if ((cmd & VK_CMD_MASK) == VK_CMD_DOWNLOAD) {
 			ret = buffer_check_ref(buffer);
@@ -1109,10 +1109,10 @@ static int32_t vkil_transfer_buffer2(void *component_handle,
 			VKIL_LOG(VK_LOG_WARNING, "");
 			goto fail_write;
 		}
-		message->args[0]     |= ret;
+		VKMSG_CMD(message) |= ret;
 
 		/* we convert the il frontend structure into a backend one */
-		convert_vkil2vk_buffer(&message->args[2], buffer);
+		convert_vkil2vk_buffer(host2vk_getdatap(message), buffer);
 
 		/* then we write the command to the queue */
 		ret = vkil_write((void *)ilctx->devctx, message);
@@ -1283,9 +1283,9 @@ int32_t vkil_process_buffer(void *component_handle,
 			goto fail_write;
 
 		/* complete message setting */
-		message->args[0] = cmd & VK_CMD_MASK;
-		message->size    = msg_size;
-		memcpy(&message->args[1], handles, nbuf * sizeof(uint32_t));
+		VKMSG_CMD(message) = cmd & VK_CMD_MASK;
+		message->size = msg_size;
+		memcpy(&VKMSG_CMD_ARG(message), handles, nbuf * sizeof(uint32_t));
 
 		ret = vkil_write((void *)ilctx->devctx, message);
 		if (VKDRV_WR_ERR(ret)) {
@@ -1390,8 +1390,8 @@ int32_t vkil_xref_buffer(void *ctx_handle,
 
 		/* complete setting */
 		message->size = 0;
-		message->args[0] = ref_delta;
-		message->args[1] = buffer->handle;
+		VKMSG_REF_DELTA(message) = ref_delta;
+		VKMSG_REF_BUF(message) = buffer->handle;
 
 		if (ref_delta < 0) {
 			ret = buffer_check_ref(buffer);

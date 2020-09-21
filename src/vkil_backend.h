@@ -31,8 +31,38 @@ typedef struct _host2vk_msg {
 	/** unique message identifier in the queue */
 	uint16_t msg_id:MSG_ID_BIT_WIDTH;
 	uint32_t context_id;    /**< handle to the HW context */
-	uint32_t args[2];       /**< argument list taken by the function */
+	union {
+		uint32_t args[2]; /**< generic argument list taken by the function */
+		/** < cmd definition */
+		struct _cmd {
+			uint32_t val;
+			uint32_t arg;
+		} cmd;
+		/** < field for parameter get/set */
+		struct _field {
+			uint32_t idx;
+			uint32_t val;
+		} field;
+		/** < buffer referencing structure */
+		struct _ref {
+			int32_t delta;
+			uint32_t buf;
+		} ref;
+		/** < error indication */
+		struct _err {
+			uint32_t state;
+			int32_t ret;
+		} err;
+	};
 } host2vk_msg;
+#define VKMSG_CMD(p_msg)       ((p_msg)->cmd.val)
+#define VKMSG_CMD_ARG(p_msg)   ((p_msg)->cmd.arg)
+#define VKMSG_FIELD(p_msg)     ((p_msg)->field.idx)
+#define VKMSG_FIELD_VAL(p_msg) ((p_msg)->field.val)
+#define VKMSG_REF_DELTA(p_msg) ((p_msg)->ref.delta)
+#define VKMSG_REF_BUF(p_msg)   ((p_msg)->ref.buf)
+#define VKMSG_ERR_IND(p_msg)   ((p_msg)->err.state)
+#define VKMSG_ERR_RET(p_msg)   ((p_msg)->err.ret)
 
 /**
  * get pointer to start of extra data in msg
@@ -101,8 +131,8 @@ typedef enum _vk_function_id_t {
 	 * These are put at the beginning here.  The unused (1-4,
 	 * 6-7) will be reserved for future unmutables.
 	 */
-	VK_FID_TRANS_BUF = 5, /**< args[0]= cmd, args[2]=host buffer desc*/
-	VK_FID_SHUTDOWN  = 8, /**< shut down command                     */
+	VK_FID_TRANS_BUF = 5, /**< msg[1] = host buffer desc */
+	VK_FID_SHUTDOWN  = 8, /**< shut down command */
 	/* end of un-mutables */
 
 	/**
@@ -111,10 +141,10 @@ typedef enum _vk_function_id_t {
 	 */
 	VK_FID_INIT,
 	VK_FID_DEINIT,
-	VK_FID_SET_PARAM, /**< args[0]=field, args[1]=value              */
-	VK_FID_GET_PARAM, /**< args[0]=field, args[1]=na                 */
-	VK_FID_PROC_BUF,  /**< args[0]= cmd, args[1]=buffer handle       */
-	VK_FID_XREF_BUF,  /**< args[0]= ref delta, args[1]=buffer handle */
+	VK_FID_SET_PARAM, /**< field.idx = field, field.val = set val */
+	VK_FID_GET_PARAM, /**< field.idx = field, field.val = na      */
+	VK_FID_PROC_BUF,  /**< cmd.val = cmd, cmd.arg = buffer handle */
+	VK_FID_XREF_BUF,  /**< ref.delta = delta, ref.arg = buffer handle */
 	VK_FID_PRIVATE,   /**< used for internal purpose                 */
 
 	/* function carried by vk2host_msg */
