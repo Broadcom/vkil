@@ -122,7 +122,8 @@ enum _vk_status_t {
 	VK_STATE_IDLE = 3,
 	VK_STATE_RUN = 4,
 	VK_STATE_FLUSH = 5,
-	VK_STATE_ERROR  = 0xFF,
+	VK_STATE_WARN = 0xfe,
+	VK_STATE_ERROR = 0xff,
 };
 
 typedef enum _vk_status_t vk_status_t;
@@ -697,9 +698,9 @@ typedef struct _vk_set_get_header {
 #define VK_LOG_LINE 80
 
 /** error message */
-typedef struct _vk_error {
+typedef struct vk_anomaly {
 	char log[VK_LOG_LINE]; /**< verbose error message */
-} vk_error;
+} vk_error, vk_warning;
 
 /* surface flags */
 typedef enum _vk_surf_flags {
@@ -778,8 +779,12 @@ typedef enum _vkil_parameter_t {
 
 	VK_PARAM_NEED_MORE_INPUT        = 160,
 	VK_PARAM_IS_STREAM_INTERLACE    = 161,
+	VK_PARAM_WARNING                = 254,
 	VK_PARAM_ERROR                  = 255,
-	VK_PARAM_MAX = 0x0FFF,
+	VK_PARAM_MAX = 0x0fff,
 } vkil_parameter_t;
+
+/* max number of warnings stored, must be a power of 2 */
+#define VK_WARNINGS_BUF_MAX  4
 
 #endif
