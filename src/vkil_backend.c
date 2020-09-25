@@ -36,7 +36,7 @@
  * short enough to bail-out quickly on unresponsive card
  * if VKIL_TIMEOUT_MS is set to zero, wait can then be infinite.
  */
-#define VKIL_TIMEOUT_MS  (30 * 1000)
+#define VKIL_TIMEOUT_MS  (50 * 1000)
 /** in the ffmpeg context ms order to magnitude is OK */
 #define VKIL_PROBE_INTERVAL_MS 1
 
