@@ -1,6 +1,6 @@
-/* SPDX-License-Identifier: GPL-2.0 OR Apache-2.0 */
+/* SPDX-License-Identifier: Apache-2.0 */
 /*
- * Copyright(c) 2020 Broadcom
+ * Copyright 2018-2020 Broadcom.
  */
 
 #ifndef VK_COMMON_H
