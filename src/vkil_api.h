@@ -17,7 +17,7 @@
 #include <stdint.h>
 #include "vk_parameters.h"
 
-#define VKIL_MAX_AGGREGATED_BUFFERS 17
+#define VKIL_MAX_AGGREGATED_BUFFERS 32
 #define VKIL_BUF_ALIGN 4 /**< required byte alignment */
 /**< vk hardware supports only pixel formatting on  2 planes (luma/chroma) */
 #define VKIL_BUF_NPLANES 2

@@ -698,7 +698,7 @@ typedef struct _vk_pool_alloc_buffer {
 /**
  * Set/Get header configuration
  */
-#define VK_MAX_BUFFER_SIZE 160
+#define VK_MAX_BUFFER_SIZE 192
 typedef struct _vk_set_get_header {
 	uint32_t handle;
 	uint8_t buffer[VK_MAX_BUFFER_SIZE];
