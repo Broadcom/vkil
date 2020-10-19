@@ -23,7 +23,7 @@
 /**
  * message structure from host to Valkyrie card
  */
-typedef struct _host2vk_msg {
+typedef struct host2vk_msg {
 	/** this refers to a function listed in vkil_fun_list */
 	uint8_t function_id;
 	uint8_t size;           /**< message size is 16*(1+size) bytes */
@@ -31,25 +31,25 @@ typedef struct _host2vk_msg {
 	/** unique message identifier in the queue */
 	uint16_t msg_id:MSG_ID_BIT_WIDTH;
 	uint32_t context_id;    /**< handle to the HW context */
-	union {
+	union { /* MISRA 2012: rule 19:2 The union keyword should not be used */
 		uint32_t args[2]; /**< generic argument list taken by the function */
-		/** < cmd definition */
-		struct _cmd {
+		/**  cmd definition */
+		struct cmd {
 			uint32_t val;
 			uint32_t arg;
 		} cmd;
-		/** < field for parameter get/set */
-		struct _field {
+		/** field for parameter get/set */
+		struct field {
 			uint32_t idx;
 			uint32_t val;
 		} field;
-		/** < buffer referencing structure */
-		struct _ref {
+		/** buffer referencing structure */
+		struct ref {
 			int32_t delta;
 			uint32_t buf;
 		} ref;
-		/** < error indication */
-		struct _err {
+		/** error indication */
+		struct err {
 			uint32_t state;
 			int32_t ret;
 		} err;
@@ -78,7 +78,7 @@ static inline void *host2vk_getdatap(host2vk_msg *msg)
 /**
  * message structure from Valkyrie card to host
  */
-typedef struct _vk2host_msg {
+typedef struct vk2host_msg {
 	/** this refers to a function listed in vkil_fun_list */
 	uint8_t function_id;
 	uint8_t size;           /**< message size is 16*(1+size) bytes */
@@ -116,7 +116,7 @@ static inline uint32_t *vk2host_getargp(vk2host_msg *msg)
 /**
  * enum type for the function id
  */
-typedef enum _vk_function_id_t {
+typedef enum vk_function_id {
 	/* context_id specify on which context the function apply */
 	VK_FID_UNDEF,
 
@@ -157,10 +157,10 @@ typedef enum _vk_function_id_t {
 	VK_FID_XREF_BUF_DONE,
 	VK_FID_PRIVATE_DONE,   /**< used for internal purpose          */
 	VK_FID_MAX
-} vk_function_id_t;
+} vk_function_id, vk_function_id_t;
 
 /** VK shut down type */
-typedef enum _vkil_shutdown_type {
+typedef enum vkil_shutdown_type {
 	VK_SHUTDOWN_UNDEF     =    0,
 	/**
 	 * used by driver autonomously when a particular process is gone

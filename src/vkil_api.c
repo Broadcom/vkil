@@ -26,7 +26,7 @@
 /*
  * store global configurations that are from CLI parser
  */
-static struct _vkil_cfg {
+static struct vkil_cfg {
 	const char *vkapi_device; /* device/affinity, which card to be used */
 	uint32_t    vkapi_processing_pri; /* processing priority */
 } vkil_cfg = { NULL, VKIL_DEF_PROCESSING_PRI };
@@ -298,7 +298,7 @@ fail:
  * @return    zero on succes, error code otherwise
  */
 static int32_t preset_host2vk_msg(host2vk_msg *msg2vk, const void *handle,
-				  const vk_function_id_t fid,
+				  const vk_function_id fid,
 				  const int64_t user_data)
 {
 	const vkil_context *ilctx = handle;
@@ -608,7 +608,7 @@ fail:
  * @param  field the field to evaluate
  * @return size of the structure aasociated to field
  */
-static int32_t vkil_get_struct_size(const vkil_parameter_t field)
+static int32_t vkil_get_struct_size(const vk_parameter field)
 {
 	if (field == VK_PARAM_PORT)
 		return sizeof(vk_port);
@@ -643,9 +643,9 @@ static int32_t vkil_get_struct_size(const vkil_parameter_t field)
  * @return          zero on success, error code otherwise
  */
 int32_t vkil_set_parameter(void *handle,
-			   const vkil_parameter_t field,
+			   const vk_parameter field,
 			   const void *value,
-			   const vkil_command_t cmd)
+			   const vkil_command cmd)
 {
 	const vkil_context *ilctx = handle;
 	int32_t ret;
@@ -712,7 +712,7 @@ fail_read:
  * @return	 zero on success, error code otherwise
  */
 int32_t vkil_get_parameter(void *handle,
-			   const vkil_parameter_t field,
+			   const vk_parameter field,
 			   void *value,
 			   const vkil_command_t cmd)
 {
@@ -1068,7 +1068,7 @@ static int32_t vkil_transfer_buffer2(void *component_handle,
 	const vkil_context *ilctx = component_handle;
 	const vkil_command_t load_mode = cmd & VK_CMD_LOAD_MASK;
 	int32_t size = get_vkil2vk_buffer_size(buffer);
-	int32_t msg_size = MSG_SIZE(size);
+	uint8_t msg_size = MSG_SIZE(size);
 	host2vk_msg message[msg_size + 1];
 	int32_t ref_delta = 0;
 	/*

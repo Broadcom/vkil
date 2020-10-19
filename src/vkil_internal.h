@@ -30,7 +30,7 @@
  * a command message is always paired to a response message, having then the
  * same _vkil_msg_id (hence the same user data)
  */
-typedef struct _vkil_msg_id {
+typedef struct vkil_msg_id {
 	int16_t used;         /**< indicte a associated intransit message */
 	int16_t reserved[3];  /**< byte alignment purpose */
 	int64_t user_data;    /**< associated sw data */
@@ -39,7 +39,7 @@ typedef struct _vkil_msg_id {
 /**
  * @brief message list context keeping track of all intransit messages
  */
-typedef struct _vkil_msgid_ctx {
+typedef struct vkil_msgid_ctx {
 	vkil_msg_id *msg_list; /**< outgoing message list */
 	/**
 	 * all writing operation on the list are accessed thru the mwx mutex
@@ -51,7 +51,7 @@ typedef struct _vkil_msgid_ctx {
 /**
  * @brief The device context
  */
-typedef struct _vkil_devctx {
+typedef struct vkil_devctx {
 	int fd;      /**< driver */
 	int32_t ref; /**< number of vkilctx instance using the device */
 	int32_t id;  /**< card id */
@@ -60,7 +60,7 @@ typedef struct _vkil_devctx {
 	vkil_msgid_ctx msgid_ctx;
 } vkil_devctx;
 
-typedef struct _vkil_context_internal {
+typedef struct vkil_context_internal {
 	int32_t reserved;
 } vkil_context_internal;
 
