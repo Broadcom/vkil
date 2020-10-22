@@ -267,7 +267,7 @@ typedef union vk_port_id_ {
 
 typedef struct _vk_port {
 	vk_port_id port_id; /** port identifiant */
-	int32_t handle; /** handle to the port (typically a buffer pool) */
+	uint32_t handle; /** handle to the port (Buffer pool identifier) */
 } vk_port;
 
 #define VK_CFG_FLAG_ENABLE 1
