@@ -290,7 +290,7 @@ static double ber_extrapolate_data(double rate, uint8_t ber_scan_mode,
 	int8_t offset[BER_MAX_SAMPLES];
 	int8_t mono_flags[BER_MAX_SAMPLES];
 	int8_t direction, heye, delta_n;
-	double Exy = 0.0, Eyy = 0.0, Exx = 0.0;
+	double Exy = 0.0,  Exx = 0.0;
 	double Ey = 0.0, Ex = 0.0;
 	double alpha = 0.0, beta = 0.0;
 	double proj_margin_12 = 0.0;
@@ -445,8 +445,6 @@ static double ber_extrapolate_data(double rate, uint8_t ber_scan_mode,
 	 * extrapolation possible
 	 */
 	if (stop_n == 1) {
-		delta_n = 1;
-
 		/*
 		 * Compute covariances and means
 		 *
@@ -455,8 +453,6 @@ static double ber_extrapolate_data(double rate, uint8_t ber_scan_mode,
 		 */
 		Exy = ((margins[0] * lbers[0] +
 		       artificial_margin * artificial_lber) / 2.0);
-		Eyy = ((lbers[0] * lbers[0] +
-		       artificial_lber * artificial_lber) / 2.0);
 		Exx = ((margins[0] * margins[0] +
 		       artificial_margin * artificial_margin) / 2.0);
 		Ey  = ((lbers[0] + artificial_lber) / 2.0);
@@ -486,7 +482,6 @@ static double ber_extrapolate_data(double rate, uint8_t ber_scan_mode,
 				continue;
 
 			Exy += (margins[idx] * lbers[idx] / (double)delta_n);
-			Eyy += (lbers[idx] * lbers[idx] / (double)delta_n);
 			Exx += (margins[idx] * margins[idx] / (double)delta_n);
 			Ey  += (lbers[idx] / (double)delta_n);
 			Ex  += (margins[idx] / (double)delta_n);
@@ -501,9 +496,6 @@ static double ber_extrapolate_data(double rate, uint8_t ber_scan_mode,
 			 */
 			Exy = ((margins[stop_n - 1] * lbers[stop_n - 1] +
 			       margins[first_non_clipped_errcnt_idx] *
-			       lbers[first_non_clipped_errcnt_idx]) / 2.0);
-			Eyy = ((lbers[stop_n - 1] * lbers[stop_n - 1] +
-			       lbers[first_non_clipped_errcnt_idx] *
 			       lbers[first_non_clipped_errcnt_idx]) / 2.0);
 			Exx = ((margins[stop_n - 1] * margins[stop_n - 1] +
 			       margins[first_non_clipped_errcnt_idx] *
@@ -520,7 +512,6 @@ static double ber_extrapolate_data(double rate, uint8_t ber_scan_mode,
 			 * artificial and the single measured point
 			 */
 			Exy = (artificial_margin * artificial_lber) / 2.0;
-			Eyy = (artificial_lber * artificial_lber) / 2.0;
 			Exx = (artificial_margin * artificial_margin) / 2.0;
 			Ey  = (artificial_lber) / 2.0;
 			Ex  = (artificial_margin) / 2.0;
@@ -530,7 +521,6 @@ static double ber_extrapolate_data(double rate, uint8_t ber_scan_mode,
 					continue;
 
 				Exy += (margins[idx] * lbers[idx] / 2.0);
-				Eyy += (lbers[idx] * lbers[idx] / 2.0);
 				Exx += (margins[idx] * margins[idx] / 2.0);
 				Ey  += (lbers[idx] / 2.0);
 				Ex  += (margins[idx] / 2.0);
