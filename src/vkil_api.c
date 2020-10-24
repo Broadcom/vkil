@@ -73,9 +73,7 @@ static int fail_write(const int error, const void *ilctx)
 	 * component exits, it is observed that other threads do not seem
 	 * to know, so we need to do some special handling here.
 	 */
-	VKIL_LOG(VK_LOG_ERROR,
-		 "Failure on writing message in ilctx %p - %s(%d)\n",
-		 ilctx, strerror(-error), error);
+	VKIL_ERR(error, "in ilctx %p", ilctx);
 	if ((error == -EAGAIN) || (error == -EPERM))
 		kill(getpid(), SIGINT);
 
@@ -93,10 +91,13 @@ static int fail_read(const int error, const void *ilctx)
 {
 	if ((error == -ENOMSG) || (error == -EAGAIN))
 		return -EAGAIN; /* request the host to try again */
+	else if (error == -ETIMEDOUT)
+		VKIL_LOG(VK_LOG_WARNING,
+			 "timed out on reading message in ilctx %p",
+			 ilctx);
 	else if (error)
-		VKIL_LOG(error == -ETIMEDOUT ? VK_LOG_WARNING : VK_LOG_ERROR,
-			 "Failure %s (%d) on reading message in ilctx %p",
-			 strerror(-error), error, ilctx);
+		VKIL_ERR(error, "in ilctx %p", ilctx);
+
 	return error;
 }
 

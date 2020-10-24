@@ -157,8 +157,7 @@ int32_t vkil_get_msg_id(vkil_devctx *devctx)
 	return i;
 
 fail:
-	VKIL_LOG(VK_LOG_ERROR, "error %s(%d) in devctx %p",
-		 strerror(ret), ret, devctx);
+	VKIL_ERR(ret, "in devctx %p", devctx);
 	return -ret; /* we always return negative error code if error */
 }
 
@@ -180,7 +179,7 @@ static int32_t vkil_deinit_msglist(vkil_devctx *devctx)
 	return 0;
 
 fail:
-	VKIL_LOG(VK_LOG_ERROR, "failure %s(%d)", strerror(ret), ret);
+	VKIL_ERR(ret, "");
 	return -EPERM;
 }
 
@@ -207,7 +206,7 @@ static int32_t vkil_init_msglist(vkil_devctx *devctx)
 
 fail:
 	vkil_deinit_msglist(devctx);
-	VKIL_LOG(VK_LOG_ERROR, "failure %s(%d)", strerror(abs(ret)), ret);
+	VKIL_ERR(ret, "");
 	return -abs(ret);
 }
 
@@ -220,7 +219,7 @@ fail:
  */
 static ssize_t vkil_wait_probe_msg(int fd,
 				   vk2host_msg *msg,
-				   const uint32_t wait_x)
+				   const int32_t wait_x)
 {
 	int32_t ret, nbytes, i = 0;
 	int32_t infinite_wait = (wait_x && (!VKIL_TIMEOUT_MS)) ? 1 : 0;
@@ -325,7 +324,7 @@ static int32_t cmp_function(const void *data, const void *data_ref)
  */
 static int32_t retrieve_message(vkil_node **pvk2host_ll, vk2host_msg *message)
 {
-	int msglen;
+	size_t msglen;
 	int32_t ret = 0;
 	vk2host_msg *msg;
 	vkil_node *node = NULL;
@@ -368,9 +367,13 @@ static int32_t retrieve_message(vkil_node **pvk2host_ll, vk2host_msg *message)
 	}
 
 	if (message->hw_status == VK_STATE_ERROR) {
-		VKIL_LOG(VK_LOG_DEBUG, "VK_STATE_ERROR => %s",
-			 (!message->arg) ?
-			 "generic error" : strerror(-(message->arg)));
+		/* memcpy to avoid undefined behavior involved by cast */
+		if (message->arg)
+			memcpy(&ret, &message->arg, sizeof(ret));
+		else
+			/* default error to prevent to log success */
+			ret = -EADV;
+		VKIL_ERR(ret, "VK_STATE_ERROR");
 		VKIL_LOG_VK2HOST_MSG(VK_LOG_DEBUG, message);
 		ret = -EADV;
 	}
@@ -500,8 +503,7 @@ int32_t vkil_read(vkil_devctx * const devctx, vk2host_msg * const msg,
 	 */
 	retm = pthread_mutex_lock(&devctx->mwx);
 	if (retm) {
-		VKIL_LOG(VK_LOG_ERROR, "mutex lock error %s(%d) in devctx %p",
-			 strerror(retm), retm, devctx);
+		VKIL_ERR(retm, "mutex lock error in devctx %p", devctx);
 		return -retm; /* force negative error */
 	}
 
@@ -516,9 +518,8 @@ int32_t vkil_read(vkil_devctx * const devctx, vk2host_msg * const msg,
 		retm = pthread_mutex_unlock(&(devctx->mwx));
 		if (retm) {
 			/* mutex error takes precedence on other error */
-			VKIL_LOG(VK_LOG_ERROR,
-				 "mutex unlock error %s(%d) in devctx %p",
-				 strerror(retm), retm, devctx);
+			VKIL_ERR(retm,
+				 "mutex unlock error in devctx %p", devctx);
 			ret = -retm;
 		}
 		return ret;
@@ -539,8 +540,7 @@ out:
 	retm = pthread_mutex_unlock(&devctx->mwx);
 	if (retm) {
 		/* mutex error takes precedence on other error */
-		VKIL_LOG(VK_LOG_ERROR, "mutex unlock error %s(%d) in devctx %p",
-			 strerror(retm), retm, devctx);
+		VKIL_ERR(retm, "mutex unlock error in devctx %p", devctx);
 		ret = -retm;
 	}
 	return ret;
@@ -658,7 +658,6 @@ int32_t vkil_init_dev(void **handle)
 
 fail:
 	vkil_deinit_dev(handle);
-	VKIL_LOG(VK_LOG_ERROR, "device initialization failure %s(%d)",
-		 strerror(-ret), ret);
+	VKIL_ERR(ret, "device initialization failure");
 	return ret;
 }

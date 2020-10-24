@@ -9,12 +9,57 @@
  */
 
 #include <errno.h>
+#include <stdarg.h>
 #include <unistd.h>
 #include "vkil_backend.h"
 #include "vkil_internal.h"
 #include "vkil_utils.h"
 
 #define VKSIM_ALIGN 16 /**< memory  is allocated on 16 bytes boundary */
+
+/*
+ * this code use strerr_r in its 2011 posix implementation
+ * for glibc 2.13 or higher
+ */
+#ifdef _GNU_SOURCE
+static_assert(0, "_GNU_SOURCE need to be undefined");
+#endif
+
+static_assert(_POSIX_C_SOURCE >= 200112,
+	      "POSIX.1-2001 or greater base specification required");
+static_assert(((__GLIBC__ == 2) && (__GLIBC_MINOR__ >= 13)) || (__GLIBC__ > 2),
+	      "glibc version need to be more recent than 2.13");
+
+/**
+ * log error message, with verbose error coe
+ * @param prefix message prefix (typically caller)
+ * @param log_mod log mod
+ * @param err  error code
+ * @param extra information message
+ * @param optional extra arguments
+ * @return none
+ */
+void vkil_err(const char *prefix, vk_log_mod log_mod, const int32_t err, const char *fmt, ...)
+{
+	static const size_t max_len = 255;
+
+	va_list args;
+	char buf[max_len + 1]; /* max_len + "/0" characters */
+	size_t  len;
+	int ret = strerror_r(abs(err), buf, max_len);
+	char *str = buf;
+
+	if (ret != EINVAL) {
+		len = max_len - strlen(buf); /* 0 <= len <= max_len */
+		str = strncat(buf, "(%d) ", len);
+	}
+
+	len = max_len - strlen(str); /* 0 <= len <= max_len */
+	str = strncat(str, fmt, len);
+	va_start(args, fmt);
+	vk_log(prefix, log_mod, LOG_TYPE_INT, VK_LOG_ERROR, str, err, args);
+	va_end(args);
+}
 
 /**
  * alloc memory
