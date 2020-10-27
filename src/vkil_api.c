@@ -434,6 +434,9 @@ static int32_t vkil_init_com(void *handle)
 		 */
 		memcpy(msg2vk.args, &ilctx->context_essential,
 			sizeof(vkil_context_essential));
+	} else {
+		/* zero out unused as driver needs to intercept */
+		memset(msg2vk.args, 0, sizeof(msg2vk.args));
 	}
 
 	ret = vkil_write((void *)ilctx->devctx, &msg2vk);
