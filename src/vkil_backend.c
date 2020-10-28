@@ -16,7 +16,6 @@
  * the driver read message queue act as a FIFO, but the host need to read
  * messages in "random" order.
  */
-
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -29,7 +28,6 @@
 #ifdef VKDRV_USERMODEL
 #include "../drv_model/vkdrv_access.h"
 #endif
-
 #define BIG_MSG_SIZE_INC   2
 /**
  * we should wait long enough to allow for non real time transcoding scheme
@@ -226,21 +224,19 @@ static ssize_t vkil_wait_probe_msg(int fd,
 
 	VK_ASSERT(msg);
 	VK_ASSERT(msg->size < UINT8_MAX);
+	VK_ASSERT(__errno_location());
 
 	nbytes = sizeof(*msg) * (msg->size + 1);
 
 	do {
+		errno = 0;  /* required by CERT-C:2012 rule ERR30-C */
 		ret = read(fd, msg, nbytes);
+		if ((ret < 0) && (errno == EMSGSIZE))
+			return -EMSGSIZE;
+
 		if (ret > 0)
 			return ret;
 
-#ifdef VKDRV_USERMODEL
-		/* in sw simulation only we don't use system errno */
-		if (ret == -EMSGSIZE)
-#else
-		if ((ret < 0) && (errno == EMSGSIZE))
-#endif
-			return -EMSGSIZE;
 		if (!wait_x)
 			return -ENOMSG;
 		usleep(1000 * VKIL_PROBE_INTERVAL_MS);
@@ -262,6 +258,9 @@ int32_t vkil_write(vkil_devctx * const devctx, host2vk_msg * const msg)
 {
 	ssize_t ret;
 
+	VK_ASSERT(__errno_location());
+
+	errno = 0; /* statement to comply with CERT-C:2012 rule ERR30-C */
 	ret = write(devctx->fd, msg, sizeof(*msg) * (msg->size + 1));
 	/* on error, driver returns -1 and the error is stored in errno */
 	if (ret < 0)
@@ -396,7 +395,7 @@ static int32_t vkil_flush_read(vkil_devctx *devctx,
 	int32_t ret, q_id;
 	vk2host_msg *msg;
 	vkil_node *node;
-	int32_t size;
+	uint8_t size;
 
 	/*
 	 * this function need to be called with

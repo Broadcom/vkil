@@ -3,6 +3,7 @@
  * Copyright 2018-2020 Broadcom.
  */
 
+#include <assert.h>
 #include <dlfcn.h>
 #include <errno.h>
 #include <stdio.h>
@@ -61,5 +62,15 @@ ssize_t vkdrv_write(int fd, const void *buf, size_t nbytes)
 
 ssize_t vkdrv_read(int fd, void *buf, size_t nbytes)
 {
-	return vkdrv.vkdrv_read(fd, buf, nbytes);
+	ssize_t ret = vkdrv.vkdrv_read(fd, buf, nbytes);
+	int *ptr = __errno_location();
+
+	assert(ptr);
+
+	if (ret < 0)
+		*ptr = -ret;
+	else
+		*ptr = 0;
+
+	return ret;
 }
