@@ -695,6 +695,7 @@ int main(int argc, char *argv[])
 
 	buffer_metadata.data = malloc(data);
 	buffer_metadata.prefix.type = VKIL_BUF_META_DATA;
+	buffer_metadata.prefix.ref = 1;
 	buffer_metadata.size = data;
 
 	ret = vkilapi->transfer_buffer(
