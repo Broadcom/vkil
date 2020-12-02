@@ -638,6 +638,12 @@ typedef struct _vk_scl_cfg {
 	vk_qpmap_cfg qpmap_cfg; /**< qp maps */
 	vk_size  output_size[VK_SCL_MAX_OUTPUTS]; /**< output sizes in pels */
 	uint32_t custom_filter_handle;
+	/**
+	 * internal output mask, where bit(n) set to one specify the output n
+	 * is not means be outputted, but just use as an intermediate cascade
+	 * filter stage
+	 */
+	uint32_t internal_stages;
 } vk_scl_cfg;
 
 /**
