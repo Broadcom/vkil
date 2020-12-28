@@ -118,6 +118,16 @@ typedef enum vk_status {
 	VK_STATE_ERROR = 0xff,
 }  vk_status, vkil_status_t;
 
+/**
+ * counter clockwise surface rotation
+ */
+enum vk_rotation {
+	VK_ROTATION_0 = 0,
+	VK_ROTATION_90 = 90,
+	VK_ROTATION_180 = 180,
+	VK_ROTATION_270 = 270,
+};
+
 enum vk_mve_reconstruct_mode {
 	MVE_RECONS_OFF = 0,
 	MVE_RECONS_REF_FRAMES_ONLY,
@@ -743,6 +753,7 @@ typedef enum vk_parameter {
 
 	VK_PARAM_VIDEO_SIZE             = 32, /**< 0 means undefined */
 	VK_PARAM_VIDEO_FORMAT           = 33, /**< 0 means undefined */
+	VK_PARAM_VIDEO_ROTATION         = 34,
 	VK_PARAM_VIDEO_ENC_CONFIG       = 48,
 	VK_PARAM_VIDEO_ENC_GOP_TYPE     = 49,
 	VK_PARAM_VIDEO_DEC_FPS          = 50,
