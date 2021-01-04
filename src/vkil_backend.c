@@ -507,21 +507,29 @@ static int32_t vkil_flush_read(vkil_devctx *devctx,
 		} while (ret == -EMSGSIZE);
 
 		if (ret >= 0) {
-			node = vkil_ll_append(&devctx->vk2host[q_id], msg);
+			if (msg->queue_id >= VKIL_MSG_Q_MAX) {
+				VKIL_LOG(VK_LOG_ERROR,
+					 "Received message with q_id %d > MAX %d in devctx %p",
+					 msg->queue_id, VKIL_MSG_Q_MAX, devctx);
+				ret = -EINVAL;
+				goto fail;
+			}
+			node = vkil_ll_append(&devctx->vk2host[msg->queue_id], msg);
 			if (!node) {
 				ret = -ENOMEM;
 				goto fail;
 			}
 			/*
-			 * if no message id specified or message id specified
-			 * has been retrieved no need to wait any longer
+			 * if no message id specified or message is unpaired,
+			 * compare based on function id
 			 */
-			if (message->msg_id == msg->msg_id)
-				wait = 0;
-			else if (!message->msg_id) {
+			if (!message->msg_id ||
+			    message->msg_id == VK_UNPAIRED_MSG_ID) {
 				int32_t still_wait = cmp_function(msg, message);
 
 				wait = still_wait ? wait : 0;
+			} else if (message->msg_id == msg->msg_id) {
+				wait = 0;
 			}
 		} else
 			vkil_free((void **)&msg);

@@ -772,6 +772,10 @@ typedef enum vk_parameter {
 	VK_PARAM_POOL_ALLOC_BUFFER       = 69,
 	/* Get some statistics about a given pool */
 	VK_PARAM_POOL_STATS              = 70,
+	/*
+	 * Set the queue_id used for PROC_BUF_RESP messages to host.
+	 */
+	VK_PARAM_PROC_BUF_DONE_QID  = 71,
 
 	/* scaler configuration parameters */
 	VK_PARAM_SCALER_FILTER          = 80, /**< 0 means undefined */

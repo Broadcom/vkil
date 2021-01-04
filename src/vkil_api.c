@@ -223,12 +223,27 @@ static int32_t buffer_ref(vkil_buffer *buffer, const int ref_delta)
  * @param[in] user_data user data to be used
  */
 static int32_t set_buffer(void *handle, const vk2host_msg *vk2host,
-			  const uint64_t user_data, const int ref_delta)
+			  const int ref_delta)
 {
 	vkil_buffer *buffer = handle;
+	/*
+	 * If msg size > 0, subtract 1 to obtain the size of the message
+	 * without the user_data_tag. This value is used below to
+	 * calculate numbers of buffers.
+	 */
+	uint32_t msg_size_wo_udt = vk2host->size ? vk2host->size - 1 : 0;
+	/*
+	 * If msg size == 0, then user_data_tag field is not valid. This
+	 * only happens when vk2host->arg contains an error code, i.e. there
+	 * is no returned buffer. 0 is used as a placeholder.
+	 */
+	uint64_t user_data = 0;
 
-	if (!vk2host->size && (buffer->type != VKIL_BUF_AG_BUFFERS)) {
-		/* a singe handle is returned */
+	if (vk2host->size)
+		user_data = vk2host_getudt(vk2host);
+
+	if (!msg_size_wo_udt && (buffer->type != VKIL_BUF_AG_BUFFERS)) {
+		/* a single handle is returned */
 		buffer->handle = vk2host->arg;
 		buffer->user_data = user_data;
 		buffer->ref += ref_delta;
@@ -241,15 +256,17 @@ static int32_t set_buffer(void *handle, const vk2host_msg *vk2host,
 		/*
 		 * a more complete answer is returned, the default
 		 * is a collection of handles, so that supposes that
-		 * the buffer is a n aggregation of buffers
+		 * the buffer is a n aggregation of buffers.
+		 * Even if msg_size is zero (e.g. HW error so no udt),
+		 * we still want to extract one handle (e.g. the scaler
+		 * acts upon the error code).
 		 */
+		nhandles = 1 + (msg_size_wo_udt * 4);
 
-		if (1 + (vk2host->size * 4) > VKIL_MAX_AGGREGATED_BUFFERS)
+		if (nhandles > VKIL_MAX_AGGREGATED_BUFFERS) {
+			VKIL_LOG(VK_LOG_ERROR, "Message size %d is too big!\n", vk2host->size);
 			goto fail;
-
-		/* max number of returned handle */
-		nhandles = MIN(1 + (vk2host->size * 4),
-			       VKIL_MAX_AGGREGATED_BUFFERS);
+		}
 
 		for (i = 0; i < nhandles ; i++) {
 			/*
@@ -308,17 +325,21 @@ static int32_t preset_host2vk_msg(host2vk_msg *msg2vk, const void *handle,
 	VK_ASSERT(handle);
 	VK_ASSERT(msg2vk);
 
-	msg_id = vkil_get_msg_id(ilctx->devctx);
-	if (msg_id < 0) {
-		ret = -ENOBUFS;
-		/* unable to get an id, too much message in transit */
-		goto fail;
-	}
+	if (fid != VK_FID_PROC_BUF) {
+		msg_id = vkil_get_msg_id(ilctx->devctx);
+		if (msg_id < 0) {
+			ret = -ENOBUFS;
+			/* unable to get an id, too much message in transit */
+			goto fail;
+		}
 
-	ret = vkil_set_msg_user_data(ilctx->devctx, msg_id, user_data);
-	if (ret < 0)
-		/* unable to set the user data */
-		goto fail;
+		ret = vkil_set_msg_user_data(ilctx->devctx, msg_id, user_data);
+		if (ret < 0)
+			/* unable to set the user data */
+			goto fail;
+	} else {
+		msg_id = VK_UNPAIRED_MSG_ID;
+	}
 
 	msg2vk->msg_id = msg_id;
 	msg2vk->queue_id = ilctx->context_essential.queue_id;
@@ -1229,7 +1250,6 @@ int32_t vkil_process_buffer(void *component_handle,
 	vkil_context_internal *ilpriv;
 	vkil_buffer *buffer;
 	int32_t ret1 = 0, ret = 0;
-	int32_t msg_id = 0;
 	uint32_t handles[VKIL_MAX_AGGREGATED_BUFFERS];
 	uint32_t nbuf, msg_size;
 
@@ -1257,7 +1277,8 @@ int32_t vkil_process_buffer(void *component_handle,
 
 		get_buffer(buffer_handle, &nbuf, handles);
 		/* handles[0] will always be primary buffer(packet/frame) */
-		msg_size = MSG_SIZE((nbuf - 1) * sizeof(uint32_t));
+		msg_size = MSG_SIZE((nbuf - 1) * sizeof(uint32_t)) +
+			   MSG_SIZE(sizeof(buffer->user_data));
 
 		ret = preset_host2vk_msg(message, component_handle,
 					 VK_FID_PROC_BUF,
@@ -1272,16 +1293,12 @@ int32_t vkil_process_buffer(void *component_handle,
 		/* complete message setting */
 		VKMSG_CMD(message) = cmd & VK_CMD_MASK;
 		message->size = msg_size;
+		host2vk_setudt(message, buffer->user_data);
 		memcpy(&VKMSG_CMD_ARG(message), handles, nbuf * sizeof(uint32_t));
 
 		ret = vkil_write((void *)ilctx->devctx, message);
-		if (VKDRV_WR_ERR(ret)) {
-			vkil_return_msg_id(ilctx->devctx,
-					   message->msg_id);
+		if (VKDRV_WR_ERR(ret))
 			goto fail_write;
-		}
-
-		msg_id = message->msg_id;
 
 		ret = buffer_ref(buffer, -1);
 		if (ret)
@@ -1293,10 +1310,9 @@ int32_t vkil_process_buffer(void *component_handle,
 		vk2host_msg response[VKIL_RET_MSG_MAX_SIZE];
 		int32_t wait = (cmd & VK_CMD_OPT_BLOCKING) ?
 				VKIL_READ_TIMEOUT : 0;
-		uint64_t user_data;
 
 		response->function_id = VK_FID_PROC_BUF_DONE;
-		response->msg_id      = msg_id;
+		response->msg_id      = VK_UNPAIRED_MSG_ID;
 		response->queue_id    = ilctx->context_essential.queue_id;
 		response->context_id  = ilctx->context_essential.handle;
 		response->size        = VKIL_RET_MSG_MAX_SIZE - 1;
@@ -1306,13 +1322,9 @@ int32_t vkil_process_buffer(void *component_handle,
 
 		ret1 = ret;
 
-		ret = vkil_get_msg_user_data(ilctx->devctx, response->msg_id,
-					      &user_data);
-		/* we return the message no matter the error status above */
-		vkil_return_msg_id(ilctx->devctx, response->msg_id);
 		if (ret)
 			goto fail_read;
-		ret = set_buffer(buffer, response, user_data, 1);
+		ret = set_buffer(buffer, response, 1);
 		if (ret)
 			goto fail_read;
 	}

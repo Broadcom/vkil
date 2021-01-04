@@ -20,6 +20,9 @@
 /** Bit width of the msg_id field in the host2vk_msg and vk2host_msg structs */
 #define MSG_ID_BIT_WIDTH 12
 
+/** msg_id used for all unpaired messages */
+#define VK_UNPAIRED_MSG_ID 0
+
 /**
  * message structure from host to Valkyrie card
  */
@@ -76,6 +79,30 @@ static inline void *host2vk_getdatap(host2vk_msg *msg)
 }
 
 /**
+ * Set value of user_data_tag field within msg to udt.
+ * The user_data_tag is stored in the first 64 bits
+ * of the final 4 words of the message.
+ */
+static inline void host2vk_setudt(host2vk_msg *msg, uint64_t udt)
+{
+	memcpy(msg + msg->size, &udt, sizeof(udt));
+}
+
+/**
+ * Get value of user_data_tag field within msg, assuming msg
+ * contains a user_data_tag.
+ * The user_data_tag is stored in the first 64 bits
+ * of the final 4 words of the message.
+ */
+static inline uint64_t host2vk_getudt(const host2vk_msg *msg)
+{
+	uint64_t udt;
+
+	memcpy(&udt, msg + msg->size, sizeof(udt));
+	return udt;
+}
+
+/**
  * message structure from Valkyrie card to host
  */
 typedef struct vk2host_msg {
@@ -114,6 +141,30 @@ static inline uint32_t *vk2host_getargp(vk2host_msg *msg)
 }
 
 /**
+ * Set value of user_data_tag field within msg to udt.
+ * The user_data_tag is stored in the first 64 bits
+ * of the final 4 words of the message.
+ */
+static inline void vk2host_setudt(vk2host_msg *msg, uint64_t udt)
+{
+	memcpy(msg + msg->size, &udt, sizeof(udt));
+}
+
+/**
+ * Get value of user_data_tag field within msg, assuming msg
+ * contains a user_data_tag.
+ * The user_data_tag is stored in the first 64 bits
+ * of the final 4 words of the message.
+ */
+static inline uint64_t vk2host_getudt(const vk2host_msg *msg)
+{
+	uint64_t udt;
+
+	memcpy(&udt, msg + msg->size, sizeof(udt));
+	return udt;
+}
+
+/**
  * enum type for the function id
  */
 typedef enum vk_function_id {
@@ -121,41 +172,26 @@ typedef enum vk_function_id {
 	VK_FID_UNDEF,
 
 	/* function carried by host2vk_msg */
-
-	/*
-	 * un-mutable session...
-	 * Currently, there are 2 FIDs exposed and used in the driver
-	 * which makes them non-mutable.
-	 *     VK_FID_TRANS_BUF must be 5,
-	 *     VK_FID_SHUTDOWN must be 8
-	 * These are put at the beginning here.  The unused (1-4,
-	 * 6-7) will be reserved for future unmutables.
-	 */
 	VK_FID_TRANS_BUF = 5, /**< msg[1] = host buffer desc */
 	VK_FID_SHUTDOWN  = 8, /**< shut down command */
-	/* end of un-mutables */
-
-	/**
-	 * If the context is set to VK_NEW_CTX,
-	 * a new context is created and handle returned by init_done
-	 */
-	VK_FID_INIT,
-	VK_FID_DEINIT,
-	VK_FID_SET_PARAM, /**< field.idx = field, field.val = set val */
-	VK_FID_GET_PARAM, /**< field.idx = field, field.val = na      */
-	VK_FID_PROC_BUF,  /**< cmd.val = cmd, cmd.arg = buffer handle */
-	VK_FID_XREF_BUF,  /**< ref.delta = delta, ref.arg = buffer handle */
-	VK_FID_PRIVATE,   /**< used for internal purpose                 */
+	VK_FID_INIT      = 9,
+	VK_FID_DEINIT    = 10,
+	VK_FID_SET_PARAM = 11, /**< field.idx = field, field.val = set val */
+	VK_FID_GET_PARAM = 12, /**< field.idx = field, field.val = na      */
+	VK_FID_PROC_BUF  = 13,  /**< cmd.val = cmd, cmd.arg = buffer handle */
+	VK_FID_XREF_BUF  = 14,  /**< ref.delta = delta, ref.arg = buffer handle */
+	VK_FID_PRIVATE   = 15,   /**< used for internal purpose                 */
 
 	/* function carried by vk2host_msg */
-	VK_FID_INIT_DONE,
-	VK_FID_DEINIT_DONE,
-	VK_FID_SET_PARAM_DONE,
-	VK_FID_GET_PARAM_DONE, /**< args[0]=value */
-	VK_FID_TRANS_BUF_DONE, /**< if upload: args[0]=buffer handle*/
-	VK_FID_PROC_BUF_DONE,  /**< args[0]=result buffer handle*/
-	VK_FID_XREF_BUF_DONE,
-	VK_FID_PRIVATE_DONE,   /**< used for internal purpose          */
+	VK_FID_INIT_DONE      = 16,
+	VK_FID_DEINIT_DONE    = 17,
+	VK_FID_SET_PARAM_DONE = 18,
+	VK_FID_GET_PARAM_DONE = 19, /**< args[0]=value */
+	VK_FID_TRANS_BUF_DONE = 20, /**< if upload: args[0]=buffer handle*/
+	VK_FID_PROC_BUF_DONE  = 21,  /**< args[0]=result buffer handle*/
+	VK_FID_XREF_BUF_DONE  = 22,
+	VK_FID_PRIVATE_DONE   = 23,   /**< used for internal purpose          */
+
 	VK_FID_MAX
 } vk_function_id, vk_function_id_t;
 
