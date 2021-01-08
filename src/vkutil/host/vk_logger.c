@@ -33,6 +33,7 @@ static logger_ctrl vk_log_ctrl[VK_LOG_MOD_MAX] = {
 	[VK_LOG_MOD_DMA] = { VK_LOG_DEF_LEVEL, "dma" },
 	[VK_LOG_MOD_SCL] = { VK_LOG_DEF_LEVEL, "scl" },
 	[VK_LOG_MOD_MPS] = { VK_LOG_DEF_LEVEL, "mps" },
+	[VK_LOG_MOD_TRC] = { VK_LOG_DEF_LEVEL, "trc" },
 	[VK_LOG_MOD_DRV] = { VK_LOG_DEF_LEVEL, "drv" },
 	[VK_LOG_MOD_SYS] = { VK_LOG_DEF_LEVEL, "sys" },
 	[VK_LOG_MOD_MVE] = { VK_LOG_DEF_LEVEL, "mve" },

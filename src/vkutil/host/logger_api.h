@@ -66,6 +66,7 @@ typedef enum _log_type {
 	LOG_TYPE_INT      = 0,
 	LOG_TYPE_ULL      = 1,
 	LOG_TYPE_UL       = 2,
+	LOG_TYPE_STR      = 3,
 } log_type;
 
 /**
