@@ -212,9 +212,18 @@ fail:
 static int64_t vkil_get_time_us(void)
 {
 	struct timespec time_i;
+	int64_t sec;
+	int64_t res;
+	int overflow;
 
 	clock_gettime(CLOCK_MONOTONIC, &time_i);
-	return time_i.tv_sec * 1000000ull + time_i.tv_nsec / 1000ull;
+	/* CERT-C INT32-C compliance */
+	overflow = __builtin_smull_overflow(time_i.tv_sec, 1000000, &sec);
+	VK_ASSERT(!overflow);
+	/* CERT-C INT32-C compliance */
+	overflow = __builtin_saddl_overflow(sec, time_i.tv_nsec / 1000, &res);
+	VK_ASSERT(!overflow);
+	return res;
 }
 
 /**
@@ -229,9 +238,9 @@ static ssize_t vkil_wait_probe_msg(int fd,
 				   const int32_t wait_x)
 {
 	int32_t ret, nbytes;
-	int32_t infinite_wait = (wait_x && (!VKIL_TIMEOUT_MS)) ? 1 : 0;
 	struct pollfd fds;
-	int64_t start_us, time_us, end_us;
+	int64_t start_us, time_us, end_us, wait;
+	int overflow;
 
 	VK_ASSERT(msg);
 	VK_ASSERT(msg->size < UINT8_MAX);
@@ -245,18 +254,32 @@ static ssize_t vkil_wait_probe_msg(int fd,
 
 	start_us = vkil_get_time_us();
 	time_us = start_us;
-	end_us = start_us + wait_x * VKIL_TIMEOUT_MS * 1000ull;
+
+	/* CERT-C INT32-C compliance */
+	overflow = __builtin_smull_overflow(wait_x, VKIL_TIMEOUT_MS * 1000, &wait);
+	VK_ASSERT(!overflow);
+
+	/* CERT-C INT32-C compliance */
+	overflow = __builtin_saddl_overflow(start_us, wait, &end_us);
+	VK_ASSERT(!overflow);
 
 	while (1) {
-		if (infinite_wait) {
-			ret = poll(&fds, 1, 0);
-		} else if (wait_x) {
-			int time_ms;
+		if (wait_x) {
+#if VKIL_TIMEOUT_MS
+			int64_t del_time_us;
+			int64_t time_ms;
 
-			time_ms = (end_us - time_us) / 1000;
+			overflow = __builtin_ssubl_overflow(end_us, time_us, &del_time_us);
+			VK_ASSERT(!overflow);
+
+			time_ms = del_time_us / 1000;
 			if (time_ms <= 0)
 				break;
 			ret = poll(&fds, 1, time_ms);
+#else
+			/* Infinite wait */
+			ret = poll(&fds, 1, 0);
+#endif
 		} else {
 			ret = 1;
 		}
@@ -264,13 +287,6 @@ static ssize_t vkil_wait_probe_msg(int fd,
 		if (ret) {
 			ret = read(fd, msg, nbytes);
 			if (ret > 0) {
-#if defined(PROBE_TIME_DUMP)
-				int elapsed_us = vkil_get_time_us() - start_us;
-
-				VKIL_LOG(VK_LOG_INFO,
-					 "i=%d Poll %d us - rd %d",
-					 i, elapsed_us, ret);
-#endif
 				/*
 				 * If ret < nbytes, we have only partially read the message
 				 * and there is no way for calling code to recover.

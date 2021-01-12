@@ -29,6 +29,8 @@ static_assert(_POSIX_C_SOURCE >= 200112,
 	      "POSIX.1-2001 or greater base specification required");
 static_assert(((__GLIBC__ == 2) && (__GLIBC_MINOR__ >= 13)) || (__GLIBC__ > 2),
 	      "glibc version need to be more recent than 2.13");
+static_assert((__GNUC__ > 5) || ((__GNUC__ == 5) && __GNUC_MINOR__ >= 1),
+	      "gcc version needs to be at least 5.1");
 
 /**
  * log error message, with verbose error coe
