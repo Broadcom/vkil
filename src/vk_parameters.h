@@ -798,6 +798,51 @@ typedef enum vk_parameter {
 	VK_PARAM_MAX = 0x0fff,
 } vk_parameter, vkil_parameter_t;
 
+/**
+ * @brief return the size in bytes of the structure associated to a
+ * vk_parameter
+ *
+ * @param  field the field to evaluate
+ * @return size of the structure associated to field
+ */
+static inline int32_t vk_param_struct_size(const vk_parameter field)
+{
+	int32_t sz;
+
+	switch (field) {
+	case VK_PARAM_PORT:
+		sz = sizeof(vk_port);
+		break;
+	case VK_PARAM_VIDEO_ENC_CONFIG:
+		sz = sizeof(vk_enc_cfg);
+		break;
+	case VK_PARAM_VIDEO_SCL_CONFIG:
+		sz = sizeof(vk_scl_cfg);
+		break;
+	case VK_PARAM_FLASH_IMAGE_CONFIG:
+		sz = sizeof(vk_flash_image_cfg);
+		break;
+	case VK_PARAM_POOL_SIZE_CONFIG:
+		sz =  sizeof(vk_pool_size_cfg);
+		break;
+	case VK_PARAM_POOL_ALLOC_BUFFER:
+		sz = sizeof(vk_pool_alloc_buffer);
+		break;
+	case VK_PARAM_ERROR:
+		sz = sizeof(vk_error);
+		break;
+	case VK_PARAM_WARNING:
+		sz = sizeof(vk_warning);
+		break;
+	case VK_PARAM_BUFFER_HEADER:
+		sz = sizeof(vk_header_cfg);
+		break;
+	default:
+		sz = sizeof(int32_t);
+	}
+	return sz;
+}
+
 /* max number of warnings stored, must be a power of 2 */
 #define VK_WARNINGS_BUF_MAX  4
 

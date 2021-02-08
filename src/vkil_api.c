@@ -606,30 +606,11 @@ fail:
  * vkil_parameter_t
  *
  * @param  field the field to evaluate
- * @return size of the structure aasociated to field
+ * @return size of the structure associated to field
  */
 static int32_t vkil_get_struct_size(const vk_parameter field)
 {
-	if (field == VK_PARAM_PORT)
-		return sizeof(vk_port);
-	else if (field == VK_PARAM_VIDEO_ENC_CONFIG)
-		return sizeof(vk_enc_cfg);
-	else if (field == VK_PARAM_VIDEO_SCL_CONFIG)
-		return sizeof(vk_scl_cfg);
-	else if (field == VK_PARAM_FLASH_IMAGE_CONFIG)
-		return sizeof(vk_flash_image_cfg);
-	else if (field == VK_PARAM_POOL_SIZE_CONFIG)
-		return sizeof(vk_pool_size_cfg);
-	else if (field == VK_PARAM_POOL_ALLOC_BUFFER)
-		return sizeof(vk_pool_alloc_buffer);
-	else if (field == VK_PARAM_ERROR)
-		return sizeof(vk_error);
-	else if (field == VK_PARAM_WARNING)
-		return sizeof(vk_warning);
-	else if (field == VK_PARAM_BUFFER_HEADER)
-		return sizeof(vk_header_cfg);
-	/* this is the default value when not structure is defined */
-	return sizeof(int32_t);
+	return vk_param_struct_size(field);
 }
 
 /**
