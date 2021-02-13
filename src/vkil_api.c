@@ -283,7 +283,6 @@ static int32_t set_buffer(void *handle, const vk2host_msg *vk2host,
 				 ag_buf->buffer[i],
 				 ((uint32_t *)&(vk2host->arg))[i]);
 
-			fflush(stdout);
 			if (!ag_buf->buffer[i] &&
 					((uint32_t *)&(vk2host->arg))[i])
 				goto fail;
@@ -319,21 +318,23 @@ static int32_t preset_host2vk_msg(host2vk_msg *msg2vk, const void *handle,
 				  const int64_t user_data)
 {
 	const vkil_context *ilctx = handle;
+	vkil_devctx *devctx;
 
 	int32_t ret, msg_id;
 
 	VK_ASSERT(handle);
 	VK_ASSERT(msg2vk);
 
+	devctx = ilctx->devctx;
 	if (fid != VK_FID_PROC_BUF) {
-		msg_id = vkil_get_msg_id(ilctx->devctx);
+		msg_id = vkil_get_msg_id(devctx);
 		if (msg_id < 0) {
 			ret = -ENOBUFS;
 			/* unable to get an id, too much message in transit */
 			goto fail;
 		}
 
-		ret = vkil_set_msg_user_data(ilctx->devctx, msg_id, user_data);
+		ret = vkil_set_msg_user_data(devctx, msg_id, user_data);
 		if (ret < 0)
 			/* unable to set the user data */
 			goto fail;
@@ -369,12 +370,15 @@ static int32_t vkil_deinit_com(void *handle)
 	vkil_context_internal *ilpriv;
 	host2vk_msg msg2vk;
 	vk2host_msg msg2host;
+	vkil_devctx *devctx;
 
 	VK_ASSERT(handle);
 
 	ilpriv = ilctx->priv_data;
 	VK_ASSERT(ilpriv);
 	VK_ASSERT(ilctx->devctx);
+
+	devctx = ilctx->devctx;
 
 	if (ilctx->context_essential.handle < VK_START_VALID_HANDLE) {
 		/* the call is allowed, but not necessarily expected */
@@ -388,9 +392,9 @@ static int32_t vkil_deinit_com(void *handle)
 	if (ret)
 		goto fail_write;
 
-	ret = vkil_write((void *)ilctx->devctx, &msg2vk);
+	ret = vkil_write(devctx, &msg2vk);
 	if (VKDRV_WR_ERR(ret)) {
-		vkil_return_msg_id(ilctx->devctx, msg2vk.msg_id);
+		vkil_return_msg_id(devctx, msg2vk.msg_id);
 		goto fail_write;
 	}
 
@@ -438,12 +442,16 @@ static int32_t vkil_init_com(void *handle)
 	vkil_context_internal *ilpriv;
 	host2vk_msg msg2vk;
 	vk2host_msg msg2host;
+	vkil_devctx *devctx;
 
 	VK_ASSERT(handle);
 
 	ilpriv = ilctx->priv_data;
+	devctx = ilctx->devctx;
 
 	VK_ASSERT(ilpriv);
+	VK_ASSERT(devctx);
+
 
 	ret = preset_host2vk_msg(&msg2vk, handle, VK_FID_INIT, 0);
 	if (ret)
@@ -461,9 +469,9 @@ static int32_t vkil_init_com(void *handle)
 		memset(msg2vk.args, 0, sizeof(msg2vk.args));
 	}
 
-	ret = vkil_write((void *)ilctx->devctx, &msg2vk);
+	ret = vkil_write(devctx, &msg2vk);
 	if (VKDRV_WR_ERR(ret)) {
-		vkil_return_msg_id(ilctx->devctx, msg2vk.msg_id);
+		vkil_return_msg_id(devctx, msg2vk.msg_id);
 		goto fail_write;
 	}
 
@@ -476,16 +484,16 @@ static int32_t vkil_init_com(void *handle)
 	 * visibility at vkil, but it is expected this take longer time than
 	 * usual so we don't abort at the first timeout
 	 */
-	ret = vkil_read((void *)ilctx->devctx, &msg2host, WAIT_INIT);
+	ret = vkil_read(devctx, &msg2host, WAIT_INIT);
 	if (VKDRV_RD_ERR(ret))
 		goto fail_read;
 
-	vkil_return_msg_id(ilctx->devctx, msg2host.msg_id);
+	vkil_return_msg_id(devctx, msg2host.msg_id);
 	if (msg2vk.context_id == VK_NEW_CTX)
 		ilctx->context_essential.handle = msg2host.context_id;
 
 	VKIL_LOG(VK_LOG_DEBUG, "ilctx=%p: card inited %p for context_id=0x%x",
-		 ilctx, ilctx->devctx, ilctx->context_essential.handle);
+		 ilctx, devctx, ilctx->context_essential.handle);
 	return ret;
 
 fail_write:
@@ -656,9 +664,10 @@ int32_t vkil_set_parameter(void *handle,
 	int32_t msg_size = field_size == sizeof(uint32_t) ?
 					0 : MSG_SIZE(field_size);
 	host2vk_msg message[msg_size + 1];
+	vkil_devctx *devctx;
 
 	VKIL_LOG(VK_LOG_DEBUG, "");
-	VK_ASSERT(handle); /* sanity check */
+	VK_ASSERT(ilctx); /* sanity check */
 
 	/* TODO: non blocking option not yet implemented */
 	VK_ASSERT(cmd & VK_CMD_OPT_BLOCKING);
@@ -670,12 +679,14 @@ int32_t vkil_set_parameter(void *handle,
 	message->size = msg_size;
 	VKMSG_FIELD(message) = field;
 
+	devctx = ilctx->devctx;
+
 	/* align  structure copy on 16 bytes boundary */
 	memcpy(msg_size ? host2vk_getdatap(message) : &VKMSG_FIELD_VAL(message),
 	       value, field_size);
-	ret = vkil_write((void *)ilctx->devctx, message);
+	ret = vkil_write(devctx, message);
 	if (VKDRV_WR_ERR(ret)) {
-		vkil_return_msg_id(ilctx->devctx, message->msg_id);
+		vkil_return_msg_id(devctx, message->msg_id);
 		goto fail_write;
 	}
 
@@ -687,12 +698,12 @@ int32_t vkil_set_parameter(void *handle,
 		response.queue_id    = ilctx->context_essential.queue_id;
 		response.context_id  = ilctx->context_essential.handle;
 		response.size        = 0;
-		ret = vkil_read((void *)ilctx->devctx, &response,
+		ret = vkil_read(devctx, &response,
 				VKIL_READ_TIMEOUT);
 		if (VKDRV_RD_ERR(ret))
 			goto fail_read;
 
-		vkil_return_msg_id(ilctx->devctx, response.msg_id);
+		vkil_return_msg_id(devctx, response.msg_id);
 	}
 	return ret;
 
@@ -725,9 +736,12 @@ int32_t vkil_get_parameter(void *handle,
 	int32_t msg_size = field_size == sizeof(uint32_t) ?
 					0 : MSG_SIZE(field_size);
 	host2vk_msg  message[msg_size + 1];
+	vkil_devctx *devctx;
 
 	VKIL_LOG(VK_LOG_DEBUG, "");
-	VK_ASSERT(handle); /* sanity check */
+	VK_ASSERT(ilctx); /* sanity check */
+
+	devctx = ilctx->devctx;
 
 	/* TODO: non blocking option not yet implemented */
 	VK_ASSERT(cmd & VK_CMD_OPT_BLOCKING);
@@ -741,9 +755,9 @@ int32_t vkil_get_parameter(void *handle,
 	memcpy(msg_size ? host2vk_getdatap(message) : &VKMSG_FIELD_VAL(message),
 	       value, field_size);
 
-	ret = vkil_write((void *)ilctx->devctx, message);
+	ret = vkil_write(devctx, message);
 	if (VKDRV_WR_ERR(ret)) {
-		vkil_return_msg_id(ilctx->devctx, message->msg_id);
+		vkil_return_msg_id(devctx, message->msg_id);
 		goto fail_write;
 	}
 
@@ -755,12 +769,11 @@ int32_t vkil_get_parameter(void *handle,
 		response->queue_id    = ilctx->context_essential.queue_id;
 		response->context_id  = ilctx->context_essential.handle;
 		response->size        = msg_size;
-		ret = vkil_read((void *)ilctx->devctx, response,
-				VKIL_READ_TIMEOUT);
+		ret = vkil_read(devctx, response, VKIL_READ_TIMEOUT);
 		if (VKDRV_RD_ERR(ret))
 			goto fail_read;
 
-		vkil_return_msg_id(ilctx->devctx, response->msg_id);
+		vkil_return_msg_id(devctx, response->msg_id);
 		memcpy(value,
 		       &((vk2host_getargp(response))[msg_size ? 1 : 0]),
 		       field_size);
@@ -803,13 +816,13 @@ static int32_t convert_vkil2vk_buffer_prefix(vk_buffer *dst,
  * @param[in]  il_packet    handle to a front hand packet structure
  * @return                  number of pointer to convey to the card
  */
-static int32_t get_vkil_nplanes(const void *il_buffer)
+static int32_t get_vkil_nplanes(const vkil_buffer *il_buffer)
 {
 	int32_t ret;
 
 	VK_ASSERT(il_buffer);
 
-	switch (((vkil_buffer *)il_buffer)->type) {
+	switch (il_buffer->type) {
 	case VKIL_BUF_PACKET:
 	case VKIL_BUF_META_DATA:
 		ret = 1;
@@ -1073,6 +1086,7 @@ static int32_t vkil_transfer_buffer2(void *component_handle,
 	uint8_t msg_size = MSG_SIZE(size);
 	host2vk_msg message[msg_size + 1];
 	int32_t ref_delta = 0;
+	vkil_devctx *devctx;
 	/*
 	 * we create a structure to allow to specify a 24 bits field which
 	 * grants us proper handling of sign extension
@@ -1094,6 +1108,8 @@ static int32_t vkil_transfer_buffer2(void *component_handle,
 	if (ret)
 		goto fail;
 
+	devctx = ilctx->devctx;
+
 	if (!(cmd & VK_CMD_OPT_CB)) {
 		/* We need to write the dma command */
 		ret = preset_host2vk_msg(message,
@@ -1112,7 +1128,7 @@ static int32_t vkil_transfer_buffer2(void *component_handle,
 			if (ret)
 				goto fail_write;
 		}
-		ret = get_vkil_nplanes(buffer_handle);
+		ret = get_vkil_nplanes(buffer);
 		if (ret < 0) {
 			VKIL_LOG(VK_LOG_WARNING, "");
 			goto fail_write;
@@ -1123,9 +1139,9 @@ static int32_t vkil_transfer_buffer2(void *component_handle,
 		convert_vkil2vk_buffer(host2vk_getdatap(message), buffer);
 
 		/* then we write the command to the queue */
-		ret = vkil_write((void *)ilctx->devctx, message);
+		ret = vkil_write(devctx, message);
 		if (VKDRV_WR_ERR(ret)) {
-			vkil_return_msg_id(ilctx->devctx, message->msg_id);
+			vkil_return_msg_id(devctx, message->msg_id);
 			goto fail_write;
 		}
 		msg_id = message->msg_id;
@@ -1145,7 +1161,7 @@ static int32_t vkil_transfer_buffer2(void *component_handle,
 		response.queue_id    = ilctx->context_essential.queue_id;
 		response.context_id  = ilctx->context_essential.handle;
 		response.size        = 0;
-		ret = vkil_read((void *)ilctx->devctx, &response, wait);
+		ret = vkil_read(devctx, &response, wait);
 		if (VKDRV_RD_ERR(ret))
 			goto fail_read;
 
@@ -1166,10 +1182,10 @@ static int32_t vkil_transfer_buffer2(void *component_handle,
 		}
 
 		ret1 = ret;
-		ret = vkil_get_msg_user_data(ilctx->devctx, response.msg_id,
-					      &buffer->user_data);
+		ret = vkil_get_msg_user_data(devctx, response.msg_id,
+					     &buffer->user_data);
 		/* we return the message no matter the error status above */
-		vkil_return_msg_id(ilctx->devctx, response.msg_id);
+		vkil_return_msg_id(devctx, response.msg_id);
 		if (ret)
 			goto fail_read;
 	}
@@ -1252,6 +1268,7 @@ int32_t vkil_process_buffer(void *component_handle,
 	int32_t ret1 = 0, ret = 0;
 	uint32_t handles[VKIL_MAX_AGGREGATED_BUFFERS];
 	uint32_t nbuf, msg_size;
+	vkil_devctx *devctx;
 
 	VKIL_LOG(VK_LOG_DEBUG, "ilctx=%p, buffer=%p, cmd=0x%x (%s%s)",
 		 ilctx,
@@ -1263,6 +1280,7 @@ int32_t vkil_process_buffer(void *component_handle,
 	VK_ASSERT(component_handle);
 	VK_ASSERT(buffer_handle);
 
+	devctx = ilctx->devctx;
 	ilpriv = ilctx->priv_data;
 	buffer = buffer_handle;
 
@@ -1296,7 +1314,7 @@ int32_t vkil_process_buffer(void *component_handle,
 		host2vk_setudt(message, buffer->user_data);
 		memcpy(&VKMSG_CMD_ARG(message), handles, nbuf * sizeof(uint32_t));
 
-		ret = vkil_write((void *)ilctx->devctx, message);
+		ret = vkil_write(devctx, message);
 		if (VKDRV_WR_ERR(ret))
 			goto fail_write;
 
@@ -1316,7 +1334,7 @@ int32_t vkil_process_buffer(void *component_handle,
 		response->queue_id    = ilctx->context_essential.queue_id;
 		response->context_id  = ilctx->context_essential.handle;
 		response->size        = VKIL_RET_MSG_MAX_SIZE - 1;
-		ret = vkil_read((void *)ilctx->devctx, response, wait);
+		ret = vkil_read(devctx, response, wait);
 		if (VKDRV_RD_ERR(ret))
 			goto fail_read;
 
@@ -1363,7 +1381,8 @@ int32_t vkil_xref_buffer(void *ctx_handle,
 	vkil_buffer *buffer = buffer_handle;
 	host2vk_msg message[1];
 
-	const vkil_context *ilctx = ctx_handle;
+	vkil_context *ilctx = ctx_handle;
+	vkil_devctx *devctx;
 
 	VKIL_LOG(VK_LOG_DEBUG, "ilctx=%p, buffer=%p, cmd=0x%x (%s%s)",
 		 ilctx,
@@ -1373,6 +1392,8 @@ int32_t vkil_xref_buffer(void *ctx_handle,
 		 vkil_cmd_opts_str(cmd));
 	VK_ASSERT(ctx_handle);
 	VK_ASSERT(cmd);
+
+	devctx = ilctx->devctx;
 
 	ret = vkil_sanity_check_buffer(buffer);
 	if (ret)
@@ -1399,9 +1420,9 @@ int32_t vkil_xref_buffer(void *ctx_handle,
 		}
 
 		/* then we write the command to the queue */
-		ret = vkil_write((void *)ilctx->devctx, message);
+		ret = vkil_write(devctx, message);
 		if (VKDRV_WR_ERR(ret)) {
-			vkil_return_msg_id(ilctx->devctx, message->msg_id);
+			vkil_return_msg_id(devctx, message->msg_id);
 			goto fail_write;
 		}
 		msg_id = message->msg_id;
@@ -1430,10 +1451,10 @@ int32_t vkil_xref_buffer(void *ctx_handle,
 
 		ret1 = ret;
 		buffer->handle = response.arg;
-		ret = vkil_get_msg_user_data(ilctx->devctx, response.msg_id,
-					      &buffer->user_data);
+		ret = vkil_get_msg_user_data(devctx, response.msg_id,
+					     &buffer->user_data);
 		/* we return the message no matter the error status above */
-		vkil_return_msg_id(ilctx->devctx, response.msg_id);
+		vkil_return_msg_id(devctx, response.msg_id);
 		if (ret)
 			goto fail_read;
 
@@ -1515,20 +1536,24 @@ int vkil_destroy_api(void **ilapi)
 int vkil_set_affinity(const char *device)
 {
 	char dev_name[30];
+	int ret;
 
 	VKIL_LOG(VK_LOG_DEBUG, "Device %s specified by user.",
 		 device ? device : "NULL");
 
 	/* check if device exists or not */
 	if (device) {
-		if (!snprintf(dev_name, sizeof(dev_name),
-			      VKIL_DEV_DRV_NAME ".%s", device))
+		ret = snprintf(dev_name, sizeof(dev_name),
+			       VKIL_DEV_DRV_NAME ".%s", device);
+		if ((ret <= 0) || (ret >= sizeof(dev_name)))
 			return -EINVAL;
 
 		if (access(dev_name, F_OK) != 0) {
 			/* Try legacy name */
-			snprintf(dev_name, sizeof(dev_name),
-				 VKIL_DEV_LEGACY_DRV_NAME ".%s", device);
+			ret = snprintf(dev_name, sizeof(dev_name),
+				       VKIL_DEV_LEGACY_DRV_NAME ".%s", device);
+			if ((ret <= 0) || (ret >= sizeof(dev_name)))
+				return -EINVAL;
 
 			if (access(dev_name, F_OK) != 0)
 				return -ENODEV;
