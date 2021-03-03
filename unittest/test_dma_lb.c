@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 /*
- * Copyright 2018-2020 Broadcom.
+ * Copyright(c) 2018-2019 Broadcom
  */
 /**
  * @file

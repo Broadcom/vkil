@@ -1,6 +1,6 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/* SPDX-License-Identifier: GPL-2.0 OR Apache-2.0 */
 /*
- * Copyright 2018-2020 Broadcom.
+ * Copyright(c) 2018-2019 Broadcom
  */
 
 #ifndef LOGGER_API_H
@@ -66,6 +66,7 @@ typedef enum _log_type {
 	LOG_TYPE_INT      = 0,
 	LOG_TYPE_ULL      = 1,
 	LOG_TYPE_UL       = 2,
+	LOG_TYPE_STR      = 3,
 } log_type;
 
 /**

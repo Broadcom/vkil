@@ -1,6 +1,6 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * Copyright 2018-2020 Broadcom.
+ * Copyright(c) 2018 Broadcom
  */
 
 /**
@@ -29,11 +29,16 @@
 #define VKIL_LOG(...) vk_log(__func__, VK_LOG_MOD_SYS, LOG_TYPE_INT,	\
 			     __VA_ARGS__)
 
+#define VKIL_ERR(...) vkil_err(__func__, VK_LOG_MOD_SYS, __VA_ARGS__)
+
 #define VKIL_LOG_HOST2VK_MSG(loglevel, msg)				\
 		VK_H2VK_LOG(VKIL_LOG, loglevel, msg)
 
 #define VKIL_LOG_VK2HOST_MSG(loglevel, msg)				\
 		VK_VK2H_LOG(VKIL_LOG, loglevel, msg)
+
+void vkil_err(const char *prefix, vk_log_mod log_mod,
+	      const int32_t err, const char *fmt, ...);
 
 int vkil_malloc(void **ptr, size_t size);
 int vkil_mallocz(void **ptr, size_t size);

@@ -1,6 +1,6 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/* SPDX-License-Identifier: GPL-2.0 OR Apache-2.0 */
 /*
- * Copyright 2018-2020 Broadcom.
+ * Copyright(c) 2018 Broadcom
  */
 
 #ifndef VK_PARAMETERS_H
@@ -267,7 +267,7 @@ typedef union vk_port_id_ {
 
 typedef struct _vk_port {
 	vk_port_id port_id; /** port identifiant */
-	int32_t handle; /** handle to the port (typically a buffer pool) */
+	uint32_t handle; /** handle to the port (Buffer pool identifier) */
 } vk_port;
 
 #define VK_CFG_FLAG_ENABLE 1
@@ -457,6 +457,23 @@ typedef struct _vk_lookahead_cfg {
 	float saq_b;
 } vk_lookahead_cfg;
 
+#define VK_ENC_CFG_QPI_SET (1 << 0)
+#define VK_ENC_CFG_DQPP_SET (1 << 1)
+#define VK_ENC_CFG_DQPB_SET (1 << 2)
+#define VK_ENC_CFG_DQPD_SET (1 << 3)
+#define VK_ENC_CFG_MIN_QP_SET (1 << 4)
+#define VK_ENC_CFG_MAX_QP_SET (1 << 5)
+typedef struct _vk_rc_cfg {
+	uint8_t flags;
+	uint8_t rc_mode; /**< rate control mode, if zero fixed qp */
+	uint8_t qpi;     /**< qp for intra frame */
+	int8_t  dqpp;    /**< delta qp for P frame */
+	int8_t  dqpb;    /**< delta qp for ref B frame */
+	int8_t  dqpd;    /**< delta qp for non ref B frame */
+	uint8_t min_qp;  /**< min qp used by rate control */
+	uint8_t max_qp;  /**< max qp used by rate control */
+} vk_rc_cfg;
+
 typedef enum _vk_color_range {
 	VK_COL_RANGE_UNDEF = 0, /**< unspecified or unknown range */
 	VK_COL_RANGE_LIMITED = 1, /**< the normal 219*2^(n-8) MPEG YUV ranges */
@@ -540,7 +557,8 @@ typedef enum _vk_rc_mode {
 	VK_RC_QTY   = 4, /**< quality */
 	VK_RC_FRAME = 5, /**< per frame qp */
 	VK_RC_MAX   = 6,
-	VK_RC_DEF   = VK_RC_QTY,
+	VK_RC_UNSET = VK_RC_MAX,
+	VK_RC_DEF   = VK_RC_STD,
 } vk_rc_mode;
 
 /** flags for multipass information (needs to be in one byte) */
@@ -575,18 +593,9 @@ typedef struct _vk_enc_cfg {
 	/** true if need to do gop-reset in sync with decoder's IDR frames */
 	uint8_t  idr_passthrough;
 
-	/** qp for intra frame not used if rate control on */
-	uint8_t  qpi;
-	uint8_t  dqpp;      /**< qp for P frame, if 0, inferred from qpi */
-	uint8_t  dqpb;      /**< qp for ref B frame, if 0, inferred from qpp */
-
-	/** qp for non ref frame, if 0, inferred from qpb */
-	uint8_t  dqpd;
-	uint8_t  rc_mode;   /**< rate control mode, if zero fixed qp */
-	uint8_t  min_qp;    /**< min qp used by rate control */
-	uint8_t  max_qp;    /**< max qp used by rate control */
-
 	uint8_t  no_repeatheaders;  /**< header data for all/first sync frame */
+	uint8_t  reserved[3];
+	vk_rc_cfg rc_cfg;
 	vk_color_cfg color_cfg;     /**< color information */
 	vk_ssim_cfg ssim_cfg;       /**< ssim granularity parameters */
 	vk_stats_cfg stats_cfg;     /**< statistics collection parameters */
@@ -689,7 +698,7 @@ typedef struct _vk_pool_alloc_buffer {
 /**
  * Set/Get header configuration
  */
-#define VK_MAX_BUFFER_SIZE 160
+#define VK_MAX_BUFFER_SIZE 192
 typedef struct _vk_set_get_header {
 	uint32_t handle;
 	uint8_t buffer[VK_MAX_BUFFER_SIZE];

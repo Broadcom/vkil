@@ -1,6 +1,6 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
- * Copyright 2018-2020 Broadcom.
+ * Copyright(c) 2018 Broadcom
  */
 
 /**
@@ -19,6 +19,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <poll.h>
 #include <stdio.h>
 #include <unistd.h>
 #include "vkil_api.h"
@@ -36,7 +37,7 @@
  * short enough to bail-out quickly on unresponsive card
  * if VKIL_TIMEOUT_MS is set to zero, wait can then be infinite.
  */
-#define VKIL_TIMEOUT_MS  (30 * 1000)
+#define VKIL_TIMEOUT_MS  (50 * 1000)
 /** in the ffmpeg context ms order to magnitude is OK */
 #define VKIL_PROBE_INTERVAL_MS 1
 
@@ -157,8 +158,7 @@ int32_t vkil_get_msg_id(vkil_devctx *devctx)
 	return i;
 
 fail:
-	VKIL_LOG(VK_LOG_ERROR, "error %s(%d) in devctx %p",
-		 strerror(ret), ret, devctx);
+	VKIL_ERR(ret, "in devctx %p", devctx);
 	return -ret; /* we always return negative error code if error */
 }
 
@@ -180,7 +180,7 @@ static int32_t vkil_deinit_msglist(vkil_devctx *devctx)
 	return 0;
 
 fail:
-	VKIL_LOG(VK_LOG_ERROR, "failure %s(%d)", strerror(ret), ret);
+	VKIL_ERR(ret, "");
 	return -EPERM;
 }
 
@@ -207,8 +207,25 @@ static int32_t vkil_init_msglist(vkil_devctx *devctx)
 
 fail:
 	vkil_deinit_msglist(devctx);
-	VKIL_LOG(VK_LOG_ERROR, "failure %s(%d)", strerror(abs(ret)), ret);
+	VKIL_ERR(ret, "");
 	return -abs(ret);
+}
+
+static int64_t vkil_get_time_us(void)
+{
+	struct timespec time_i;
+	int64_t sec;
+	int64_t res;
+	int overflow;
+
+	clock_gettime(CLOCK_MONOTONIC, &time_i);
+	/* CERT-C INT32-C compliance */
+	overflow = __builtin_smull_overflow(time_i.tv_sec, 1000000, &sec);
+	VK_ASSERT(!overflow);
+	/* CERT-C INT32-C compliance */
+	overflow = __builtin_saddl_overflow(sec, time_i.tv_nsec / 1000, &res);
+	VK_ASSERT(!overflow);
+	return res;
 }
 
 /**
@@ -216,38 +233,82 @@ fail:
  * @param[in] driver to poll
  * @param[in|out] message returned on success
  * @param[in] max wait factor (=default_wait*wait_x, zero means no wait)
- * @return zero if success otherwise error message
+ * @return positive if success otherwise error message
  */
 static ssize_t vkil_wait_probe_msg(int fd,
 				   vk2host_msg *msg,
-				   const uint32_t wait_x)
+				   const int32_t wait_x)
 {
-	int32_t ret, nbytes, i = 0;
-	int32_t infinite_wait = (wait_x && (!VKIL_TIMEOUT_MS)) ? 1 : 0;
+	int32_t ret, nbytes;
+	struct pollfd fds;
+	int64_t start_us, time_us, end_us, wait;
+	int overflow;
 
 	VK_ASSERT(msg);
 	VK_ASSERT(msg->size < UINT8_MAX);
 
 	nbytes = sizeof(*msg) * (msg->size + 1);
 
-	do {
-		ret = read(fd, msg, nbytes);
-		if (ret > 0)
-			return ret;
+	fds.fd = fd;
+	fds.events = POLLIN | POLLRDNORM;
+	fds.revents = 0;
+
+	start_us = vkil_get_time_us();
+	time_us = start_us;
+
+	/* CERT-C INT32-C compliance */
+	overflow = __builtin_smull_overflow(wait_x, VKIL_TIMEOUT_MS * 1000, &wait);
+	VK_ASSERT(!overflow);
+
+	/* CERT-C INT32-C compliance */
+	overflow = __builtin_saddl_overflow(start_us, wait, &end_us);
+	VK_ASSERT(!overflow);
+
+	while (1) {
+		if (wait_x) {
+#if VKIL_TIMEOUT_MS
+			int64_t del_time_us;
+			int64_t time_ms;
+
+			overflow = __builtin_ssubl_overflow(end_us, time_us, &del_time_us);
+			VK_ASSERT(!overflow);
+
+			time_ms = del_time_us / 1000;
+			if (time_ms <= 0)
+				break;
+			ret = poll(&fds, 1, time_ms);
+#else
+			/* Infinite wait */
+			ret = poll(&fds, 1, 0);
+#endif
+		} else {
+			ret = 1;
+		}
+
+		if (ret) {
+			ret = read(fd, msg, nbytes);
+			if (ret > 0) {
+				/*
+				 * If ret < nbytes, we have only partially read the message
+				 * and there is no way for calling code to recover.
+				 */
+				VK_ASSERT(ret == nbytes);
+				return ret;
+			}
 
 #ifdef VKDRV_USERMODEL
-		/* in sw simulation only we don't use system errno */
-		if (ret == -EMSGSIZE)
+			/* in sw simulation only we don't use system errno */
+			if (ret == -EMSGSIZE)
 #else
-		if ((ret < 0) && (errno == EMSGSIZE))
+			if ((ret < 0) && (errno == EMSGSIZE))
 #endif
-			return -EMSGSIZE;
-		if (!wait_x)
-			return -ENOMSG;
-		usleep(1000 * VKIL_PROBE_INTERVAL_MS);
-		i++;
-	} while (i < ((wait_x * VKIL_TIMEOUT_MS) / VKIL_PROBE_INTERVAL_MS) ||
-		 infinite_wait);
+				return -EMSGSIZE;
+			if (!wait_x)
+				return -ENOMSG;
+		}
+
+		time_us = vkil_get_time_us();
+	}
 
 	VKIL_LOG(VK_LOG_WARNING, "Hit timeout %d ms", wait_x * VKIL_TIMEOUT_MS);
 	return -ETIMEDOUT; /* if we are here we have timed out */
@@ -325,7 +386,7 @@ static int32_t cmp_function(const void *data, const void *data_ref)
  */
 static int32_t retrieve_message(vkil_node **pvk2host_ll, vk2host_msg *message)
 {
-	int msglen;
+	size_t msglen;
 	int32_t ret = 0;
 	vk2host_msg *msg;
 	vkil_node *node = NULL;
@@ -368,9 +429,13 @@ static int32_t retrieve_message(vkil_node **pvk2host_ll, vk2host_msg *message)
 	}
 
 	if (message->hw_status == VK_STATE_ERROR) {
-		VKIL_LOG(VK_LOG_DEBUG, "VK_STATE_ERROR => %s",
-			 (!message->arg) ?
-			 "generic error" : strerror(-(message->arg)));
+		/* memcpy to avoid undefined behavior involved by cast */
+		if (message->arg)
+			memcpy(&ret, &message->arg, sizeof(ret));
+		else
+			/* default error to prevent to log success */
+			ret = -EADV;
+		VKIL_ERR(ret, "VK_STATE_ERROR");
 		VKIL_LOG_VK2HOST_MSG(VK_LOG_DEBUG, message);
 		ret = -EADV;
 	}
@@ -393,7 +458,7 @@ static int32_t vkil_flush_read(vkil_devctx *devctx,
 	int32_t ret, q_id;
 	vk2host_msg *msg;
 	vkil_node *node;
-	int32_t size;
+	uint8_t size;
 
 	/*
 	 * this function need to be called with
@@ -500,8 +565,7 @@ int32_t vkil_read(vkil_devctx * const devctx, vk2host_msg * const msg,
 	 */
 	retm = pthread_mutex_lock(&devctx->mwx);
 	if (retm) {
-		VKIL_LOG(VK_LOG_ERROR, "mutex lock error %s(%d) in devctx %p",
-			 strerror(retm), retm, devctx);
+		VKIL_ERR(retm, "mutex lock error in devctx %p", devctx);
 		return -retm; /* force negative error */
 	}
 
@@ -516,9 +580,8 @@ int32_t vkil_read(vkil_devctx * const devctx, vk2host_msg * const msg,
 		retm = pthread_mutex_unlock(&(devctx->mwx));
 		if (retm) {
 			/* mutex error takes precedence on other error */
-			VKIL_LOG(VK_LOG_ERROR,
-				 "mutex unlock error %s(%d) in devctx %p",
-				 strerror(retm), retm, devctx);
+			VKIL_ERR(retm,
+				 "mutex unlock error in devctx %p", devctx);
 			ret = -retm;
 		}
 		return ret;
@@ -539,8 +602,7 @@ out:
 	retm = pthread_mutex_unlock(&devctx->mwx);
 	if (retm) {
 		/* mutex error takes precedence on other error */
-		VKIL_LOG(VK_LOG_ERROR, "mutex unlock error %s(%d) in devctx %p",
-			 strerror(retm), retm, devctx);
+		VKIL_ERR(retm, "mutex unlock error in devctx %p", devctx);
 		ret = -retm;
 	}
 	return ret;
@@ -658,7 +720,6 @@ int32_t vkil_init_dev(void **handle)
 
 fail:
 	vkil_deinit_dev(handle);
-	VKIL_LOG(VK_LOG_ERROR, "device initialization failure %s(%d)",
-		 strerror(-ret), ret);
+	VKIL_ERR(ret, "device initialization failure");
 	return ret;
 }

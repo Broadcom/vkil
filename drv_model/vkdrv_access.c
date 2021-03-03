@@ -1,6 +1,7 @@
-// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: GPL-2.0-or-later
 /*
- * Copyright 2018-2020 Broadcom.
+ * Copyright © 2005-2018 Broadcom. All Rights Reserved.
+ * The term “Broadcom” refers to Broadcom Inc. and/or its subsidiaries
  */
 
 #include <dlfcn.h>

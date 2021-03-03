@@ -1,6 +1,6 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/* SPDX-License-Identifier: GPL-2.0 OR Apache-2.0 */
 /*
- * Copyright 2018-2020 Broadcom.
+ * Copyright(c) 2018-2019 Broadcom
  */
 
 #ifndef VK_LOGGER_H
@@ -17,6 +17,7 @@ typedef enum _vk_log_mod {
 	VK_LOG_MOD_DMA,      /** dma */
 	VK_LOG_MOD_SCL,      /** scaler */
 	VK_LOG_MOD_MPS,      /** multipass encoder */
+	VK_LOG_MOD_TRC,      /** tracing */
 	VK_LOG_MOD_DRV,      /** driver */
 	VK_LOG_MOD_SYS,      /** infra structures, mem, queue etc */
 	VK_LOG_MOD_MVE,      /** mali firmware */
