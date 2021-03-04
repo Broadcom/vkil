@@ -285,8 +285,11 @@ static ssize_t vkil_wait_probe_msg(int fd,
 		}
 
 		if (ret) {
+			errno = 0;  /* required by CERT-C:2012 rule ERR30-C */
 			ret = read(fd, msg, nbytes);
-			if (ret > 0) {
+			if ((ret < 0) && (errno == EMSGSIZE))
+				return -EMSGSIZE;
+			else if (ret > 0) {
 				/*
 				 * If ret < nbytes, we have only partially read the message
 				 * and there is no way for calling code to recover.
@@ -295,13 +298,6 @@ static ssize_t vkil_wait_probe_msg(int fd,
 				return ret;
 			}
 
-#ifdef VKDRV_USERMODEL
-			/* in sw simulation only we don't use system errno */
-			if (ret == -EMSGSIZE)
-#else
-			if ((ret < 0) && (errno == EMSGSIZE))
-#endif
-				return -EMSGSIZE;
 			if (!wait_x)
 				return -ENOMSG;
 		}
@@ -458,7 +454,7 @@ static int32_t vkil_flush_read(vkil_devctx *devctx,
 			       int32_t wait)
 {
 	int32_t ret, q_id;
-	vk2host_msg *msg;
+	vk2host_msg *msg = NULL;
 	vkil_node *node;
 	uint8_t size;
 
@@ -641,6 +637,7 @@ void vkil_deinit_node_list(vkil_node *ptr)
 int32_t vkil_deinit_dev(void **handle)
 {
 	int i;
+	int ret = 0;
 	VKIL_LOG(VK_LOG_DEBUG, "");
 
 	if (*handle) {
@@ -653,7 +650,12 @@ int32_t vkil_deinit_dev(void **handle)
 			VKIL_LOG(VK_LOG_DEBUG, "close driver");
 			vkil_deinit_msglist(devctx);
 			close(devctx->fd);
-			pthread_mutex_destroy(&devctx->mwx);
+			ret = pthread_mutex_destroy(&devctx->mwx);
+			if (ret) {  /* error are forced to be negative */
+				ret = -ret;
+				VKIL_ERR(ret, "in devctx %p", devctx);
+			}
+
 			for (i = 0; i < VKIL_MSG_Q_MAX; i++) {
 				vkil_deinit_node_list(devctx->vk2host[i]);
 				devctx->vk2host[i] = NULL;
@@ -695,15 +697,22 @@ int32_t vkil_init_dev(void **handle)
 		if (devctx->id < 0)
 			goto fail;
 
-		if (!snprintf(dev_name, sizeof(dev_name),
-			      VKIL_DEV_DRV_NAME ".%d", devctx->id))
+		ret = snprintf(dev_name, sizeof(dev_name),
+			       VKIL_DEV_DRV_NAME ".%d", devctx->id);
+		if ((ret <= 0) || (ret >= sizeof(dev_name))) {
+			ret = -EINVAL;
 			goto fail;
+		}
 
 		devctx->fd = open(dev_name, O_RDWR);
 		if (devctx->fd < 0) {
 			/* Try legacy name */
 			snprintf(dev_name, sizeof(dev_name),
 				 VKIL_DEV_LEGACY_DRV_NAME ".%d", devctx->id);
+			if ((ret <= 0) || (ret >= sizeof(dev_name))) {
+				ret = -EINVAL;
+				goto fail;
+			}
 
 			devctx->fd = open(dev_name, O_RDWR);
 			if (devctx->fd < 0)
