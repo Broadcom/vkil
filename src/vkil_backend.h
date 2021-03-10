@@ -209,28 +209,12 @@ typedef enum vkil_shutdown_type {
 	VK_SHUTDOWN_TYPE_MAX,
 } vkil_shutdown_type;
 
-/**
- * return the str representation of a function id
- */
-const char *vkil_function_id_str(uint32_t function_id);
-
-/**
- * return description of a shutdown type
- */
-const char *vkil_shutdown_type_str(const vkil_shutdown_type type);
-
-/**
- * return the description of a command
- */
-const char *vkil_cmd_str(uint32_t cmd);
-
-/**
- * return command's option string
- */
-const char *vkil_cmd_opts_str(uint32_t cmd);
 
 /* msg size is expressed in multiple of 16 bytes */
 #define MSG_SIZE(size) (((size) + sizeof(host2vk_msg) - 1) \
 			/ sizeof(host2vk_msg))
+
+const char *vkil_function_id_str(const uint32_t function_id);
+const char *vkil_shutdown_type_str(const vkil_shutdown_type type);
 
 #endif

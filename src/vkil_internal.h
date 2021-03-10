@@ -78,8 +78,4 @@ int32_t vkil_set_msg_user_data(vkil_devctx *devctx, const int32_t msg_id,
 int32_t vkil_get_msg_user_data(vkil_devctx *devctx, const int32_t msg_id,
 			       uint64_t *user_data);
 
-const char *vkil_function_id_str(uint32_t function_id);
-const char *vkil_cmd_str(uint32_t cmd);
-const char *vkil_cmd_opts_str(uint32_t cmd);
-
 #endif

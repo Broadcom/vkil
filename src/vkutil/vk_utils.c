@@ -17,7 +17,7 @@
  * @param function id
  * @return ASCII description of function id
  */
-const char *vkil_function_id_str(uint32_t function_id)
+const char *vkil_function_id_str(const uint32_t function_id)
 {
 
 	static const char * const vkil_fun_list[VK_FID_MAX] = {
@@ -67,53 +67,4 @@ const char *vkil_shutdown_type_str(const vkil_shutdown_type type)
 		return _shutdown_type_list[type];
 	else
 		return "n/a";
-}
-
-/**
- * get the description of a command
- * @param command id
- * @return ASCII description of command
- */
-const char *vkil_cmd_str(uint32_t cmd)
-{
-	static const char * const _base_cmd_list[VK_CMD_BASE_MAX] = {
-		[VK_CMD_BASE_NONE]      = "none",
-		[VK_CMD_BASE_IDLE]      = "idle",
-		[VK_CMD_BASE_RUN]       = "run",
-		[VK_CMD_BASE_FLUSH]     = "flush",
-		[VK_CMD_BASE_UPLOAD]    = "upload",
-		[VK_CMD_BASE_DOWNLOAD]  = "download",
-		[VK_CMD_BASE_VERIFY_LB] = "process_buffer",
-	};
-
-	uint32_t base_cmd_idx = (cmd & VK_CMD_MASK) >> VK_CMD_BASE_SHIFT;
-
-	if (base_cmd_idx < VK_CMD_BASE_MAX)
-		return _base_cmd_list[base_cmd_idx];
-	else
-		return "n/a";
-}
-
-/**
- * get the description of options in a command
- * @param command id
- * @return ASCII description of command options
- */
-const char *vkil_cmd_opts_str(uint32_t cmd)
-{
-	uint32_t idx;
-	/*
-	 * this has to match the defined first option bit location.
-	 * For adding additional options, this mapping function needs
-	 * to be modified to have new options.
-	 */
-	static const char * const opt_str[] = {
-		"",        "|cb",       "|blk",       "|blk,cb",
-		"|gt",     "|gt,cb",    "|gt,blk",    "|gt,blk,cb",
-		"|lb",     "|lb,cb",    "|lb,blk",    "|lb,blk,cb",
-		"|lb,gt",  "|lb,gt,cb", "|lb,gt,blk", "|lb,gt,blk,cb",
-	};
-
-	idx = (cmd & VK_CMD_OPTS_MASK) >> VK_CMD_OPTS_SHIFT;
-	return opt_str[idx];
 }

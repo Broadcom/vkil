@@ -102,6 +102,55 @@ static int fail_read(const int error, const void *ilctx)
 }
 
 /**
+ * get the description of a command
+ * @param command id
+ * @return ASCII description of command
+ */
+static const char *vkil_cmd_str(const uint32_t cmd)
+{
+	static const char * const _base_cmd_list[VK_CMD_BASE_MAX] = {
+		[VK_CMD_BASE_NONE]      = "none",
+		[VK_CMD_BASE_IDLE]      = "idle",
+		[VK_CMD_BASE_RUN]       = "run",
+		[VK_CMD_BASE_FLUSH]     = "flush",
+		[VK_CMD_BASE_UPLOAD]    = "upload",
+		[VK_CMD_BASE_DOWNLOAD]  = "download",
+		[VK_CMD_BASE_VERIFY_LB] = "process_buffer",
+	};
+
+	uint32_t base_cmd_idx = (cmd & VK_CMD_MASK) >> VK_CMD_BASE_SHIFT;
+
+	if (base_cmd_idx < VK_CMD_BASE_MAX)
+		return _base_cmd_list[base_cmd_idx];
+	else
+		return "n/a";
+}
+
+/**
+ * get the description of options in a command
+ * @param command id
+ * @return ASCII description of command options
+ */
+static const char *vkil_cmd_opts_str(const uint32_t cmd)
+{
+	uint32_t idx;
+	/*
+	 * this has to match the defined first option bit location.
+	 * For adding additional options, this mapping function needs
+	 * to be modified to have new options.
+	 */
+	static const char * const opt_str[] = {
+		"",        "|cb",       "|blk",       "|blk,cb",
+		"|gt",     "|gt,cb",    "|gt,blk",    "|gt,blk,cb",
+		"|lb",     "|lb,cb",    "|lb,blk",    "|lb,blk,cb",
+		"|lb,gt",  "|lb,gt,cb", "|lb,gt,blk", "|lb,gt,blk,cb",
+	};
+
+	idx = (cmd & VK_CMD_OPTS_MASK) >> VK_CMD_OPTS_SHIFT;
+	return opt_str[idx];
+}
+
+/**
  * @brief extract handles from the input buffer
  * that have to be processed
  * @param[in] handle input buffer to be processed
@@ -167,8 +216,8 @@ static int buffer_check_ref(const vkil_buffer *buffer)
 			return -ENOBUFS;
 		}
 	} else if (buffer->type == VKIL_BUF_AG_BUFFERS) {
-		vkil_aggregated_buffers *ag_buf =
-			(vkil_aggregated_buffers *)buffer;
+		const vkil_aggregated_buffers *ag_buf =
+			(const vkil_aggregated_buffers *)buffer;
 
 		for (i = 0; i < ag_buf->nbuffers; i++) {
 			if (ag_buf->buffer[i] &&
@@ -281,10 +330,10 @@ static int32_t set_buffer(void *handle, const vk2host_msg *vk2host,
 				 "i=%d buffer=%p handle=0x%" PRIx32,
 				 i,
 				 ag_buf->buffer[i],
-				 ((uint32_t *)&(vk2host->arg))[i]);
+				 ((const uint32_t *)&(vk2host->arg))[i]);
 
 			if (!ag_buf->buffer[i] &&
-					((uint32_t *)&(vk2host->arg))[i])
+					((const uint32_t *)&(vk2host->arg))[i])
 				goto fail;
 			else if (ag_buf->buffer[i]) {
 				ag_buf->buffer[i]->handle =
@@ -879,7 +928,7 @@ static int32_t convert_vkil2vk_buffer_surface(vk_buffer_surface *surface,
 	if (is_interlaced) /* make height a  multiple of 2 */
 		height += height % 2;
 
-	surface->format = ((vkil_buffer_surface *)ilsurface)->format;
+	surface->format = ((const vkil_buffer_surface *)ilsurface)->format;
 
 	switch (surface->format) {
 	case VK_FORMAT_YOL2:
@@ -992,20 +1041,23 @@ static int32_t convert_vkil2vk_buffer_metadata(vk_buffer_metadata *mdata,
  * (they can be different or the same).
  * @param[in]  il_packet handle to a front hand packet structure
  * @param[out] packet    handle to the backend structure
- * @return          zero on succes, error code otherwise
+ * @return  zero on succes, error code otherwise
  */
-static int32_t convert_vkil2vk_buffer(void *buffer, const void *il_buffer)
+static int32_t convert_vkil2vk_buffer(void *buf, const void *il_buffer)
 {
 	VK_ASSERT(il_buffer);
-	VK_ASSERT(buffer);
+	VK_ASSERT(buf);
 
 	switch (((vkil_buffer *)il_buffer)->type) {
 	case	VKIL_BUF_PACKET:
-		return convert_vkil2vk_buffer_packet(buffer, il_buffer);
+		return convert_vkil2vk_buffer_packet((vk_buffer_packet *)buf,
+						     il_buffer);
 	case	VKIL_BUF_SURFACE:
-		return convert_vkil2vk_buffer_surface(buffer, il_buffer);
+		return convert_vkil2vk_buffer_surface((vk_buffer_surface *)buf,
+						      il_buffer);
 	case	VKIL_BUF_META_DATA:
-		return convert_vkil2vk_buffer_metadata(buffer, il_buffer);
+		return convert_vkil2vk_buffer_metadata((vk_buffer_metadata *)buf,
+						       il_buffer);
 	}
 	return -EINVAL;
 }
