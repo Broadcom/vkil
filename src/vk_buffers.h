@@ -1,6 +1,6 @@
-/* SPDX-License-Identifier: GPL-2.0 OR Apache-2.0 */
+/* SPDX-License-Identifier: Apache-2.0 */
 /*
- * Copyright(c) 2018 Broadcom
+ * Copyright 2018-2020 Broadcom.
  */
 
 #ifndef VK_BUFFERS_H
@@ -19,7 +19,7 @@
 #define __packed __attribute__((packed))
 #endif
 
-typedef enum _vk_buffer_type {
+typedef enum vk_buffer_type {
 	VK_BUF_UNDEF       =    0,
 	VK_BUF_METADATA    =  0x1,
 	VK_BUF_PACKET      =  0x2,
@@ -32,7 +32,7 @@ typedef enum _vk_buffer_type {
  * prefix to be used for all buffer type
  * prefix size is 16 bytes
  */
-typedef struct _vk_buffer {
+typedef struct vk_buffer {
 	uint32_t handle;    /**< handle to the buffer on the SOC */
 	uint32_t flags:16;  /**< flags */
 	uint32_t type:4;    /**< buffer type */
@@ -45,19 +45,19 @@ typedef struct _vk_buffer {
  * buffer used to store metadata (qpmap, statistic, ssim,... values)
  * the type of metadata transmitted is opaque to this container
  */
-typedef struct _vk_buffer_metadata {
+typedef struct vk_buffer_metadata {
 	vk_buffer prefix;
 	uint32_t  used_size; /**< used  buffer size in bytes */
 	uint32_t  size;      /**< total buffer size in bytes */
 	uint64_t  data;      /**< Pointer to metadata     */
 } vk_buffer_metadata;
 
-typedef struct __packed _vk_data {
+typedef struct __packed vk_data {
 	uint32_t    size; /**< data size in bytes */
 	uint64_t    address; /**< Pointer to data     */
 } vk_data;
 
-typedef struct _vk_buffer_surface {
+typedef struct vk_buffer_surface {
 	vk_buffer prefix;
 	vk_size max_size;
 	vk_size visible_size;
@@ -75,7 +75,7 @@ typedef struct _vk_buffer_surface {
 	vk_data planes[VK_SURFACE_MAX_PLANES]; /* length, address */
 } vk_buffer_surface;
 
-typedef struct _vk_buffer_packet {
+typedef struct vk_buffer_packet {
 	vk_buffer prefix;
 	uint32_t  used_size; /**< used  buffer size in bytes */
 	uint32_t  size;      /**< total buffer size in bytes */

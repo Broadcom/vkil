@@ -1,8 +1,7 @@
-/* SPDX-License-Identifier: GPL-2.0 */
+/* SPDX-License-Identifier: Apache-2.0 */
 /*
- * Copyright(c) 2018 Broadcom
+ * Copyright 2018-2020 Broadcom.
  */
-
 /**
  * @file
  * @brief frontend API for host application (e.g. ffmpeg)
@@ -23,7 +22,7 @@
 #define VKIL_BUF_NPLANES 2
 
 /** Buffer type descriptor */
-typedef enum _vkil_buffer_type {
+typedef enum vkil_buffer_type {
 	VKIL_BUF_UNDEF       = 0,
 	VKIL_BUF_META_DATA   = 1,
 	VKIL_BUF_PACKET      = 2,
@@ -75,7 +74,7 @@ typedef enum _vkil_buffer_type {
  * component port_id associated to the buffer.
  * @li all vkil buffers are required to have this prefix
  */
-typedef struct _vkil_buffer {
+typedef struct vkil_buffer {
 	uint32_t handle; /**< handle provided by the valkyrie card */
 	uint16_t flags:16;
 	uint16_t type:4;    /**< a _vkil_buffer_type */
@@ -89,7 +88,7 @@ typedef struct _vkil_buffer {
  *
  * the type of metadata transmitted is opaque to this container
  */
-typedef struct _vkil_buffer_metadata {
+typedef struct vkil_buffer_metadata {
 	vkil_buffer prefix;
 	uint32_t used_size; /**< size of the payload */
 	/** size of the buffer, required to be a 32 bits multiple */
@@ -98,7 +97,7 @@ typedef struct _vkil_buffer_metadata {
 } vkil_buffer_metadata;
 
 /** @brief buffer used to store a bitstream packet */
-typedef struct _vkil_buffer_packet {
+typedef struct vkil_buffer_packet {
 	vkil_buffer prefix;
 	uint32_t used_size; /**< size of the payload */
 	/** size of the buffer, required to be a 32 bits multiple */
@@ -109,7 +108,7 @@ typedef struct _vkil_buffer_packet {
 /**
  * @brief 32 bits structure storing a 2D size
  */
-typedef union vkil_size_ {
+typedef union vkil_size {
 	struct {
 		uint32_t  width:16; /**< is to be the 16 lsb */
 		uint32_t height:16; /**< is to be the 16 msb */
@@ -128,7 +127,7 @@ typedef union vkil_size_ {
  * are always expected to be interleaved, e.g. NV12, NV21 or P010 format
  * are supported as well as Hardware format)
  */
-typedef struct _vkil_buffer_surface {
+typedef struct vkil_buffer_surface {
 	vkil_buffer prefix; /**< generic buffer descritor */
 	vkil_size max_size;
 	vkil_size visible_size;
@@ -166,7 +165,7 @@ typedef struct _vkil_aggregated_buffers {
  * @li according to the _vkil_context::context_essential, an HW context will
  * be created (opaque structure)
  */
-typedef struct _vkil_context {
+typedef struct vkil_context {
 	/** context descriptor */
 	vkil_context_essential context_essential;
 	void       *devctx;    /**< handle to the hw device */
@@ -207,7 +206,7 @@ typedef struct _vkil_context {
  *
  * In the context of ffmpeg this means the vkil is polling the state of the card
  */
-typedef struct _vkil_api {
+typedef struct vkil_api {
 	/** a new context is created if ctx_handle == VK_NEW_CTX */
 	int32_t (*init)(void **ctx_handle);
 	/**
@@ -220,17 +219,17 @@ typedef struct _vkil_api {
 	 * (if the field refers to a structure, the value is a pointer to it)
 	 */
 	int32_t  (*set_parameter)(void *ctx_handle,
-				  const vkil_parameter_t field,
+				  const vk_parameter field,
 				  const void *value,
-				  const vkil_command_t cmd);
+				  const vkil_command cmd);
 	/**
 	 * get the context field values
 	 * (if the field refers to a structure, the value is a pointer to it)
 	 */
 	int32_t  (*get_parameter)(void *ctx_handle,
-				  const vkil_parameter_t field,
+				  const vk_parameter field,
 				  void *value,
-				  const vkil_command_t cmd);
+				  const vkil_command cmd);
 	/**
 	 * This function needs to be called for all buffers to transfer to/from
 	 * the Valkyrie card (vkil_command_t provides the transfer direction)
@@ -244,7 +243,7 @@ typedef struct _vkil_api {
 	 */
 	int32_t (*transfer_buffer)(void *ctx_handle,
 				   void *buffer_handle,
-				   const vkil_command_t cmd);
+				   const vkil_command cmd);
 
 	/**
 	 * Same as above except the transferred size or buffer size extension
@@ -252,7 +251,7 @@ typedef struct _vkil_api {
 	 */
 	int32_t (*transfer_buffer2)(void *ctx_handle,
 				    void *buffer_handle,
-				    const vkil_command_t cmd,
+				    const vkil_command cmd,
 				    int32_t *size);
 	/**
 	 * the process buffer typically "consumes" the buffer provided in
@@ -264,7 +263,7 @@ typedef struct _vkil_api {
 	 */
 	int32_t (*process_buffer)(void *ctx_handle,
 				  void *buffer_handle,
-				  const vkil_command_t cmd);
+				  const vkil_command cmd);
 	/**
 	 * the xref buffer allows to add or remove references to the buffer
 	 * @li adding a reference, prevent the buffer to be deleted on a
@@ -275,7 +274,7 @@ typedef struct _vkil_api {
 	int32_t (*xref_buffer)(void *ctx_handle,
 			       void *buffer_handle,
 			       const int32_t ref_delta,
-			       const vkil_command_t cmd);
+			       const vkil_command cmd);
 } vkil_api;
 
 extern void *vkil_create_api(void);

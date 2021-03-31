@@ -1,6 +1,6 @@
-// SPDX-License-Identifier: GPL-2.0 OR Apache-2.0
+// SPDX-License-Identifier: Apache-2.0
 /*
- * Copyright(c) 2019 Broadcom
+ * Copyright 2018-2020 Broadcom.
  */
 
 /**
@@ -95,7 +95,7 @@ void vk_log(const char *prefix, vk_log_mod log_mod,
 	struct timespec tm;
 	int length, max_length;
 
-	if (level > vk_log_ctrl[log_mod].log_level)
+	if (level > vk_log_ctrl[(uint32_t)log_mod].log_level)
 		return;
 
 	pthread_mutex_lock(&log_mutex);
@@ -120,8 +120,8 @@ void vk_log(const char *prefix, vk_log_mod log_mod,
 
 	/* now, log the buffer in thread's context */
 	length = snprintf(p_buf, sizeof(_loc_buf),
-			  "\x1B[0m[%6d.%06d]%s%s:%s:",
-			  (int) tm.tv_sec, (int) tm.tv_nsec / 1000,
+			  "\x1B[0m[%6ld.%06ld]%s%s:%s:",
+			  tm.tv_sec, tm.tv_nsec / 1000,
 			  color,
 			  vk_log_ctrl[log_mod].tag,
 			  prefix);

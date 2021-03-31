@@ -1,6 +1,6 @@
-// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-License-Identifier: Apache-2.0
 /*
- * Copyright(c) 2018 Broadcom
+ * Copyright 2018-2020 Broadcom.
  */
 
 /**
@@ -16,7 +16,6 @@
  * the driver read message queue act as a FIFO, but the host need to read
  * messages in "random" order.
  */
-
 #include <errno.h>
 #include <fcntl.h>
 #include <poll.h>
@@ -30,7 +29,6 @@
 #ifdef VKDRV_USERMODEL
 #include "../drv_model/vkdrv_access.h"
 #endif
-
 #define BIG_MSG_SIZE_INC   2
 /**
  * we should wait long enough to allow for non real time transcoding scheme
@@ -246,6 +244,7 @@ static ssize_t vkil_wait_probe_msg(int fd,
 
 	VK_ASSERT(msg);
 	VK_ASSERT(msg->size < UINT8_MAX);
+	VK_ASSERT(__errno_location());
 
 	nbytes = sizeof(*msg) * (msg->size + 1);
 
@@ -286,8 +285,11 @@ static ssize_t vkil_wait_probe_msg(int fd,
 		}
 
 		if (ret) {
+			errno = 0;  /* required by CERT-C:2012 rule ERR30-C */
 			ret = read(fd, msg, nbytes);
-			if (ret > 0) {
+			if ((ret < 0) && (errno == EMSGSIZE))
+				return -EMSGSIZE;
+			else if (ret > 0) {
 				/*
 				 * If ret < nbytes, we have only partially read the message
 				 * and there is no way for calling code to recover.
@@ -296,13 +298,6 @@ static ssize_t vkil_wait_probe_msg(int fd,
 				return ret;
 			}
 
-#ifdef VKDRV_USERMODEL
-			/* in sw simulation only we don't use system errno */
-			if (ret == -EMSGSIZE)
-#else
-			if ((ret < 0) && (errno == EMSGSIZE))
-#endif
-				return -EMSGSIZE;
 			if (!wait_x)
 				return -ENOMSG;
 		}
@@ -324,6 +319,9 @@ int32_t vkil_write(vkil_devctx * const devctx, host2vk_msg * const msg)
 {
 	ssize_t ret;
 
+	VK_ASSERT(__errno_location());
+
+	errno = 0; /* statement to comply with CERT-C:2012 rule ERR30-C */
 	ret = write(devctx->fd, msg, sizeof(*msg) * (msg->size + 1));
 	/* on error, driver returns -1 and the error is stored in errno */
 	if (ret < 0)
@@ -456,7 +454,7 @@ static int32_t vkil_flush_read(vkil_devctx *devctx,
 			       int32_t wait)
 {
 	int32_t ret, q_id;
-	vk2host_msg *msg;
+	vk2host_msg *msg = NULL;
 	vkil_node *node;
 	uint8_t size;
 
@@ -505,21 +503,29 @@ static int32_t vkil_flush_read(vkil_devctx *devctx,
 		} while (ret == -EMSGSIZE);
 
 		if (ret >= 0) {
-			node = vkil_ll_append(&devctx->vk2host[q_id], msg);
+			if (msg->queue_id >= VKIL_MSG_Q_MAX) {
+				VKIL_LOG(VK_LOG_ERROR,
+					 "Received message with q_id %d > MAX %d in devctx %p",
+					 msg->queue_id, VKIL_MSG_Q_MAX, devctx);
+				ret = -EINVAL;
+				goto fail;
+			}
+			node = vkil_ll_append(&devctx->vk2host[msg->queue_id], msg);
 			if (!node) {
 				ret = -ENOMEM;
 				goto fail;
 			}
 			/*
-			 * if no message id specified or message id specified
-			 * has been retrieved no need to wait any longer
+			 * if no message id specified or message is unpaired,
+			 * compare based on function id
 			 */
-			if (message->msg_id == msg->msg_id)
-				wait = 0;
-			else if (!message->msg_id) {
+			if (!message->msg_id ||
+			    message->msg_id == VK_UNPAIRED_MSG_ID) {
 				int32_t still_wait = cmp_function(msg, message);
 
 				wait = still_wait ? wait : 0;
+			} else if (message->msg_id == msg->msg_id) {
+				wait = 0;
 			}
 		} else
 			vkil_free((void **)&msg);
@@ -631,6 +637,7 @@ void vkil_deinit_node_list(vkil_node *ptr)
 int32_t vkil_deinit_dev(void **handle)
 {
 	int i;
+	int ret = 0;
 	VKIL_LOG(VK_LOG_DEBUG, "");
 
 	if (*handle) {
@@ -643,7 +650,12 @@ int32_t vkil_deinit_dev(void **handle)
 			VKIL_LOG(VK_LOG_DEBUG, "close driver");
 			vkil_deinit_msglist(devctx);
 			close(devctx->fd);
-			pthread_mutex_destroy(&devctx->mwx);
+			ret = pthread_mutex_destroy(&devctx->mwx);
+			if (ret) {  /* error are forced to be negative */
+				ret = -ret;
+				VKIL_ERR(ret, "in devctx %p", devctx);
+			}
+
 			for (i = 0; i < VKIL_MSG_Q_MAX; i++) {
 				vkil_deinit_node_list(devctx->vk2host[i]);
 				devctx->vk2host[i] = NULL;
@@ -685,15 +697,22 @@ int32_t vkil_init_dev(void **handle)
 		if (devctx->id < 0)
 			goto fail;
 
-		if (!snprintf(dev_name, sizeof(dev_name),
-			      VKIL_DEV_DRV_NAME ".%d", devctx->id))
+		ret = snprintf(dev_name, sizeof(dev_name),
+			       VKIL_DEV_DRV_NAME ".%d", devctx->id);
+		if ((ret <= 0) || (ret >= sizeof(dev_name))) {
+			ret = -EINVAL;
 			goto fail;
+		}
 
 		devctx->fd = open(dev_name, O_RDWR);
 		if (devctx->fd < 0) {
 			/* Try legacy name */
 			snprintf(dev_name, sizeof(dev_name),
 				 VKIL_DEV_LEGACY_DRV_NAME ".%d", devctx->id);
+			if ((ret <= 0) || (ret >= sizeof(dev_name))) {
+				ret = -EINVAL;
+				goto fail;
+			}
 
 			devctx->fd = open(dev_name, O_RDWR);
 			if (devctx->fd < 0)

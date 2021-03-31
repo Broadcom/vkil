@@ -1,12 +1,14 @@
-/* SPDX-License-Identifier: GPL-2.0 OR Apache-2.0 */
+/* SPDX-License-Identifier: Apache-2.0 */
 /*
- * Copyright(c) 2018 Broadcom
+ * Copyright 2018-2020 Broadcom.
  */
 
 #ifndef VK_PARAMETERS_H
 #define VK_PARAMETERS_H
 
 #include <stdint.h>
+
+/* name suffixed "_t" are depreciated, due to the fact they are POSIX reserved */
 
 #define VK_SCL_MAX_OUTPUTS  4
 
@@ -19,7 +21,7 @@
 /**
  * @brief enumeration of different component role
  */
-enum _vk_role_t {
+typedef enum vk_role {
 	VK_INFO     = 0,
 	VK_DMA      = 1,
 	VK_DECODER  = 2,
@@ -27,10 +29,7 @@ enum _vk_role_t {
 	VK_SCALER   = 4,
 	VK_MULTIPASS_ENCODER = 5,
 	VK_ROLE_MAX = 0xF /**< the role is encoded on 4 bits */
-};
-
-typedef enum _vk_role_t vk_role_t;
-typedef enum _vk_role_t vkil_role_t;
+} vk_role, vk_role_t, vkil_role_t;
 
 /**
  * @brief structure used by the card to allocate a context
@@ -39,7 +38,7 @@ typedef enum _vk_role_t vkil_role_t;
  * for this reason the structure size is limited to 8 bytes
  * (keep message size to 1)
  */
-struct _vk_context_essential {
+typedef struct vk_context_essential {
 	uint32_t handle; /**< host opaque handle defined by the vk card */
 	uint32_t queue_id:4; /**< queue id */
 	uint32_t component_role:4; /**< vk_role_t encoded on 4 bits */
@@ -48,16 +47,12 @@ struct _vk_context_essential {
 	 * max is 2^22 according to man 5 proc
 	 */
 	uint32_t pid:24;
-};
-
-typedef struct _vk_context_essential vk_context_essential;
-/* the below is an obsolete naming, prefer vk_context_essential */
-typedef struct _vk_context_essential vkil_context_essential;
+} vk_context_essential, vkil_context_essential;
 
 /**
  * @brief base available command sent to the HW
  */
-typedef enum _vk_base_command_t {
+typedef enum vk_base_command {
 	VK_CMD_BASE_NONE      = 0, /**< no explicit command */
 	VK_CMD_BASE_IDLE      = 1, /**< standby mode */
 	VK_CMD_BASE_RUN       = 2, /**< request to start processing */
@@ -74,7 +69,7 @@ typedef enum _vk_base_command_t {
 /**
  * @brief available command sent to the HW
  */
-enum _vk_command_t {
+typedef enum vk_command {
 	/** no explicit command */
 	VK_CMD_NONE        = VK_CMD_BASE_NONE      << VK_CMD_BASE_SHIFT,
 	/** standby mode */
@@ -89,10 +84,7 @@ enum _vk_command_t {
 	VK_CMD_DOWNLOAD    = VK_CMD_BASE_DOWNLOAD  << VK_CMD_BASE_SHIFT,
 	/** command to verify buffer + LB */
 	VK_CMD_VERIFY_LB   = VK_CMD_BASE_VERIFY_LB << VK_CMD_BASE_SHIFT,
-};
-
-typedef enum  _vk_command_t vk_command_t;
-typedef enum  _vk_command_t vkil_command_t;
+} vk_command,  vkil_command, vkil_command_t;
 
 /* shift to get to first option bit, ie VK_CMD_OPT_CB */
 #define VK_CMD_OPTS_SHIFT    14
@@ -115,7 +107,7 @@ typedef enum  _vk_command_t vkil_command_t;
 /** command mask for load: command + options that are allowed to pass down */
 #define VK_CMD_LOAD_MASK     (VK_CMD_MASK | VK_CMD_OPT_DMA_LB)
 
-enum _vk_status_t {
+typedef enum vk_status {
 	VK_STATE_OK = 0,
 	VK_STATE_UNLOADED = 1, /**< no hw ctx is loaded */
 	VK_STATE_READY = 2,
@@ -124,10 +116,17 @@ enum _vk_status_t {
 	VK_STATE_FLUSH = 5,
 	VK_STATE_WARN = 0xfe,
 	VK_STATE_ERROR = 0xff,
-};
+}  vk_status, vkil_status_t;
 
-typedef enum _vk_status_t vk_status_t;
-typedef enum _vk_status_t vkil_status_t;
+/**
+ * counter clockwise surface rotation
+ */
+enum vk_rotation {
+	VK_ROTATION_0 = 0,
+	VK_ROTATION_90 = 90,
+	VK_ROTATION_180 = 180,
+	VK_ROTATION_270 = 270,
+};
 
 enum vk_mve_reconstruct_mode {
 	MVE_RECONS_OFF = 0,
@@ -241,7 +240,7 @@ enum vk_scaler_filter {
 #define VK_INPUT_PORT  0
 #define VK_OUTPUT_PORT 1
 
-typedef union vk_size_ {
+typedef union vk_size {
 	struct {
 		/*
 		 * the bit organization is designed to match the ssim and
@@ -257,7 +256,7 @@ typedef union vk_size_ {
 	uint32_t size;
 } vk_size;
 
-typedef union vk_port_id_ {
+typedef union vk_port_id {
 	struct {
 		uint32_t id:7;     /**< indicate input/output number idx */
 		uint32_t direction:1; /**< indicate if input or output   */
@@ -265,15 +264,14 @@ typedef union vk_port_id_ {
 	uint32_t map;
 } vk_port_id;
 
-typedef struct _vk_port {
+typedef struct vk_port {
 	vk_port_id port_id; /** port identifiant */
 	uint32_t handle; /** handle to the port (Buffer pool identifier) */
 } vk_port;
 
 #define VK_CFG_FLAG_ENABLE 1
 
-
-typedef struct _vk_ctu_stats {
+typedef struct vk_ctu_stats {
 	/* number of 8x8 blocks in the CTU that are intra */
 	uint8_t  intra_count;
 	uint8_t  reserved;
@@ -296,7 +294,7 @@ typedef struct _vk_surface_stats {
 	uint32_t ref_pic_count[2]; /**< display order pic cnt of references */
 } vk_surface_stats;
 
-typedef struct _vk_me_stats {
+typedef struct vk_me_stats {
 	uint32_t intra_rd_cost : 26; /* Intra RD cost (distortion+lambda*bits) */
 	uint32_t inter_used    :  1; /* Inter selected by RD */
 	uint32_t coarse_mvs    :  1; /* Bit used to tell the FW to use only coarse (top left) MVs */
@@ -374,7 +372,7 @@ typedef struct _vk_scl_custom_filter {
 			  [VK_SCL_MAX_PHASES][VK_SCL_MAX_VER_COEFS];
 } vk_scl_custom_filter;
 
-typedef struct _vk_vars_cfg {
+typedef struct vk_vars_cfg {
 	int32_t flags;
 	int32_t size; /**< bytes required to store a frame qpmap */
 } vk_vars_cfg;
@@ -388,7 +386,7 @@ typedef struct _vk_vars_cfg {
  * the values can range from -8 to +7 for each 4-bit set.
  * qpmap will have (width/32) * (height/32) num of records.
  */
-typedef struct _vk_qpmap_bpr {
+typedef struct vk_qpmap_bpr {
 	uint16_t qp_delta;
 	/*
 	 * One value for each 16*16 (i.e. 4 bit values).
@@ -421,7 +419,7 @@ typedef struct _vk_qpmap_bpr {
 #define VK_ADAPT_QP_SIG_COST_THRESHOLD_BPP_SET (1 << 9)
 #define VK_ADAPT_QP_QPD_SUM_DISABLE_THRESHOLD_BPP_SET (1 << 10)
 #define VK_ADAPT_QP_QPD_SUM_THRESHOLD_SET (1 << 11)
-typedef struct _vk_adaptqp_cfg {
+typedef struct vk_adaptqp_cfg {
 	int32_t flags;
 	int32_t a; /**< Value used in qpdelta =  (a * log2(variance)) + b */
 	int32_t b; /**< Value used in qpdelta =  (a * log2(variance)) + b */
@@ -442,7 +440,7 @@ typedef struct _vk_adaptqp_cfg {
  *
  * the algorithm to run-time lookahead to improve the video quality
  */
-typedef struct _vk_lookahead_cfg {
+typedef struct vk_lookahead_cfg {
 	int32_t flags;
 	uint8_t frames; /**< number of frames to lookahead **/
 	uint8_t seg_gops;
@@ -463,7 +461,7 @@ typedef struct _vk_lookahead_cfg {
 #define VK_ENC_CFG_DQPD_SET (1 << 3)
 #define VK_ENC_CFG_MIN_QP_SET (1 << 4)
 #define VK_ENC_CFG_MAX_QP_SET (1 << 5)
-typedef struct _vk_rc_cfg {
+typedef struct vk_rc_cfg {
 	uint8_t flags;
 	uint8_t rc_mode; /**< rate control mode, if zero fixed qp */
 	uint8_t qpi;     /**< qp for intra frame */
@@ -474,7 +472,7 @@ typedef struct _vk_rc_cfg {
 	uint8_t max_qp;  /**< max qp used by rate control */
 } vk_rc_cfg;
 
-typedef enum _vk_color_range {
+typedef enum vk_color_range {
 	VK_COL_RANGE_UNDEF = 0, /**< unspecified or unknown range */
 	VK_COL_RANGE_LIMITED = 1, /**< the normal 219*2^(n-8) MPEG YUV ranges */
 	VK_COL_RANGE_FULL = 2, /**< the normal 2^n-1   JPEG YUV ranges */
@@ -492,7 +490,7 @@ typedef enum _vk_color_range {
  * ITU-T H.264 § Annex E / ITU-T H.265 § Annex E whenever flag
  * VK_CFG_FLAG_ENABLE is set
  */
-typedef struct _vk_color_cfg {
+typedef struct vk_color_cfg {
 	int32_t flags;
 	uint8_t range; /**< color range */
 	/** source primaries as defined by ITU-T H.273 (12/2016) § 8.1 */
@@ -503,23 +501,23 @@ typedef struct _vk_color_cfg {
 	uint8_t matrix;
 } vk_color_cfg;
 
-typedef struct _vk_qpmap_cfg {
+typedef struct vk_qpmap_cfg {
 	int32_t flags;
 	int32_t size; /**< bytes required to store a frame qpmap */
 } vk_qpmap_cfg;
 
-typedef struct _vk_stats_cfg {
+typedef struct vk_stats_cfg {
 	int32_t flags;
 	int32_t size; /**< bytes required to store a frame stats */
 } vk_stats_cfg;
 
-typedef struct _vk_me_stats_cfg {
+typedef struct vk_me_stats_cfg {
 	int32_t flags;
 	int32_t size; /**< bytes required to store a frame of me stats */
 	uint8_t coarse_mvs; /**< set to non-zero to use coarse motion vectors */
 } vk_me_stats_cfg;
 
-typedef struct _vk_ssim_cfg {
+typedef struct vk_ssim_cfg {
 	int32_t flags;
 	 /**< log2 of super block size in 4x4pels unit */
 	uint8_t log_sb_plus1;
@@ -528,7 +526,7 @@ typedef struct _vk_ssim_cfg {
 } vk_ssim_cfg;
 
 /** vk_buffer_surface format type including pixel depth (encoded on 16 bits) */
-typedef enum _vk_format_type {
+typedef enum vk_format_type {
 	VK_FORMAT_UNDEF = 0,
 	VK_FORMAT_AFBC  = 1,      /**< hw surface 10 bits  */
 	VK_FORMAT_YOL2  = 2,      /**< hw surface 10 bits  */
@@ -538,7 +536,7 @@ typedef enum _vk_format_type {
 } vk_format_type;
 
 /** vk gop type  */
-typedef enum _vk_gop_type {
+typedef enum vk_gop_type {
 	VK_GOP_UNDEF            = 0, /**< not defined                      */
 	VK_GOP_BIDIRECTIONAL    = 1, /**< bframes + reorder                */
 	VK_GOP_LOWDELAY         = 2, /**< low delay (no frame reordering)  */
@@ -549,7 +547,7 @@ typedef enum _vk_gop_type {
 } vk_gop_type;
 
 /** rate control mode.  Note: 0->4 is a direct 1-to-1 mapping to MVE FW */
-typedef enum _vk_rc_mode {
+typedef enum vk_rc_mode {
 	VK_RC_OFF   = 0, /**< off */
 	VK_RC_STD   = 1, /**< standard rate control */
 	VK_RC_VBR   = 2, /**< variable bit rate     */
@@ -567,13 +565,13 @@ typedef enum _vk_rc_mode {
 #define VK_MULTIPASS_USE_OFFLINE 0x8
 
 /** repeat-header type */
-typedef enum _vk_repeat_hdr_type {
+typedef enum vk_repeat_hdr_type {
 	VK_REPEAT_HEADER = 0, /**< Repeat the hdr for all key frames */
 	VK_NO_REPEAT_HEADER,  /**< header for first key frame only   */
 	VK_GLOBAL_HEADER,     /**< same as above + get hdr in init   */
 } vk_repeat_hdr_type;
 
-typedef struct _vk_enc_cfg {
+typedef struct vk_enc_cfg {
 	uint32_t standard;  /**< video standard */
 	vk_size  size;
 	uint16_t profile;
@@ -607,7 +605,7 @@ typedef struct _vk_enc_cfg {
 } vk_enc_cfg;
 
 /** extra arguments passed to process_buffer */
-typedef struct _vk_enc_surface_attrs {
+typedef struct vk_enc_surface_attrs {
 	uint32_t qpmap;     /**< handle on qpmap if non zero */
 	uint32_t varmap;    /**< handle on varmap if non zero */
 	uint32_t quality;   /**< quality index if non zero */
@@ -615,7 +613,7 @@ typedef struct _vk_enc_surface_attrs {
 } vk_enc_surface_attrs;
 
 /** filter type */
-typedef enum _vk_scl_filter_type {
+typedef enum vk_scl_filter_type {
 	VK_SCL_FLTR_UNKNOWN = 0,  /**< Unknown filter */
 	VK_SCL_FLTR_NEAREST,      /**< Nearest neighbour */
 	VK_SCL_FLTR_LINEAR,       /**< Linear */
@@ -626,7 +624,7 @@ typedef enum _vk_scl_filter_type {
 } vk_scl_filter_type;
 
 /** scaler configuration */
-typedef struct _vk_scl_cfg {
+typedef struct vk_scl_cfg {
 	uint32_t filter; /*depreciated parameter */
 	uint32_t filter_luma:16;   /**< filter type in Luma component */
 	uint32_t filter_chroma:16; /**< filter type in chroma component */
@@ -638,6 +636,12 @@ typedef struct _vk_scl_cfg {
 	vk_qpmap_cfg qpmap_cfg; /**< qp maps */
 	vk_size  output_size[VK_SCL_MAX_OUTPUTS]; /**< output sizes in pels */
 	uint32_t custom_filter_handle;
+	/**
+	 * internal output mask, where bit(n) set to one specify the output n
+	 * is not means be outputted, but just use as an intermediate cascade
+	 * filter stage
+	 */
+	uint32_t internal_stages;
 } vk_scl_cfg;
 
 /**
@@ -645,7 +649,7 @@ typedef struct _vk_scl_cfg {
  * they are explicitly labelled, since they are required to be matching
  * between the card and the host
  */
-typedef enum _vk_scl_input {
+typedef enum vk_scl_input {
 	VK_SCL_VIDEO_IN     = 0, /**< video surface input */
 	VK_SCL_FILTER_COEFS = 1, /**< custom filter configuration input */
 	VK_SCL_NUM_INPUTS   = 2,
@@ -656,7 +660,7 @@ typedef enum _vk_scl_input {
  * Supported flash types are QSPI/NAND.
  * NOTE: Current implementation supports only QSPI flash type
  */
-typedef enum _vk_info_flash_type {
+typedef enum vk_info_flash_type {
 	VK_INFO_FLASH_TYPE_INVALID = 0,
 	VK_INFO_FLASH_TYPE_QSPI = 0x10,
 	VK_INFO_FLASH_TYPE_NAND = 0x20,
@@ -667,7 +671,7 @@ typedef enum _vk_info_flash_type {
  * The flash image configuration is used to pass the data required for flashing
  * between the card and the host
  */
-typedef struct _vk_flash_image_config {
+typedef struct vk_flash_image_config {
 	uint32_t image_type;
 	uint32_t image_size;
 	uint32_t write_offset;
@@ -678,7 +682,7 @@ typedef struct _vk_flash_image_config {
  * Pool size configuration
  * The pool size configuration is used to change a particular pool size
  */
-typedef struct _vk_pool_size_config {
+typedef struct vk_pool_size_config {
 	vk_port_id port_id;
 	uint32_t size;
 } vk_pool_size_cfg;
@@ -687,7 +691,7 @@ typedef struct _vk_pool_size_config {
  * Pool alloc configuration
  * The pool alloc configuration is used to alloc a buffer in a pool
  */
-typedef struct _vk_pool_alloc_buffer {
+typedef struct vk_pool_alloc_buffer {
 	vk_port_id port_id;
 	union {
 		uint32_t size; // requested
@@ -699,7 +703,7 @@ typedef struct _vk_pool_alloc_buffer {
  * Set/Get header configuration
  */
 #define VK_MAX_BUFFER_SIZE 192
-typedef struct _vk_set_get_header {
+typedef struct vk_set_get_header {
 	uint32_t handle;
 	uint8_t buffer[VK_MAX_BUFFER_SIZE];
 } vk_header_cfg;
@@ -712,7 +716,7 @@ typedef struct vk_anomaly {
 } vk_error, vk_warning;
 
 /* surface flags */
-typedef enum _vk_surf_flags {
+typedef enum vk_surf_flags {
 	VK_SURF_DEC_TOP_TYPE_I       = 0x01, /**< Decoded Top - IDR Frame */
 	VK_SURF_DEC_TOP_TYPE_P       = 0x02, /**< Decoded Top - I,P MBs Only */
 	VK_SURF_DEC_TOP_TYPE_B       = 0x03, /**< Decoded Top - I,P or B MBs */
@@ -725,7 +729,7 @@ typedef enum _vk_surf_flags {
 	VK_SURF_DEC_MASK             = 0xFF, /**< Decoded Full Mask */
 } vk_surf_flags;
 
-typedef enum _vkil_parameter_t {
+typedef enum vk_parameter {
 	VK_PARAM_NONE                   = 0,
 
 	/* general monitoring parameters */
@@ -749,6 +753,7 @@ typedef enum _vkil_parameter_t {
 
 	VK_PARAM_VIDEO_SIZE             = 32, /**< 0 means undefined */
 	VK_PARAM_VIDEO_FORMAT           = 33, /**< 0 means undefined */
+	VK_PARAM_VIDEO_ROTATION         = 34,
 	VK_PARAM_VIDEO_ENC_CONFIG       = 48,
 	VK_PARAM_VIDEO_ENC_GOP_TYPE     = 49,
 	VK_PARAM_VIDEO_DEC_FPS          = 50,
@@ -767,6 +772,10 @@ typedef enum _vkil_parameter_t {
 	VK_PARAM_POOL_ALLOC_BUFFER       = 69,
 	/* Get some statistics about a given pool */
 	VK_PARAM_POOL_STATS              = 70,
+	/*
+	 * Set the queue_id used for PROC_BUF_RESP messages to host.
+	 */
+	VK_PARAM_PROC_BUF_DONE_QID  = 71,
 
 	/* scaler configuration parameters */
 	VK_PARAM_SCALER_FILTER          = 80, /**< 0 means undefined */
@@ -791,7 +800,52 @@ typedef enum _vkil_parameter_t {
 	VK_PARAM_WARNING                = 254,
 	VK_PARAM_ERROR                  = 255,
 	VK_PARAM_MAX = 0x0fff,
-} vkil_parameter_t;
+} vk_parameter, vkil_parameter_t;
+
+/**
+ * @brief return the size in bytes of the structure associated to a
+ * vk_parameter
+ *
+ * @param  field the field to evaluate
+ * @return size of the structure associated to field
+ */
+static inline int32_t vk_param_struct_size(const vk_parameter field)
+{
+	int32_t sz;
+
+	switch (field) {
+	case VK_PARAM_PORT:
+		sz = sizeof(vk_port);
+		break;
+	case VK_PARAM_VIDEO_ENC_CONFIG:
+		sz = sizeof(vk_enc_cfg);
+		break;
+	case VK_PARAM_VIDEO_SCL_CONFIG:
+		sz = sizeof(vk_scl_cfg);
+		break;
+	case VK_PARAM_FLASH_IMAGE_CONFIG:
+		sz = sizeof(vk_flash_image_cfg);
+		break;
+	case VK_PARAM_POOL_SIZE_CONFIG:
+		sz =  sizeof(vk_pool_size_cfg);
+		break;
+	case VK_PARAM_POOL_ALLOC_BUFFER:
+		sz = sizeof(vk_pool_alloc_buffer);
+		break;
+	case VK_PARAM_ERROR:
+		sz = sizeof(vk_error);
+		break;
+	case VK_PARAM_WARNING:
+		sz = sizeof(vk_warning);
+		break;
+	case VK_PARAM_BUFFER_HEADER:
+		sz = sizeof(vk_header_cfg);
+		break;
+	default:
+		sz = sizeof(int32_t);
+	}
+	return sz;
+}
 
 /* max number of warnings stored, must be a power of 2 */
 #define VK_WARNINGS_BUF_MAX  4

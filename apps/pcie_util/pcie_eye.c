@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 /*
- * Copyright(c) 2019 Broadcom
+ * Copyright 2019-2020 Broadcom.
  */
 
 #include <assert.h>
