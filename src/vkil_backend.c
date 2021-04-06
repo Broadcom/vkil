@@ -38,6 +38,11 @@
 #define VKIL_TIMEOUT_MS  (50 * 1000)
 /** in the ffmpeg context ms order to magnitude is OK */
 #define VKIL_PROBE_INTERVAL_MS 1
+/**
+ * use 20% of the timeout as an intermediate poll period.  This allows the
+ * poll to wakeup and do a failsafe read.
+ */
+#define VKIL_POLL_MAX_MS (VKIL_TIMEOUT_MS / 5)
 
 /*
  * this refers to the maximum number of intransit message into a single context
@@ -275,32 +280,41 @@ static ssize_t vkil_wait_probe_msg(int fd,
 			time_ms = del_time_us / 1000;
 			if (time_ms <= 0)
 				break;
+
+			/*
+			 * cap the time_ms to a smaller max so that it would be
+			 * possible to failsafe and do a read anyway.  Since we
+			 * interlace between wait vs non-wait read, if a
+			 * wait_read is preceded with a non-wait one, it will
+			 * return right the way as the previous read has set the
+			 * event.
+			 */
+			if (time_ms > VKIL_POLL_MAX_MS)
+				time_ms = VKIL_POLL_MAX_MS;
+
 			ret = poll(&fds, 1, time_ms);
 #else
 			/* Infinite wait */
 			ret = poll(&fds, 1, 0);
 #endif
-		} else {
-			ret = 1;
 		}
 
-		if (ret) {
-			errno = 0;  /* required by CERT-C:2012 rule ERR30-C */
-			ret = read(fd, msg, nbytes);
-			if ((ret < 0) && (errno == EMSGSIZE))
-				return -EMSGSIZE;
-			else if (ret > 0) {
-				/*
-				 * If ret < nbytes, we have only partially read the message
-				 * and there is no way for calling code to recover.
-				 */
-				VK_ASSERT(ret == nbytes);
-				return ret;
-			}
-
-			if (!wait_x)
-				return -ENOMSG;
+		errno = 0;  /* required by CERT-C:2012 rule ERR30-C */
+		ret = read(fd, msg, nbytes);
+		if (ret > 0) {
+			/*
+			 * If ret < nbytes, we have only partially read the message
+			 * and there is no way for calling code to recover.
+			 */
+			VK_ASSERT(ret == nbytes);
+			return ret;
 		}
+
+		if (errno == EMSGSIZE)
+			return -EMSGSIZE;
+
+		if (!wait_x)
+			return -ENOMSG;
 
 		time_us = vkil_get_time_us();
 	}
