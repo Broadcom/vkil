@@ -23,6 +23,9 @@
 /** msg_id used for all unpaired messages */
 #define VK_UNPAIRED_MSG_ID 0
 
+/** Align size to 64 bytes if cop performs cache flush  on shared memory */
+#define VK_COP_CACHE_LINE_SIZE 64
+
 /**
  * message structure from host to Valkyrie card
  */
