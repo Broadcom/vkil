@@ -166,7 +166,8 @@ enum vk_video_profile {
 	VK_V_PROFILE_VP9_1                     = 2, /* 8bits 422 and 444 */
 	VK_V_PROFILE_VP9_2                     = 3, /* 10-12bits 420 */
 	VK_V_PROFILE_VP9_3                     = 4, /* 10-12bits 422 and 444 */
-	VK_V_PROFILE_MAX = 0xFFFF
+	VK_V_PROFILE_MAX                       = 0xFFFF,
+	VK_V_PROFILE_UNSUPPORTED               = VK_V_PROFILE_MAX
 };
 
 /**
@@ -224,7 +225,8 @@ enum vk_video_level {
 	VK_V_LEVEL_VP9_5  =  9,
 	VK_V_LEVEL_VP9_51 = 10,
 
-	VK_V_LEVEL_MAX = 0xFFFF
+	VK_V_LEVEL_MAX = 0xFFFF,
+	VK_V_LEVEL_UNSUPPORTED = VK_V_LEVEL_MAX
 };
 
 enum vk_scaler_filter {
